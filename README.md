@@ -1,8 +1,8 @@
-# NXCTF - Next CTF
+# TDCTF - Next CTF
 > 🚩 **Modern Capture The Flag (CTF) Platform** — Built for security competitions, workshops, and training. Features real-time scoring, team management, and admin controls. Deploy to Vercel + Supabase in minutes.
 
-## 🎯 What is NXCTF?
-NXCTF is a **full-featured CTF (Capture The Flag) competition platform** designed to host security challenges. Whether you're running a college competition, corporate training event, or online CTF, NXCTF provides everything you need:
+## 🎯 What is TDCTF?
+TDCTF is a **full-featured CTF (Capture The Flag) competition platform** designed to host security challenges. Whether you're running a college competition, corporate training event, or online CTF, TDCTF provides everything you need:
 
 - 🏆 **Live Scoreboard** — Real-time leaderboards (individual & team-based)
 - 🎮 **Challenge System** — 11+ challenge categories (Web, Crypto, Reverse, Pwn, etc.)
@@ -12,7 +12,7 @@ NXCTF is a **full-featured CTF (Capture The Flag) competition platform** designe
 - 🛠️ **Admin Dashboard** — Full control over challenges, events, and users
 - 🔐 **Secure** — User authentication, Google OAuth, CAPTCHA support
 - 🌙 **Dark Mode** — Beautiful responsive UI with theme support
-- 🚀 **Service Integration** — Connect to NXCTL for dynamic challenge infrastructure
+- 🚀 **Service Integration** — Connect to TDCTL for dynamic challenge infrastructure
 
 ## ⚡ Quick Start
 ### Prerequisites
@@ -24,8 +24,8 @@ NXCTF is a **full-featured CTF (Capture The Flag) competition platform** designe
 ### 1. Clone & Install
 Clone the repo and install dependencies:
 ```bash
-git clone https://github.com/nxctf/nxctf
-cd nxctf
+git clone https://github.com/tenka-developer/tdctf
+cd tdctf
 ```
 
 Install dependencies and generate the initial SQL file:
@@ -55,8 +55,8 @@ NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=your_supabase_anon_key
 NEXT_PUBLIC_SITE_URL=http://localhost:3000
 
 # NEXT_PUBLIC_TURNSTILE_SITE_KEY=your_cloudflare_turnstile_site_key
-# NXCTL_API_URL=http://localhost:8000
-# NXCTL_API_TOKEN=your_api_token
+# TDCTL_API_URL=http://localhost:8000
+# TDCTL_API_TOKEN=your_api_token
 # NEXT_PUBLIC_MAINTENANCE_MODE=no
 ```
 
@@ -64,7 +64,7 @@ The only required variables are `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABAS
 
 You can find `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` in your Supabase dashboard → Connect. Copy the URL and the publishable key (anon key), then paste them into your `.env.local` file.
 
-The optional variables are `NEXT_PUBLIC_TURNSTILE_SITE_KEY` for Cloudflare Turnstile CAPTCHA, `NXCTL_API_URL` and `NXCTL_API_TOKEN` for NXCTL service integration, and `NEXT_PUBLIC_MAINTENANCE_MODE` for maintenance mode.
+The optional variables are `NEXT_PUBLIC_TURNSTILE_SITE_KEY` for Cloudflare Turnstile CAPTCHA, `TDCTL_API_URL` and `TDCTL_API_TOKEN` for TDCTL service integration, and `NEXT_PUBLIC_MAINTENANCE_MODE` for maintenance mode.
 
 ### 4. Setting your platform
 After running the development server, you can open `http://localhost:3000` and see the Icon Setting in the navbar. Click it to open the config dialog, then set your platform name, description, flag format, challenge categories, team settings, event settings, and more.
@@ -125,7 +125,7 @@ This will automatically update `src/lib/supabase/database.types.ts` to keep your
 - **Challenge Management** — Create, edit, delete challenges
 - **Dynamic Scoring** — Adjust points based on solver count
 - **Event Management** — Host multiple CTF events
-- **Service Integration** — Connect NXCTL for ephemeral challenge services
+- **Service Integration** — Connect TDCTL for ephemeral challenge services
 - **User Management** — Manage admins and users
 - **Analytics** — View solves, audit logs, first bloods
 - **Notifications** — Send broadcast messages to all users
@@ -140,10 +140,10 @@ This will automatically update `src/lib/supabase/database.types.ts` to keep your
 Edit `src/config.ts` to customize your platform:
 ```typescript
 export const APP = {
-  shortName: "NXCTF",                    // Platform name
+  shortName: "TDCTF",                    // Platform name
   fullName: "Next CTF",                  // Full name
   description: "...",                    // Description
-  flagFormat: "NXCTF{...}",             // Expected flag format
+  flagFormat: "TDCTF{...}",             // Expected flag format
   challengeCategories: [...],            // Available challenge types
 
   // Team settings
@@ -161,12 +161,12 @@ export const APP = {
 ```
 
 ## 🔗 Optional Features
-### NXCTL Service Integration
-If you have [NXCTL](https://github.com/nxctf/nxctl) running, add to `.env.local`:
+### TDCTL Service Integration
+If you have [TDCTL](https://github.com/tenka-developer/tdctl) running, add to `.env.local`:
 
 ```env
-NXCTL_API_URL=http://localhost:8000
-NXCTL_API_TOKEN=your_secret_token
+TDCTL_API_URL=http://localhost:8000
+TDCTL_API_TOKEN=your_secret_token
 ```
 
 Services will auto-appear in challenge panels for users to start/restart/extend instances.
@@ -217,7 +217,7 @@ src/
 │   ├── scoreboard/        # Leaderboards
 │   ├── teams/             # Team management
 │   ├── profile/           # User profiles
-│   ├── api/nxctl/         # NXCTL API integration
+│   ├── api/tdctl/         # TDCTL API integration
 │   └── ...other pages
 ├── shared/
 │   ├── components/        # Reusable React components
@@ -263,7 +263,7 @@ npm run update-types:local  # Generate TypeScript types from local Supabase
 ## 📊 How It Works
 
 ## 🤝 Support & Contributing
-- 📖 [NXCTL Documentation](https://docs.nxctf.my.id)
+- 📖 [TDCTL Documentation](https://docs.tdctf.my.id)
 - 🐛 Report issues on GitHub or your repository issue tracker
 - 💬 Questions? Open a discussion
 

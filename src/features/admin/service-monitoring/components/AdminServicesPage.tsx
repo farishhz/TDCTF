@@ -16,7 +16,7 @@ import {
 } from '../lib/admin-services-utils'
 import { useAdminServicesData } from '../hooks/useAdminServicesData'
 import { useChallengeForm } from '../../challenges/hooks/useChallengeForm'
-import type { AdminNxctlActionTarget, AdminServiceRow, AdminServicesFilters, AdminServiceTab } from '../types'
+import type { AdminTDCTLActionTarget, AdminServiceRow, AdminServicesFilters, AdminServiceTab } from '../types'
 import { FlagPreviewDialog } from '../../challenges/components/FlagPreviewDialog'
 import ChallengeFormDialogHost from '../../challenges/components/ChallengeFormDialogHost'
 import AdminLiveServicesTable from './AdminLiveServicesTable'
@@ -75,7 +75,7 @@ export default function AdminServicesPage() {
     actionLoading,
     globalActionLoading,
     refresh,
-    runNxctlAction,
+    runTDCTLAction,
     runGlobalServiceAction,
   } = useAdminServicesData()
 
@@ -83,7 +83,7 @@ export default function AdminServicesPage() {
   const [filters, setFilters] = useState<AdminServicesFilters>(DEFAULT_FILTERS)
   const [nowTick, setNowTick] = useState(() => Date.now())
   const [openForm, setOpenForm] = useState(false)
-  const [pendingServiceAction, setPendingServiceAction] = useState<{ target: AdminNxctlActionTarget; action: 'up' | 'down' } | null>(null)
+  const [pendingServiceAction, setPendingServiceAction] = useState<{ target: AdminTDCTLActionTarget; action: 'up' | 'down' } | null>(null)
   const challengeForm = useChallengeForm()
 
   const {
@@ -118,9 +118,9 @@ export default function AdminServicesPage() {
 
   const livePlatformEntries = useMemo(() => {
     const entriesById = new Map<string, typeof platformEntries[number]>()
-    ;[...platformEntries, ...enrichedPlatformEntries].forEach((entry) => {
-      if (!entriesById.has(entry.id)) entriesById.set(entry.id, entry)
-    })
+      ;[...platformEntries, ...enrichedPlatformEntries].forEach((entry) => {
+        if (!entriesById.has(entry.id)) entriesById.set(entry.id, entry)
+      })
     return Array.from(entriesById.values())
   }, [enrichedPlatformEntries, platformEntries])
 
@@ -167,22 +167,22 @@ export default function AdminServicesPage() {
         <div className="flex flex-col min-h-0 flex-1">
           <AdminStickyToolbar
             tabs={
-                  <AdminTabs
-                    value={activeTab}
-                    onChange={setActiveTab}
-                    items={[
-                      {
-                        value: 'live',
-                        label: 'Actual Services',
-                        icon: Activity,
-                      },
-                      {
-                        value: 'platform',
-                        label: 'Supabase Services',
-                        icon: Server,
-                      },
-                    ]}
-                  />
+              <AdminTabs
+                value={activeTab}
+                onChange={setActiveTab}
+                items={[
+                  {
+                    value: 'live',
+                    label: 'Actual Services',
+                    icon: Activity,
+                  },
+                  {
+                    value: 'platform',
+                    label: 'Supabase Services',
+                    icon: Server,
+                  },
+                ]}
+              />
             }
             filters={
               <AdminServicesToolbar
@@ -244,11 +244,11 @@ export default function AdminServicesPage() {
                   isGlobalAdmin={isGlobalAdmin}
                   actionLoading={actionLoading}
                   globalActionLoading={globalActionLoading}
-                  onNxctlAction={(target, action) => {
+                  onTDCTLAction={(target, action) => {
                     if (action === 'down') {
                       setPendingServiceAction({ target, action })
                     } else {
-                      void runNxctlAction(target, action)
+                      void runTDCTLAction(target, action)
                     }
                   }}
                   onGlobalAction={(action) => void runGlobalServiceAction(action)}
@@ -275,11 +275,11 @@ export default function AdminServicesPage() {
         onOpenChange={() => setPendingServiceAction(null)}
         title={pendingServiceAction ? `Stop ${pendingServiceAction.target.name}` : ''}
         variant="destructive"
-        description={<p>Are you sure you want to stop NXCTL service <b>{pendingServiceAction?.target.name}</b>?</p>}
+        description={<p>Are you sure you want to stop TDCTL service <b>{pendingServiceAction?.target.name}</b>?</p>}
         confirmLabel="Stop Service"
         onConfirm={() => {
           if (pendingServiceAction) {
-            void runNxctlAction(pendingServiceAction.target, pendingServiceAction.action)
+            void runTDCTLAction(pendingServiceAction.target, pendingServiceAction.action)
             setPendingServiceAction(null)
           }
         }}

@@ -44,10 +44,10 @@ type SecretConfig = {
   supabaseAnonKey: string
   turnstileSiteKey: string
   turnstileSiteKeyEnabled: boolean
-  nxctlEnabled: boolean
-  nxctlApiUrl: string
-  nxctlApiToken: string
-  nxctlApiAdminSecret: string
+  tdctlEnabled: boolean
+  tdctlApiUrl: string
+  tdctlApiToken: string
+  tdctlApiAdminSecret: string
 }
 
 type AssetConfigItem = {
@@ -81,10 +81,10 @@ const emptySecret: SecretConfig = {
   supabaseAnonKey: '',
   turnstileSiteKey: '',
   turnstileSiteKeyEnabled: false,
-  nxctlEnabled: false,
-  nxctlApiUrl: '',
-  nxctlApiToken: '',
-  nxctlApiAdminSecret: '',
+  tdctlEnabled: false,
+  tdctlApiUrl: '',
+  tdctlApiToken: '',
+  tdctlApiAdminSecret: '',
 }
 
 interface DevConfigDialogProps {
@@ -168,7 +168,7 @@ export default function DevConfigDialog({ open, onOpenChange }: DevConfigDialogP
     setConfig((current) => ({ ...current, [key]: !current[key] }))
   }
 
-  const toggleSecretField = (key: keyof Pick<SecretConfig, 'turnstileSiteKeyEnabled' | 'nxctlEnabled'>) => {
+  const toggleSecretField = (key: keyof Pick<SecretConfig, 'turnstileSiteKeyEnabled' | 'tdctlEnabled'>) => {
     setSecret((current) => ({ ...current, [key]: !current[key] }))
   }
 
@@ -394,16 +394,16 @@ export default function DevConfigDialog({ open, onOpenChange }: DevConfigDialogP
 
               <Section title="Orchestrator" description="Automation for challenge instances.">
                 <div className="space-y-4">
-                  <ToggleItem title="Enable Orchestrator" desc="Active NXCTL integration." checked={secret.nxctlEnabled} onToggle={() => toggleSecretField('nxctlEnabled')} />
-                  <div className={cn("grid gap-4 transition-all duration-300", !secret.nxctlEnabled && "pointer-events-none opacity-40")}>
+                  <ToggleItem title="Enable Orchestrator" desc="Active TDCTL integration." checked={secret.tdctlEnabled} onToggle={() => toggleSecretField('tdctlEnabled')} />
+                  <div className={cn("grid gap-4 transition-all duration-300", !secret.tdctlEnabled && "pointer-events-none opacity-40")}>
                     <ConfigField label="API Endpoint">
-                      <Input value={secret.nxctlApiUrl} onChange={(e) => updateSecretField('nxctlApiUrl', e.target.value)} className={MONO_INPUT_CLASS} />
+                      <Input value={secret.tdctlApiUrl} onChange={(e) => updateSecretField('tdctlApiUrl', e.target.value)} className={MONO_INPUT_CLASS} />
                     </ConfigField>
                     <ConfigField label="Access Token">
-                      <Input type="password" value={secret.nxctlApiToken} onChange={(e) => updateSecretField('nxctlApiToken', e.target.value)} className={MONO_INPUT_CLASS} />
+                      <Input type="password" value={secret.tdctlApiToken} onChange={(e) => updateSecretField('tdctlApiToken', e.target.value)} className={MONO_INPUT_CLASS} />
                     </ConfigField>
                     <ConfigField label="Admin Secret">
-                      <Input type="password" value={secret.nxctlApiAdminSecret} onChange={(e) => updateSecretField('nxctlApiAdminSecret', e.target.value)} className={MONO_INPUT_CLASS} />
+                      <Input type="password" value={secret.tdctlApiAdminSecret} onChange={(e) => updateSecretField('tdctlApiAdminSecret', e.target.value)} className={MONO_INPUT_CLASS} />
                     </ConfigField>
                   </div>
                 </div>

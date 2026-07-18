@@ -3,7 +3,7 @@
 import React, { useEffect, useMemo, useState } from 'react'
 import { AlertTriangle, Clock, Loader2, Play, Power, PowerOff, RefreshCcw, Server } from 'lucide-react'
 import toast from 'react-hot-toast'
-import { parseNxctlService, type NxctlServiceEntry } from '../lib/nxctl-services'
+import { parseTDCTLService, type TDCTLServiceEntry } from '../lib/tdctl-services'
 import {
   formatExtendWaitDuration,
   formatServiceSeconds,
@@ -14,19 +14,19 @@ import {
   getRestartState,
   getServiceDisplayName,
   getTimerClass,
-  isNxctlNotFoundError,
+  isTDCTLNotFoundError,
   type ServiceAction,
   type ServiceActionLoadingState,
 } from '../lib/challenge-service-panel-state'
 import {
-  buildNxctlServiceHeaders,
-  buildNxctlStatusHeaders,
-  buildNxctlStatusUrl,
-  getNxctlErrorMessage,
-  getNxctlStatusName,
+  buildTDCTLServiceHeaders,
+  buildTDCTLStatusHeaders,
+  buildTDCTLStatusUrl,
+  getTDCTLErrorMessage,
+  getTDCTLStatusName,
   isHttpEndpoint,
-  normalizeNxctlStatusDetail,
-} from '../lib/nxctl-service-utils'
+  normalizeTDCTLStatusDetail,
+} from '../lib/tdctl-service-utils'
 
 const EXTEND_REMINDER_SOUND = '/sounds/notif_ringtone.mp3'
 const EXTEND_REMINDER_VOLUME = 0.25
@@ -55,7 +55,7 @@ const ChallengeServicesPanel: React.FC<ChallengeServicesPanelProps> = ({
   const rawServicesKey = services.join('\u0000')
   const parsedServices = useMemo(
     () => (rawServicesKey ? rawServicesKey.split('\u0000') : [])
-      .map(parseNxctlService)
+      .map(parseTDCTLService)
       .filter((service) => service.name.trim() !== ''),
     [rawServicesKey]
   )
@@ -223,14 +223,14 @@ const ChallengeServicesPanel: React.FC<ChallengeServicesPanelProps> = ({
       })
 
       try {
-        const res = await fetch(buildNxctlStatusUrl(parsedServices), {
-          headers: buildNxctlStatusHeaders(parsedServices),
+        const res = await fetch(buildTDCTLStatusUrl(parsedServices), {
+          headers: buildTDCTLStatusHeaders(parsedServices),
         })
         const data = await res.json()
         if (!isCurrentRun()) return
 
         if (!res.ok || !Array.isArray(data)) {
-          const message = getNxctlErrorMessage(data)
+          const message = getTDCTLErrorMessage(data)
           setServiceDetailsError((prev) => {
             const next = { ...prev }
             parsedServices.forEach((service) => {
@@ -243,8 +243,8 @@ const ChallengeServicesPanel: React.FC<ChallengeServicesPanelProps> = ({
 
         const statusByName = new Map<string, any>()
         data.forEach((item: any) => {
-          const name = getNxctlStatusName(item)
-          if (name) statusByName.set(name, normalizeNxctlStatusDetail(item))
+          const name = getTDCTLStatusName(item)
+          if (name) statusByName.set(name, normalizeTDCTLStatusDetail(item))
         })
 
         const fetchedAt = Date.now()
@@ -277,7 +277,7 @@ const ChallengeServicesPanel: React.FC<ChallengeServicesPanelProps> = ({
           parsedServices.forEach((service) => {
             next[service.name] = statusByName.has(service.name)
               ? null
-              : 'Service is not visible from NXCTL status. Check the service name or challenge key.'
+              : 'Service is not visible from TDCTL status. Check the service name or challenge key.'
           })
           return next
         })
@@ -373,29 +373,29 @@ const ChallengeServicesPanel: React.FC<ChallengeServicesPanelProps> = ({
         {
           icon: '!',
           duration: 7000,
-          id: `nxctl-expiry-${service.name}`,
+          id: `tdctl-expiry-${service.name}`,
         }
       )
     })
   }, [open, visibleServices, serviceDetails, serviceDetailsFetchTime, nowTick, playExtendReminderSound, stopExtendReminderSound])
 
-  const inspectService = React.useCallback(async (service: NxctlServiceEntry) => {
+  const inspectService = React.useCallback(async (service: TDCTLServiceEntry) => {
     setServiceDetailsLoading((prev) => ({ ...prev, [service.name]: true }))
     setServiceDetailsError((prev) => ({ ...prev, [service.name]: null }))
     try {
-      const resInspect = await fetch(`/api/nxctl?action=inspect&name=${encodeURIComponent(service.name)}`, {
-        headers: buildNxctlServiceHeaders(service),
+      const resInspect = await fetch(`/api/tdctl?action=inspect&name=${encodeURIComponent(service.name)}`, {
+        headers: buildTDCTLServiceHeaders(service),
       })
       const dataInspect = await resInspect.json()
       if (resInspect.ok) {
-        setServiceDetails((prev) => ({ ...prev, [service.name]: normalizeNxctlStatusDetail(dataInspect) }))
+        setServiceDetails((prev) => ({ ...prev, [service.name]: normalizeTDCTLStatusDetail(dataInspect) }))
         setServiceDetailsFetchTime((prev) => ({ ...prev, [service.name]: Date.now() }))
         setServiceDetailsError((prev) => ({ ...prev, [service.name]: null }))
       } else {
-        if (isNxctlNotFoundError(resInspect.status, dataInspect)) {
+        if (isTDCTLNotFoundError(resInspect.status, dataInspect)) {
           setHiddenServices((prev) => ({ ...prev, [service.name]: true }))
         } else {
-          setServiceDetailsError((prev) => ({ ...prev, [service.name]: getNxctlErrorMessage(dataInspect) }))
+          setServiceDetailsError((prev) => ({ ...prev, [service.name]: getTDCTLErrorMessage(dataInspect) }))
         }
       }
     } catch (error: any) {
@@ -406,7 +406,7 @@ const ChallengeServicesPanel: React.FC<ChallengeServicesPanelProps> = ({
     }
   }, [])
 
-  const handleServiceAction = async (service: NxctlServiceEntry, action: ServiceAction) => {
+  const handleServiceAction = async (service: TDCTLServiceEntry, action: ServiceAction) => {
     const details = serviceDetails[service.name]
     const isRunning = details?.runtime?.status === 'running'
 
@@ -448,9 +448,9 @@ const ChallengeServicesPanel: React.FC<ChallengeServicesPanelProps> = ({
     const toastId = toast.loading(`${action}ing ${serviceDisplayName}...`)
 
     try {
-      const res = await fetch('/api/nxctl', {
+      const res = await fetch('/api/tdctl', {
         method: 'POST',
-        headers: buildNxctlServiceHeaders(service, true),
+        headers: buildTDCTLServiceHeaders(service, true),
         body: JSON.stringify({ action, name: service.name }),
       })
 
@@ -460,7 +460,7 @@ const ChallengeServicesPanel: React.FC<ChallengeServicesPanelProps> = ({
         await new Promise((resolve) => setTimeout(resolve, 500))
         await inspectService(service)
       } else {
-        toast.error(`Failed to ${action} ${serviceDisplayName}: ${getNxctlErrorMessage(data)}`, { id: toastId })
+        toast.error(`Failed to ${action} ${serviceDisplayName}: ${getTDCTLErrorMessage(data)}`, { id: toastId })
       }
     } catch (error) {
       console.error(`Failed to ${action} ${service.name}`, error)
@@ -476,7 +476,7 @@ const ChallengeServicesPanel: React.FC<ChallengeServicesPanelProps> = ({
     <div>
       <p className="select-none text-[11px] font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-2 flex items-center gap-1.5 opacity-90">
         <Server className="h-3.5 w-3.5 text-indigo-500/70 shrink-0" />
-        <span>NXCTL Services</span>
+        <span>TDCTL Services</span>
         {lastGlobalFetchTime > 0 && (() => {
           const elapsedMs = nowTick - lastGlobalFetchTime
           const remainingMs = Math.max(0, STATUS_REFRESH_INTERVAL_MS - elapsedMs)

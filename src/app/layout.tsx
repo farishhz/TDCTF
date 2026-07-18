@@ -22,8 +22,8 @@ export const metadata: Metadata = {
   title: `${APP.shortName} - ${APP.fullName}`,
   description: APP.description,
   keywords: ['CTF', 'Capture The Flag', 'Cybersecurity', 'Hacking Challenge', 'CSCV', 'InfoSec', 'ctftime', 'ctftime.org', 'CTF Platform', 'Cybersecurity Competition', 'Ethical Hacking', 'Vulnerability Assessment', 'Penetration Testing', 'Digital Forensics', 'Malware Analysis', 'Network Security', 'Web Application Security', 'Cryptography', 'Reverse Engineering', 'Security Training', 'Cyber Defense', 'Bug Bounty', 'Red Teaming', 'Blue Teaming', 'Cybersecurity Community', 'CTF Events', 'CTF Challenges', 'Cybersecurity Education', 'CTF Teams', 'Cybersecurity Awareness', 'Capture The Flag Events', 'CTF Challenges Platform', 'Cybersecurity Skills', 'CTF Competitions', 'Cybersecurity Learning', 'CTF Resources', 'Cybersecurity Tools', 'CTF Tutorials', 'Cybersecurity Labs', 'CTF Write-ups', 'Cybersecurity News', 'CTF Strategies', 'Cybersecurity Research', 'CTF Techniques', 'Cybersecurity Conferences', 'CTF Workshops', 'Cybersecurity Careers', 'CTF Training', 'Cybersecurity Certifications', 'CTF Platforms', 'Cybersecurity Innovations', 'CTF Community', 'Cybersecurity Trends', 'CTF Development', 'Cybersecurity Solutions'],
-  authors: [{ name: 'ariafatah', url: BASE_URL }],
-  creator: 'ariafatah',
+  authors: [{ name: 'alfarisiazmir', url: BASE_URL }],
+  creator: 'alfarisiazmir',
   publisher: APP.fullName,
   applicationName: APP.fullName,
   referrer: 'origin-when-cross-origin',
@@ -93,7 +93,7 @@ export default async function RootLayout({
             __html: `
               (function() {
                 try {
-                  var settings = JSON.parse(localStorage.getItem('nxctf_settings_v1'));
+                  var settings = JSON.parse(localStorage.getItem('tdctf_settings_v1'));
                   var theme = settings ? settings.theme : 'dark';
                   if (theme === 'dark' || (!theme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
                     document.documentElement.classList.add('dark');

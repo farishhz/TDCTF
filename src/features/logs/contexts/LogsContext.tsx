@@ -173,7 +173,7 @@ export function LogsProvider({ children }: { children: React.ReactNode }) {
   async function getEventChallengeIds(eventId: string | null | 'all') {
     if (eventId === 'all') return null
     const normalizedId = eventId === null ? 'main' : String(eventId)
-    const key = `nxctf_event_challenge_ids_v1:${normalizedId}`
+    const key = `tdctf_event_challenge_ids_v1:${normalizedId}`
     // check in-memory
     if (eventChallengeCacheRef.current[normalizedId]) return new Set(eventChallengeCacheRef.current[normalizedId])
     // check sessionStorage

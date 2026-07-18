@@ -26,11 +26,11 @@ export const DEFAULT_SETTINGS: SystemSettings = {
   disable_signup: false,
   disable_default_challenges: false,
   max_team_members: 5,
-  discord_link: 'https://discord.gg/5etKks6aQQ',
+  discord_link: 'https://github.com/tenka-developer',
   event_main_label: 'main',
-  event_main_image_url: 'https://raw.githubusercontent.com/nxctf/assets/refs/heads/main/event/active_nxctf.png',
+  event_main_image_url: 'https://raw.githubusercontent.com/tdctf/assets/refs/heads/main/event/active_tdctf.png',
   event_fallback_image_url: '',
-  flag_format: 'NXCTF{your_flag_here}',
+  flag_format: 'TDCTF{your_flag_here}',
 }
 
 type SystemSettingsContextType = {
@@ -41,7 +41,7 @@ type SystemSettingsContextType = {
 
 const SystemSettingsContext = createContext<SystemSettingsContextType | undefined>(undefined)
 
-const CACHE_KEY = 'nxctf_system_settings_cache'
+const CACHE_KEY = 'tdctf_system_settings_cache'
 const CACHE_TTL = 60 * 1000 // 1 minute
 
 export function SystemSettingsProvider({ children }: { children: React.ReactNode }) {

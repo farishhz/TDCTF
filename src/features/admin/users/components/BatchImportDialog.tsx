@@ -192,12 +192,12 @@ export default function BatchImportDialog({
 
   // Download CSV template
   const downloadTemplate = () => {
-    const csvContent = 'username,email,password,team\nuser_demo1,demo1@nxctf.com,password123,Team Alpha\nuser_demo2,demo2@nxctf.com,password123,Team Beta'
+    const csvContent = 'username,email,password,team\nuser_demo1,demo1@tdctf.com,password123,Team Alpha\nuser_demo2,demo2@tdctf.com,password123,Team Beta'
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
     const url = URL.createObjectURL(blob)
     const link = document.createElement('a')
     link.setAttribute('href', url)
-    link.setAttribute('download', 'nxctf_user_import_template.csv')
+    link.setAttribute('download', 'tdctf_user_import_template.csv')
     link.style.visibility = 'hidden'
     document.body.appendChild(link)
     link.click()

@@ -2,7 +2,7 @@
 -- Queries: geo_challenges
 -- GeoGuessr-style challenge support
 -- Flag format: prefix{geo:lat,lng,radius_km}
--- Example:   nxctf{geo:-6.2000,106.8160,1.500}
+-- Example:   tdctf{geo:-6.2000,106.8160,1.500}
 -- ==============================================
 
 -- -----------------------------------------------

@@ -1,10 +1,10 @@
 import {
-  buildNxctlEndpointInfo,
-  normalizeNxctlStatusDetail as normalizeBaseNxctlStatusDetail,
-} from '@/features/challenges/lib/nxctl-service-utils'
+  buildTDCTLEndpointInfo,
+  normalizeTDCTLStatusDetail as normalizeBaseTDCTLStatusDetail,
+} from '@/features/challenges/lib/tdctl-service-utils'
 import type {
   AdminLiveServiceRow,
-  AdminNxctlStatusDetail,
+  AdminTDCTLStatusDetail,
   AdminServiceEndpoint,
   AdminServiceRow,
   AdminServiceStatus,
@@ -14,18 +14,18 @@ export function normalizeLookup(value: string) {
   return value.trim().toLowerCase()
 }
 
-export function normalizeNxctlStatusDetail(item: any): AdminNxctlStatusDetail {
-  return normalizeBaseNxctlStatusDetail(item) as AdminNxctlStatusDetail
+export function normalizeTDCTLStatusDetail(item: any): AdminTDCTLStatusDetail {
+  return normalizeBaseTDCTLStatusDetail(item) as AdminTDCTLStatusDetail
 }
 
-export function normalizeNxctlStatusList(data: unknown) {
+export function normalizeTDCTLStatusList(data: unknown) {
   if (!Array.isArray(data)) return []
-  return data.map(normalizeNxctlStatusDetail)
+  return data.map(normalizeTDCTLStatusDetail)
 }
 
-export function getNxctlStatusMap(data: unknown) {
-  const statusByName = new Map<string, AdminNxctlStatusDetail>()
-  const rows = Array.isArray(data) ? data.map(normalizeNxctlStatusDetail) : []
+export function getTDCTLStatusMap(data: unknown) {
+  const statusByName = new Map<string, AdminTDCTLStatusDetail>()
+  const rows = Array.isArray(data) ? data.map(normalizeTDCTLStatusDetail) : []
 
   rows.forEach((item) => {
     const name = item.challenge.name
@@ -36,7 +36,7 @@ export function getNxctlStatusMap(data: unknown) {
 }
 
 export function getRemainingSecondsFromDetail(
-  detail: AdminNxctlStatusDetail | null | undefined,
+  detail: AdminTDCTLStatusDetail | null | undefined,
   fetchedAt: number | null | undefined,
   now = Date.now()
 ) {
@@ -48,7 +48,7 @@ export function getRemainingSecondsFromDetail(
 }
 
 export function getRuntimeStatusFromDetail(
-  detail: AdminNxctlStatusDetail | null | undefined,
+  detail: AdminTDCTLStatusDetail | null | undefined,
   error?: string | null,
   fetchedAt?: number | null,
   now = Date.now()
@@ -114,7 +114,7 @@ export function getServiceEndpoints(row: AdminServiceRow): AdminServiceEndpoint[
 
   return exports
     .map((item: any, index) => {
-      const endpoint = buildNxctlEndpointInfo(item, serviceType, row.service.options)
+      const endpoint = buildTDCTLEndpointInfo(item, serviceType, row.service.options)
       if (!endpoint) return null
 
       return {
@@ -138,7 +138,7 @@ export function getLiveServiceEndpoints(row: AdminLiveServiceRow): (AdminService
 
   return exports
     .map((item: any, index): (AdminServiceEndpoint & { isSsh: boolean; password?: string }) | null => {
-      const endpoint = buildNxctlEndpointInfo(item, serviceType, serviceOptions)
+      const endpoint = buildTDCTLEndpointInfo(item, serviceType, serviceOptions)
       if (!endpoint) return null
 
       return {

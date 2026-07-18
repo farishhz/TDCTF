@@ -36,7 +36,7 @@ type SubChallengesContextType = {
   resetAnswers: (challengeId: string) => Promise<SubChallengeState>
 }
 
-const STORAGE_KEY_PREFIX = 'nxctf_sub_challenge_answers_v1:'
+const STORAGE_KEY_PREFIX = 'tdctf_sub_challenge_answers_v1:'
 
 const DEFAULT_STATE: SubChallengeState = {
   loaded: false,

@@ -1,19 +1,19 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
-import { NXCTL_API_ADMIN_SECRET, NXCTL_API_TOKEN, NXCTL_API_URL } from '@/_vars/secret'
+import { TDCTL_API_ADMIN_SECRET, TDCTL_API_TOKEN, TDCTL_API_URL } from '@/_vars/secret'
 import { SUPABASE_ANON_KEY, SUPABASE_URL } from '@/_vars/const'
 
-const apiUrl = NXCTL_API_URL.replace(/\/$/, '')
-const CHALLENGE_KEY_HEADER = 'X-NXCTL-Challenge-Key'
+const apiUrl = TDCTL_API_URL.replace(/\/$/, '')
+const CHALLENGE_KEY_HEADER = 'X-TDCTL-Challenge-Key'
 
-type NxctlAction = 'up' | 'down' | 'restart' | 'extend'
+type TDCTLAction = 'up' | 'down' | 'restart' | 'extend'
 
 async function safeFetch(url: string, options?: RequestInit) {
   if (!apiUrl) {
     return {
       ok: false,
       status: 503,
-      data: { error: 'NXCTL API URL is not configured' },
+      data: { error: 'TDCTL API URL is not configured' },
     }
   }
 
@@ -44,11 +44,11 @@ async function safeFetch(url: string, options?: RequestInit) {
   }
 }
 
-function buildNxctlHeaders(challengeKey?: string | null, includeAdminSecret = false) {
+function buildTDCTLHeaders(challengeKey?: string | null, includeAdminSecret = false) {
   const headers: Record<string, string> = {}
 
-  if (NXCTL_API_TOKEN) {
-    headers.Authorization = `Bearer ${NXCTL_API_TOKEN}`
+  if (TDCTL_API_TOKEN) {
+    headers.Authorization = `Bearer ${TDCTL_API_TOKEN}`
   }
 
   const key = String(challengeKey || '').trim()
@@ -56,8 +56,8 @@ function buildNxctlHeaders(challengeKey?: string | null, includeAdminSecret = fa
     headers[CHALLENGE_KEY_HEADER] = key
   }
 
-  if (includeAdminSecret && NXCTL_API_ADMIN_SECRET) {
-    headers['X-NXCTL-Admin-Secret'] = NXCTL_API_ADMIN_SECRET
+  if (includeAdminSecret && TDCTL_API_ADMIN_SECRET) {
+    headers['X-TDCTL-Admin-Secret'] = TDCTL_API_ADMIN_SECRET
   }
 
   return headers
@@ -161,7 +161,7 @@ function buildStatusUrl(targetNames: string[]) {
   return `${apiUrl}/status?${statusParams.toString()}`
 }
 
-function getNxctlErrorCode(data: any): string {
+function getTDCTLErrorCode(data: any): string {
   const values = [data?.detail, data?.error, data?.message, data]
 
   for (const value of values) {
@@ -179,7 +179,7 @@ function getNxctlErrorCode(data: any): string {
 function isTargetedStatusAccessError(result: Awaited<ReturnType<typeof safeFetch>>) {
   return (
     result.status === 404 &&
-    getNxctlErrorCode(result.data) === 'challenge_not_found_or_not_authorized'
+    getTDCTLErrorCode(result.data) === 'challenge_not_found_or_not_authorized'
   )
 }
 
@@ -237,7 +237,7 @@ export async function GET(request: Request) {
     if (!isAdmin) return jsonError('Global admin access required', 403)
 
     const result = await safeFetch(`${apiUrl}/admin/challenges`, {
-      headers: buildNxctlHeaders(null, true),
+      headers: buildTDCTLHeaders(null, true),
     })
 
     return jsonResponse(result)
@@ -249,7 +249,7 @@ export async function GET(request: Request) {
 
     const result = await fetchStatus(
       parseStatusFilter(searchParams),
-      buildNxctlHeaders(challengeKey, true)
+      buildTDCTLHeaders(challengeKey, true)
     )
 
     return jsonResponse(result)
@@ -263,7 +263,7 @@ export async function GET(request: Request) {
     }
 
     const result = await safeFetch(`${apiUrl}/inspect/${servicePath(name)}`, {
-      headers: buildNxctlHeaders(challengeKey),
+      headers: buildTDCTLHeaders(challengeKey),
     })
 
     return jsonResponse(result)
@@ -275,7 +275,7 @@ export async function GET(request: Request) {
 
   const result = await fetchStatus(
     parseStatusFilter(searchParams),
-    buildNxctlHeaders(challengeKey)
+    buildTDCTLHeaders(challengeKey)
   )
 
   return jsonResponse(result)
@@ -288,7 +288,7 @@ export async function POST(request: Request) {
 
   try {
     const body = await request.json()
-    const action = body?.action as NxctlAction | undefined
+    const action = body?.action as TDCTLAction | undefined
     const name = typeof body?.name === 'string' ? body.name : ''
     const all = body?.all === true
     const force = body?.force === true
@@ -311,7 +311,7 @@ export async function POST(request: Request) {
       const adminPath = action === 'down' ? '/admin/down' : `/${action}?all=true`
       const result = await safeFetch(`${apiUrl}${adminPath}`, {
         method: 'POST',
-        headers: buildNxctlHeaders(null, true),
+        headers: buildTDCTLHeaders(null, true),
       })
 
       return jsonResponse(result)
@@ -336,7 +336,7 @@ export async function POST(request: Request) {
         : `/${action}/${servicePath(name)}`
     const result = await safeFetch(`${apiUrl}${upstreamPath}`, {
       method: 'POST',
-      headers: buildNxctlHeaders(challengeKey, isAdminAction),
+      headers: buildTDCTLHeaders(challengeKey, isAdminAction),
     })
 
     return jsonResponse(result)

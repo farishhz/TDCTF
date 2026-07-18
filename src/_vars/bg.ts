@@ -4,31 +4,31 @@ export const PAGE_BACKGROUNDS = {
     opacity: 0,
   },
   home: {
-    url: 'https://raw.githubusercontent.com/nxctf/assets/refs/heads/main/bg/fantasy-bg.png',
+    url: '/fantasy-bg.png',
     opacity: 15,
   },
   challenges: {
-    url: 'https://raw.githubusercontent.com/nxctf/assets/refs/heads/main/bg/fantasy-bg-2.png',
+    url: '/fantasy-bg.png',
     opacity: 12,
   },
   scoreboard: {
-    url: 'https://raw.githubusercontent.com/nxctf/assets/refs/heads/main/bg/fantasy-bg-3.png',
+    url: '/fantasy-bg.png',
     opacity: 12,
   },
   teams: {
-    url: 'https://raw.githubusercontent.com/nxctf/assets/refs/heads/main/bg/fantasy-bg-4.png',
+    url: '/fantasy-bg.png',
     opacity: 10,
   },
   rules: {
-    url: 'https://raw.githubusercontent.com/nxctf/assets/refs/heads/main/bg/fantasy-bg-5.png',
+    url: '/fantasy-bg.png',
     opacity: 10,
   },
   profile: {
-    url: 'https://raw.githubusercontent.com/nxctf/assets/refs/heads/main/bg/fantasy-bg-7.png',
+    url: '/fantasy-bg.png',
     opacity: 10,
   },
   user: {
-    url: 'https://raw.githubusercontent.com/nxctf/assets/refs/heads/main/bg/fantasy-bg-7.png',
+    url: '/fantasy-bg.png',
     opacity: 10,
   },
 }

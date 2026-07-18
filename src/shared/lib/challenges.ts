@@ -247,8 +247,8 @@ export async function getChallengePlaceholder(challengeId: string): Promise<stri
 
 
 /**
- * Get NXCTL service names for a challenge
- * (Services are now stored in challenges.services column, not in nxctl table)
+ * Get TDCTL service names for a challenge
+ * (Services are now stored in challenges.services column, not in tdctl table)
  */
 export async function getChallengeServices(challengeId: string): Promise<string[]> {
   try {

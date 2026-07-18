@@ -15,7 +15,7 @@ export type ChallengeFilters = {
 
 }
 
-const STORAGE_KEY = 'nxctf:challengeFilters'
+const STORAGE_KEY = 'tdctf:challengeFilters'
 
 const defaultFilters: ChallengeFilters = {
   status: 'all',

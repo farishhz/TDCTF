@@ -57,7 +57,7 @@ const CONFIG_KEYS: ConfigKey[] = [
   {
     key: 'flag_format',
     label: 'Flag Format',
-    description: 'The standard flag format format structure (e.g. NXCTF{your_flag_here}).',
+    description: 'The standard flag format format structure (e.g. TDCTF{your_flag_here}).',
     type: 'string',
     tab: 'general',
   },
@@ -160,11 +160,11 @@ export default function AdminSettingsPage() {
         const settingsMap: Record<string, string> = {}
         // Initialize with default values
         CONFIG_KEYS.forEach((cfg) => {
-          if (cfg.key === 'discord_link') settingsMap[cfg.key] = 'https://discord.gg/5etKks6aQQ'
+          if (cfg.key === 'discord_link') settingsMap[cfg.key] = 'https://github.com/tenka-developer'
           else if (cfg.key === 'event_main_label') settingsMap[cfg.key] = 'main'
-          else if (cfg.key === 'event_main_image_url') settingsMap[cfg.key] = 'https://raw.githubusercontent.com/nxctf/assets/refs/heads/main/event/active_nxctf.png'
+          else if (cfg.key === 'event_main_image_url') settingsMap[cfg.key] = 'https://raw.githubusercontent.com/tdctf/assets/refs/heads/main/event/active_tdctf.png'
           else if (cfg.key === 'event_fallback_image_url') settingsMap[cfg.key] = ''
-          else if (cfg.key === 'flag_format') settingsMap[cfg.key] = 'NXCTF{your_flag_here}'
+          else if (cfg.key === 'flag_format') settingsMap[cfg.key] = 'TDCTF{your_flag_here}'
           else {
             settingsMap[cfg.key] = cfg.type === 'number' ? '5' : 'false'
           }

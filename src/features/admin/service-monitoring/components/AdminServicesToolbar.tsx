@@ -69,7 +69,7 @@ export default function AdminServicesToolbar({
                 className={actionButtonClass}
                 onClick={() => handleGlobalAction('up')}
                 disabled={!isGlobalAdmin || globalActionLoading !== null}
-                title={isGlobalAdmin ? 'Start all NXCTL services' : 'Only global admins can start all services'}
+                title={isGlobalAdmin ? 'Start all TDCTL services' : 'Only global admins can start all services'}
               >
                 {globalActionLoading === 'up' ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Power className="h-3.5 w-3.5" />}
                 Up all
@@ -81,7 +81,7 @@ export default function AdminServicesToolbar({
                 className={`${actionButtonClass} hover:border-red-500/40 hover:text-red-600 dark:hover:text-red-300`}
                 onClick={() => handleGlobalAction('down')}
                 disabled={!isGlobalAdmin || globalActionLoading !== null}
-                title={isGlobalAdmin ? 'Stop all NXCTL services' : 'Only global admins can stop all services'}
+                title={isGlobalAdmin ? 'Stop all TDCTL services' : 'Only global admins can stop all services'}
               >
                 {globalActionLoading === 'down' ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <PowerOff className="h-3.5 w-3.5" />}
                 Down all
@@ -137,7 +137,7 @@ export default function AdminServicesToolbar({
         variant={confirmAction === 'down' ? 'destructive' : 'default'}
         description={
           <p>
-            Are you sure you want to {confirmAction === 'up' ? 'start' : 'stop'} all NXCTL services?
+            Are you sure you want to {confirmAction === 'up' ? 'start' : 'stop'} all TDCTL services?
           </p>
         }
         confirmLabel={confirmAction === 'up' ? 'Start All' : 'Stop All'}

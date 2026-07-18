@@ -1,10 +1,10 @@
-import type { NxctlServiceEntry } from './nxctl-services'
+import type { TDCTLServiceEntry } from './tdctl-services'
 import {
-  buildNxctlEndpointInfo,
+  buildTDCTLEndpointInfo,
   firstBoolean,
   firstNumber,
   formatDuration,
-} from './nxctl-service-utils'
+} from './tdctl-service-utils'
 
 export type ServiceAction = 'up' | 'restart' | 'extend'
 export type ServiceActionLoadingState = ServiceAction | null
@@ -85,7 +85,7 @@ export function getExtendState(details: any, remainingSec: number | null, timeSi
   }
 }
 
-export function isNxctlNotFoundError(status: number, data: any): boolean {
+export function isTDCTLNotFoundError(status: number, data: any): boolean {
   const getCode = (val: any): string | null => {
     if (!val) return null
     if (typeof val === 'string') return val
@@ -101,13 +101,13 @@ export function isNxctlNotFoundError(status: number, data: any): boolean {
   return status === 404 || code === 'challenge_not_found'
 }
 
-export function getChallengeServiceEndpoints(service: NxctlServiceEntry, details: any): ChallengeServiceEndpoint[] {
+export function getChallengeServiceEndpoints(service: TDCTLServiceEntry, details: any): ChallengeServiceEndpoint[] {
   const serviceType = String(details?.challenge?.type || '').toLowerCase()
   const exports: unknown[] = Array.isArray(details?.exports) ? details.exports : []
 
   return exports
     .map((item: unknown, exportIdx: number): ChallengeServiceEndpoint | null => {
-      const endpoint = buildNxctlEndpointInfo(item, serviceType, service.options)
+      const endpoint = buildTDCTLEndpointInfo(item, serviceType, service.options)
       if (!endpoint) return null
 
       const endpointRecord = item && typeof item === 'object' ? item as Record<string, unknown> : {}

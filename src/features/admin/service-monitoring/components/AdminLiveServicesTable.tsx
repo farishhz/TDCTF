@@ -9,7 +9,7 @@ import {
   TableRow,
 } from '@/shared/ui'
 import { ADMIN_ROW_CLASS, AdminEmptyState, AdminTableSurface } from '@/features/admin/ui'
-import type { AdminLiveServiceRow, AdminNxctlActionTarget, AdminServiceAction } from '../types'
+import type { AdminLiveServiceRow, AdminTDCTLActionTarget, AdminServiceAction } from '../types'
 import AdminServiceStatusBadge from './AdminServiceStatusBadge'
 import { formatDuration, getRemainingSecondsFromDetail, getLiveServiceEndpoints } from '../lib/admin-services-utils'
 
@@ -18,7 +18,7 @@ type AdminLiveServicesTableProps = {
   isGlobalAdmin: boolean
   actionLoading: Record<string, AdminServiceAction | null>
   globalActionLoading: 'up' | 'down' | null
-  onNxctlAction: (target: AdminNxctlActionTarget, action: AdminServiceAction) => void
+  onTDCTLAction: (target: AdminTDCTLActionTarget, action: AdminServiceAction) => void
   onGlobalAction: (action: 'up' | 'down') => void
 }
 
@@ -82,7 +82,7 @@ function EndpointChip({ endpoint }: { endpoint: any }) {
   )
 }
 
-function getActionTarget(row: AdminLiveServiceRow): AdminNxctlActionTarget | null {
+function getActionTarget(row: AdminLiveServiceRow): AdminTDCTLActionTarget | null {
   const platformEntry = row.platformEntries.find((entry) => entry.key) || row.platformEntries[0]
   if (!platformEntry) return null
 
@@ -111,7 +111,7 @@ function getExtendState(row: AdminLiveServiceRow, now = Date.now()) {
   }
 }
 
-function LiveNxctlActions({
+function LiveTDCTLActions({
   row,
   target,
   isGlobalAdmin,
@@ -120,10 +120,10 @@ function LiveNxctlActions({
   now,
 }: {
   row: AdminLiveServiceRow
-  target: AdminNxctlActionTarget
+  target: AdminTDCTLActionTarget
   isGlobalAdmin: boolean
   loadingAction: AdminServiceAction | null
-  onAction: (target: AdminNxctlActionTarget, action: AdminServiceAction) => void
+  onAction: (target: AdminTDCTLActionTarget, action: AdminServiceAction) => void
   now: number
 }) {
   const isRunning = row.status === 'running' || row.status === 'container_only'
@@ -148,7 +148,7 @@ function LiveNxctlActions({
         className={actionButtonClass}
         onClick={() => onAction(target, 'up')}
         disabled={isBusy || isRunning || !hasKey}
-        title={!hasKey ? 'Challenge key is missing from NXCTL admin config' : isRunning ? 'Service is already running' : 'Start service'}
+        title={!hasKey ? 'Challenge key is missing from TDCTL admin config' : isRunning ? 'Service is already running' : 'Start service'}
       >
         {renderIcon('up', <Play className="h-3.5 w-3.5" />)}
         Start
@@ -201,7 +201,7 @@ export default function AdminLiveServicesTable({
   isGlobalAdmin,
   actionLoading,
   globalActionLoading,
-  onNxctlAction,
+  onTDCTLAction,
   onGlobalAction,
 }: AdminLiveServicesTableProps) {
   const [now, setNow] = useState(() => Date.now())
@@ -224,7 +224,7 @@ export default function AdminLiveServicesTable({
       <div className="p-5">
         <AdminEmptyState
           title="No live services found"
-          description="Try adjusting filters, or refresh once NXCTL runtime data is available."
+          description="Try adjusting filters, or refresh once TDCTL runtime data is available."
         />
       </div>
     )
@@ -246,9 +246,8 @@ export default function AdminLiveServicesTable({
               return (
                 <Fragment key={row.id}>
                   <TableRow
-                    className={`${ADMIN_ROW_CLASS} ${
-                      hasEndpoints ? 'cursor-pointer' : ''
-                    }`}
+                    className={`${ADMIN_ROW_CLASS} ${hasEndpoints ? 'cursor-pointer' : ''
+                      }`}
                     onClick={() => hasEndpoints && toggleRow(row.id)}
                   >
                     <TableCell className="pl-6 w-10" onClick={(e) => e.stopPropagation()}>
@@ -260,9 +259,8 @@ export default function AdminLiveServicesTable({
                           aria-label={isExpanded ? 'Collapse endpoints' : 'Expand endpoints'}
                         >
                           <ChevronRight
-                            className={`h-4 w-4 text-gray-500 transition-transform duration-200 ${
-                              isExpanded ? 'rotate-90' : ''
-                            }`}
+                            className={`h-4 w-4 text-gray-500 transition-transform duration-200 ${isExpanded ? 'rotate-90' : ''
+                              }`}
                           />
                         </button>
                       )}
@@ -286,12 +284,12 @@ export default function AdminLiveServicesTable({
                         )}
                         <AdminServiceStatusBadge status={row.status} />
                         {actionTarget ? (
-                          <LiveNxctlActions
+                          <LiveTDCTLActions
                             row={row}
                             target={actionTarget}
                             isGlobalAdmin={isGlobalAdmin}
                             loadingAction={actionLoading[actionTarget.id] ?? null}
-                            onAction={onNxctlAction}
+                            onAction={onTDCTLAction}
                             now={now}
                           />
                         ) : (

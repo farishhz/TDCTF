@@ -10,18 +10,18 @@ import { getChallengesList } from '@/shared/lib'
 import { getEvents } from '@/features/events/services/event.service'
 import type { Event } from '@/shared/types'
 import {
-  buildNxctlHeaders,
+  buildTDCTLHeaders,
   buildLiveServicesUrl,
-  buildNxctlStatusHeaders,
-  buildNxctlStatusUrl,
+  buildTDCTLStatusHeaders,
+  buildTDCTLStatusUrl,
   buildServiceRows,
-  getNxctlErrorMessage,
-  getNxctlStatusMap,
-  normalizeNxctlStatusList,
+  getTDCTLErrorMessage,
+  getTDCTLStatusMap,
+  normalizeTDCTLStatusList,
   normalizePlatformChallengeEntries,
 } from '../lib/admin-services-utils'
 import type {
-  AdminNxctlActionTarget,
+  AdminTDCTLActionTarget,
   AdminPlatformChallengeEntry,
   AdminRuntimeStatusSnapshot,
   AdminServiceAction,
@@ -65,7 +65,7 @@ export function useAdminServicesData() {
     }
 
     try {
-      const res = await fetch('/api/nxctl?action=admin-challenges', {
+      const res = await fetch('/api/tdctl?action=admin-challenges', {
         headers: {
           Authorization: `Bearer ${accessToken}`,
         },
@@ -75,7 +75,7 @@ export function useAdminServicesData() {
       if (!res.ok || !Array.isArray(data)) {
         return {
           entries: [] as AdminPlatformChallengeEntry[],
-          error: getNxctlErrorMessage(data),
+          error: getTDCTLErrorMessage(data),
         }
       }
 
@@ -84,10 +84,10 @@ export function useAdminServicesData() {
         error: null,
       }
     } catch (error: any) {
-      console.error('Failed to fetch NXCTL platform challenges', error)
+      console.error('Failed to fetch TDCTL platform challenges', error)
       return {
         entries: [] as AdminPlatformChallengeEntry[],
-        error: error?.message || 'Failed to fetch NXCTL platform challenges',
+        error: error?.message || 'Failed to fetch TDCTL platform challenges',
       }
     }
   }, [])
@@ -114,26 +114,26 @@ export function useAdminServicesData() {
         if (liveRes.ok && Array.isArray(data)) {
           isComplete = true
         } else {
-          statusError = getNxctlErrorMessage(data)
+          statusError = getTDCTLErrorMessage(data)
           data = null
         }
       }
 
       if (!Array.isArray(data) && rows.length > 0) {
-        const res = await fetch(buildNxctlStatusUrl(rows), {
-          headers: buildNxctlStatusHeaders(rows),
+        const res = await fetch(buildTDCTLStatusUrl(rows), {
+          headers: buildTDCTLStatusHeaders(rows),
         })
         data = await res.json()
         if (statusRunRef.current !== runId) return
 
         if (!res.ok || !Array.isArray(data)) {
-          statusError = getNxctlErrorMessage(data)
+          statusError = getTDCTLErrorMessage(data)
           data = []
         }
       }
 
       const fetchedAt = Date.now()
-      const details = normalizeNxctlStatusList(data)
+      const details = normalizeTDCTLStatusList(data)
       setRuntimeStatus({
         details,
         fetchedAt,
@@ -142,7 +142,7 @@ export function useAdminServicesData() {
       })
 
       if (!Array.isArray(data) || details.length === 0) {
-        const message = statusError || 'No NXCTL runtime data returned'
+        const message = statusError || 'No TDCTL runtime data returned'
         setServiceRows(rows.map((row) => ({
           ...row,
           details: null,
@@ -152,21 +152,21 @@ export function useAdminServicesData() {
         return
       }
 
-      const statusByName = getNxctlStatusMap(details)
+      const statusByName = getTDCTLStatusMap(details)
 
       setServiceRows(rows.map((row) => {
         const detail = statusByName.get(row.service.name)
         return {
           ...row,
           details: detail ?? null,
-          error: detail ? null : 'Service is not visible from NXCTL status. Check service name or challenge key.',
+          error: detail ? null : 'Service is not visible from TDCTL status. Check service name or challenge key.',
           fetchedAt,
         }
       }))
     } catch (error: any) {
       if (statusRunRef.current !== runId) return
-      console.error('Failed to fetch NXCTL services status', error)
-      const message = error?.message || 'Failed to fetch NXCTL services status'
+      console.error('Failed to fetch TDCTL services status', error)
+      const message = error?.message || 'Failed to fetch TDCTL services status'
       setRuntimeStatus({
         details: [],
         fetchedAt: Date.now(),
@@ -238,7 +238,7 @@ export function useAdminServicesData() {
     await initServicesData(true)
   }, [initServicesData])
 
-  const runNxctlAction = useCallback(async (target: AdminNxctlActionTarget, action: AdminServiceAction) => {
+  const runTDCTLAction = useCallback(async (target: AdminTDCTLActionTarget, action: AdminServiceAction) => {
     setActionLoading((prev) => ({ ...prev, [target.id]: action }))
     const actionLabel = action === 'up' ? 'start' : action
     const toastId = toast.loading(`${actionLabel}ing ${target.name}...`)
@@ -246,23 +246,23 @@ export function useAdminServicesData() {
     try {
       const { data: sessionData } = await supabase.auth.getSession()
       const accessToken = sessionData.session?.access_token
-      const res = await fetch('/api/nxctl', {
+      const res = await fetch('/api/tdctl', {
         method: 'POST',
-        headers: buildNxctlHeaders(target.key, true, accessToken),
+        headers: buildTDCTLHeaders(target.key, true, accessToken),
         body: JSON.stringify({ action, name: target.name, ...(target.force ? { force: true } : {}) }),
       })
       const data = await res.json()
 
       if (!res.ok) {
-        toast.error(`Failed to ${actionLabel} ${target.name}: ${getNxctlErrorMessage(data)}`, { id: toastId })
+        toast.error(`Failed to ${actionLabel} ${target.name}: ${getTDCTLErrorMessage(data)}`, { id: toastId })
         return
       }
 
-      toast.success(`NXCTL service ${actionLabel} request completed`, { id: toastId })
+      toast.success(`TDCTL service ${actionLabel} request completed`, { id: toastId })
       await new Promise((resolve) => setTimeout(resolve, 500))
       await loadStatus(serviceRows, accessToken)
     } catch (error) {
-      console.error(`Failed to run NXCTL ${action} for ${target.name}`, error)
+      console.error(`Failed to run TDCTL ${action} for ${target.name}`, error)
       toast.error(`Failed to ${actionLabel} ${target.name}`, { id: toastId })
     } finally {
       setActionLoading((prev) => ({ ...prev, [target.id]: null }))
@@ -270,7 +270,7 @@ export function useAdminServicesData() {
   }, [loadStatus, serviceRows])
 
   const runServiceAction = useCallback(async (row: AdminServiceRow, action: AdminServiceAction) => {
-    await runNxctlAction({
+    await runTDCTLAction({
       id: row.id,
       name: row.service.name,
       key: row.service.key,
@@ -278,12 +278,12 @@ export function useAdminServicesData() {
       error: row.error,
       fetchedAt: row.fetchedAt,
     }, action)
-  }, [runNxctlAction])
+  }, [runTDCTLAction])
 
   const runGlobalServiceAction = useCallback(async (action: 'up' | 'down') => {
     setGlobalActionLoading(action)
     const actionLabel = action === 'up' ? 'Starting' : 'Stopping'
-    const toastId = toast.loading(`${actionLabel} all NXCTL services...`)
+    const toastId = toast.loading(`${actionLabel} all TDCTL services...`)
 
     try {
       const { data: sessionData } = await supabase.auth.getSession()
@@ -294,24 +294,24 @@ export function useAdminServicesData() {
         return
       }
 
-      const res = await fetch('/api/nxctl', {
+      const res = await fetch('/api/tdctl', {
         method: 'POST',
-        headers: buildNxctlHeaders(undefined, true, accessToken),
+        headers: buildTDCTLHeaders(undefined, true, accessToken),
         body: JSON.stringify({ action, all: true }),
       })
       const data = await res.json()
 
       if (!res.ok) {
-        toast.error(`NXCTL ${action} all failed: ${getNxctlErrorMessage(data)}`, { id: toastId })
+        toast.error(`TDCTL ${action} all failed: ${getTDCTLErrorMessage(data)}`, { id: toastId })
         return
       }
 
-      toast.success(`NXCTL ${action} all completed`, { id: toastId })
+      toast.success(`TDCTL ${action} all completed`, { id: toastId })
       await new Promise((resolve) => setTimeout(resolve, 500))
       await loadStatus(serviceRows, accessToken)
     } catch (error) {
-      console.error(`Failed to run NXCTL ${action} all`, error)
-      toast.error(`NXCTL ${action} all failed`, { id: toastId })
+      console.error(`Failed to run TDCTL ${action} all`, error)
+      toast.error(`TDCTL ${action} all failed`, { id: toastId })
     } finally {
       setGlobalActionLoading(null)
     }
@@ -360,7 +360,7 @@ export function useAdminServicesData() {
     globalActionLoading,
     refresh,
     runServiceAction,
-    runNxctlAction,
+    runTDCTLAction,
     runGlobalServiceAction,
   }
 }

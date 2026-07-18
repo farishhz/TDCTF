@@ -64,7 +64,7 @@ export default function GeoMapSelector({
   onConfirm,
   onCancel,
 }: GeoMapSelectorProps) {
-  const [prefix, setPrefix] = useState('NXCTF')
+  const [prefix, setPrefix] = useState('TDCTF')
   const [radius, setRadius] = useState(1.5)
   const [coords, setCoords] = useState<GeoCoordinates | null>(null)
   const [isMoving, setIsMoving] = useState(false)
@@ -175,7 +175,7 @@ export default function GeoMapSelector({
           <Input
             value={prefix}
             onChange={(e) => setPrefix(e.target.value)}
-            placeholder="e.g. nxctf"
+            placeholder="e.g. tdctf"
             className="h-9 text-sm"
           />
         </div>

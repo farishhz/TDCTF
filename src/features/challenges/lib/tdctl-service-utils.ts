@@ -1,8 +1,8 @@
-import type { NxctlServiceEntry, NxctlServiceOptions } from './nxctl-services'
+import type { TDCTLServiceEntry, TDCTLServiceOptions } from './tdctl-services'
 
-export const CHALLENGE_KEY_HEADER = 'X-NXCTL-Challenge-Key'
+export const CHALLENGE_KEY_HEADER = 'X-TDCTL-Challenge-Key'
 
-export type NxctlStatusDetail = {
+export type TDCTLStatusDetail = {
   challenge: {
     name: string
     type: string | null
@@ -24,7 +24,7 @@ export type NxctlStatusDetail = {
   raw?: unknown
 }
 
-export type NxctlEndpointInfo = {
+export type TDCTLEndpointInfo = {
   endpoint: string
   label: string
   copyText: string
@@ -35,9 +35,9 @@ export type NxctlEndpointInfo = {
   password: string
 }
 
-type NamedService = Pick<NxctlServiceEntry, 'name' | 'key'>
+type NamedService = Pick<TDCTLServiceEntry, 'name' | 'key'>
 
-export function buildNxctlHeaders(serviceKey?: string, json = false, accessToken?: string | null) {
+export function buildTDCTLHeaders(serviceKey?: string, json = false, accessToken?: string | null) {
   const headers: Record<string, string> = {}
   if (json) headers['Content-Type'] = 'application/json'
   if (serviceKey) headers[CHALLENGE_KEY_HEADER] = serviceKey
@@ -45,11 +45,11 @@ export function buildNxctlHeaders(serviceKey?: string, json = false, accessToken
   return headers
 }
 
-export function buildNxctlServiceHeaders(service: Pick<NxctlServiceEntry, 'key'>, json = false) {
-  return buildNxctlHeaders(service.key, json)
+export function buildTDCTLServiceHeaders(service: Pick<TDCTLServiceEntry, 'key'>, json = false) {
+  return buildTDCTLHeaders(service.key, json)
 }
 
-export function buildNxctlStatusHeaders(services: NamedService[]): Record<string, string> {
+export function buildTDCTLStatusHeaders(services: NamedService[]): Record<string, string> {
   const keys = Array.from(new Set(
     services
       .map((service) => service.key?.trim())
@@ -60,15 +60,15 @@ export function buildNxctlStatusHeaders(services: NamedService[]): Record<string
   return { [CHALLENGE_KEY_HEADER]: keys.join(',') }
 }
 
-export function buildNxctlStatusUrl(services: NamedService[]) {
-  return buildNxctlActionUrl('status', services)
+export function buildTDCTLStatusUrl(services: NamedService[]) {
+  return buildTDCTLActionUrl('status', services)
 }
 
-export function buildNxctlLiveServicesUrl(services: NamedService[]) {
-  return buildNxctlActionUrl('live-services', services)
+export function buildTDCTLLiveServicesUrl(services: NamedService[]) {
+  return buildTDCTLActionUrl('live-services', services)
 }
 
-function buildNxctlActionUrl(action: string, services: NamedService[]) {
+function buildTDCTLActionUrl(action: string, services: NamedService[]) {
   const params = new URLSearchParams({ action })
   const names = Array.from(new Set(
     services
@@ -77,7 +77,7 @@ function buildNxctlActionUrl(action: string, services: NamedService[]) {
   ))
 
   if (names.length > 0) params.set('filter', names.join(','))
-  return `/api/nxctl?${params.toString()}`
+  return `/api/tdctl?${params.toString()}`
 }
 
 export function firstString(...values: unknown[]): string {
@@ -115,11 +115,11 @@ export function firstNumber(...values: unknown[]): number | null {
   return null
 }
 
-export function getNxctlStatusName(item: any) {
+export function getTDCTLStatusName(item: any) {
   return String(item?.name || item?.challenge?.name || '').trim()
 }
 
-export function normalizeNxctlStatusDetail(item: any): NxctlStatusDetail {
+export function normalizeTDCTLStatusDetail(item: any): TDCTLStatusDetail {
   const restart = item?.runtime?.restart || item?.restart || null
   const restartEnabled = firstBoolean(
     restart?.enabled,
@@ -147,7 +147,7 @@ export function normalizeNxctlStatusDetail(item: any): NxctlStatusDetail {
 
   return {
     challenge: {
-      name: getNxctlStatusName(item),
+      name: getTDCTLStatusName(item),
       type: item?.type || item?.challenge?.type || null,
       port,
       ports: Array.isArray(item?.ports) ? item.ports : Array.isArray(item?.challenge?.ports) ? item.challenge.ports : [],
@@ -168,7 +168,7 @@ export function normalizeNxctlStatusDetail(item: any): NxctlStatusDetail {
   }
 }
 
-export function stringifyNxctlDetail(value: unknown): string | null {
+export function stringifyTDCTLDetail(value: unknown): string | null {
   if (!value) return null
   if (typeof value === 'string') return value
   if (typeof value !== 'object') return String(value)
@@ -178,10 +178,10 @@ export function stringifyNxctlDetail(value: unknown): string | null {
   const message = typeof detail.message === 'string' ? detail.message : ''
 
   if (code === 'challenge_not_found_or_not_authorized') return 'Challenge not found, disabled, or missing/invalid challenge key.'
-  if (code === 'challenge_not_found') return 'Challenge not found in NXCTL.'
-  if (code === 'invalid_or_missing_api_token') return 'NXCTL API token is missing or invalid.'
-  if (code === 'invalid_or_missing_admin_secret') return 'NXCTL admin secret is missing or invalid.'
-  if (code === 'api_admin_secret_not_configured') return 'NXCTL admin secret is not configured.'
+  if (code === 'challenge_not_found') return 'Challenge not found in TDCTL.'
+  if (code === 'invalid_or_missing_api_token') return 'TDCTL API token is missing or invalid.'
+  if (code === 'invalid_or_missing_admin_secret') return 'TDCTL admin secret is missing or invalid.'
+  if (code === 'api_admin_secret_not_configured') return 'TDCTL admin secret is not configured.'
   if (code === 'restart_disabled') return 'Restart is disabled for this challenge.'
   if (message) return message
   if (code) return code
@@ -193,11 +193,11 @@ export function stringifyNxctlDetail(value: unknown): string | null {
   }
 }
 
-export function getNxctlErrorMessage(data: any, fallback = 'Unknown NXCTL error') {
+export function getTDCTLErrorMessage(data: any, fallback = 'Unknown TDCTL error') {
   return (
-    stringifyNxctlDetail(data?.detail) ||
-    stringifyNxctlDetail(data?.error) ||
-    stringifyNxctlDetail(data?.message) ||
+    stringifyTDCTLDetail(data?.detail) ||
+    stringifyTDCTLDetail(data?.error) ||
+    stringifyTDCTLDetail(data?.message) ||
     fallback
   )
 }
@@ -243,7 +243,7 @@ export function toSshCopyCommand(endpoint: string, user?: string) {
     : command
 }
 
-export function buildNxctlEndpointInfo(item: any, serviceType = '', serviceOptions: NxctlServiceOptions = {}): NxctlEndpointInfo | null {
+export function buildTDCTLEndpointInfo(item: any, serviceType = '', serviceOptions: TDCTLServiceOptions = {}): TDCTLEndpointInfo | null {
   const endpoint = getExportEndpoint(item)
   if (!endpoint) return null
 

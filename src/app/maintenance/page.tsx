@@ -26,7 +26,7 @@ export default function MaintenancePage() {
   const [devConfigOpen, setDevConfigOpen] = useState(false)
   const [cookieError, setCookieError] = useState('')
   const [healthStatus, setHealthStatus] = useState<'checking' | 'online' | 'offline' | 'idle'>('idle')
-  const [discordLink, setDiscordLink] = useState('https://discord.gg/5etKks6aQQ')
+  const [discordLink, setDiscordLink] = useState('https://github.com/tenka-developer')
   const isDev = process.env.NODE_ENV === 'development'
 
   useEffect(() => {

@@ -90,7 +90,7 @@ function ScoreboardExportSnapshotView({
   const modeLabel = customModeLabel ?? (snapshot.mode === 'first-blood' ? 'First Blood' : 'Points')
   const isFirstPage = snapshot.fromRank === 1
   const displayedToRank = Math.min(snapshot.toRank, snapshot.fromRank + snapshot.tableEntries.length - 1)
-  const platformName = APP.fullName || APP.shortName || 'NXCTF'
+  const platformName = APP.fullName || APP.shortName || 'TDCTF'
   const exportDescription = `Top ${modeLabel} Rank ${snapshot.fromRank}-${displayedToRank}`
 
   return (

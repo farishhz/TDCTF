@@ -86,7 +86,7 @@ export async function fetchScoreboardExportSnapshot({
 }
 
 export function createScoreboardExportFilename(snapshot: ScoreboardExportSnapshot) {
-  const platformName = slugFilenamePart(APP.shortName || APP.fullName || 'nxctf') || 'nxctf'
+  const platformName = slugFilenamePart(APP.shortName || APP.fullName || 'tdctf') || 'tdctf'
   const scope = slugFilenamePart(snapshot.scope) || 'scoreboard'
   const eventName = slugFilenamePart(snapshot.eventLabel) || 'scoreboard'
   const type = slugFilenamePart(snapshot.fileType) || 'point'

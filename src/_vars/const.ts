@@ -1,13 +1,13 @@
-export const NXCTF = {
-  nxctf_title: 'NXCTF',
-  nxctf_url: 'https://nxctf.my.id',
-  nxctf_logo: 'https://raw.githubusercontent.com/nxctf/assets/refs/heads/main/logo/logo-no-bg.svg',
-  nxctf_discord: 'https://discord.gg/5etKks6aQQ',
-  nxctf_donation: 'https://saweria.co/nxctf',
-  nxctf_github: 'https://github.com/nxctf/nxctf',
-  nxctf_github_org: 'https://github.com/nxctf',
-  nxctf_author: 'https://github.com/ariafatah0711',
-  nxctf_docs: 'https://docs.nxctf.my.id/'
+export const TDCTF = {
+  tdctf_title: 'TDCTF',
+  tdctf_url: 'alfarisiazmir.my.id',
+  tdctf_logo: '/logo-no-bg.svg',
+  tdctf_discord: 'https://github.com/tenka-developer',
+  tdctf_donation: 'https://clicky.id/farisdev/support/traktir-saya-minum',
+  tdctf_github: 'https://github.com/tenka-developer/tdctf',
+  tdctf_github_org: 'https://github.com/tenka-developer',
+  tdctf_author: 'https://github.com/farishhz',
+  tdctf_docs: 'alfarisiazmir.my.id'
 }
 
 export const LINKS = {
@@ -42,9 +42,9 @@ aaaaaaaaaaaaaaaaaa
 
 bbbbbbbbbbbbbbbbbbbbbbbbbbbb
 
-![gambar](https://raw.githubusercontent.com/nxctf/assets/refs/heads/main/event/active_nxctf.png)
+![gambar](https://raw.githubusercontent.com/tdctf/assets/refs/heads/main/event/active_tdctf.png)
 
-if ur want use link [link](https://nxctf.my.id)
+if ur want use link [link](alfarisiazmir.my.id)
 
 \`\`\`python
 print('a')

@@ -18,3 +18,12 @@ CREATE TABLE public.users (
 
 CREATE INDEX IF NOT EXISTS users_tags_idx ON public.users USING gin (tags);
 
+-- Stub for is_admin() to allow subsequent RLS policies to compile before queries/users.sql runs.
+CREATE OR REPLACE FUNCTION public.is_admin()
+RETURNS BOOLEAN AS $$
+BEGIN
+  RETURN FALSE;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+

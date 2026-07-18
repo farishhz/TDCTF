@@ -1,6 +1,6 @@
 import type { Challenge, Event } from '@/shared/types'
-import type { NxctlServiceEntry } from '@/features/challenges/lib/nxctl-services'
-import type { NxctlStatusDetail } from '@/features/challenges/lib/nxctl-service-utils'
+import type { TDCTLServiceEntry } from '@/features/challenges/lib/tdctl-services'
+import type { TDCTLStatusDetail } from '@/features/challenges/lib/tdctl-service-utils'
 
 export type AdminServiceStatus = 'running' | 'stopped' | 'container_only' | 'expired' | 'error' | 'unknown'
 
@@ -30,25 +30,25 @@ export type AdminServiceEndpoint = {
   isHttp: boolean
 }
 
-export type AdminNxctlStatusDetail = NxctlStatusDetail & {
+export type AdminTDCTLStatusDetail = TDCTLStatusDetail & {
   raw: unknown
 }
 
 export type AdminServiceRow = {
   id: string
-  service: NxctlServiceEntry
+  service: TDCTLServiceEntry
   challenge: Challenge
   event: Event | null
-  details: AdminNxctlStatusDetail | null
+  details: AdminTDCTLStatusDetail | null
   error: string | null
   fetchedAt: number | null
 }
 
-export type AdminNxctlActionTarget = {
+export type AdminTDCTLActionTarget = {
   id: string
   name: string
   key: string
-  details: AdminNxctlStatusDetail | null
+  details: AdminTDCTLStatusDetail | null
   error: string | null
   fetchedAt: number | null
   force?: boolean
@@ -67,7 +67,7 @@ export type AdminPlatformChallengeEntry = {
   matchedServiceRows: AdminServiceRow[]
   challenge: Challenge | null
   event: Event | null
-  liveDetails: AdminNxctlStatusDetail | null
+  liveDetails: AdminTDCTLStatusDetail | null
   comparison: AdminServiceComparisonStatus
 }
 
@@ -99,7 +99,7 @@ export type AdminLiveServiceRow = {
   id: string
   name: string
   serviceName: string
-  details: AdminNxctlStatusDetail
+  details: AdminTDCTLStatusDetail
   status: AdminServiceStatus
   fetchedAt: number | null
   platformEntries: AdminPlatformChallengeEntry[]
@@ -111,7 +111,7 @@ export type AdminLiveServiceRow = {
 }
 
 export type AdminRuntimeStatusSnapshot = {
-  details: AdminNxctlStatusDetail[]
+  details: AdminTDCTLStatusDetail[]
   fetchedAt: number | null
   error: string | null
   isComplete: boolean
@@ -124,15 +124,15 @@ export type AdminServicesFilters = {
   requiresKey: 'all' | 'required' | 'not_required'
   keyAvailable: 'all' | 'available' | 'missing'
   validity:
-    | 'all'
-    | 'valid'
-    | 'invalid'
-    | 'key_missing'
-    | 'configured_not_running'
-    | 'missing_from_platform'
-    | 'running_unregistered'
-    | 'disabled_running'
-    | 'unknown'
+  | 'all'
+  | 'valid'
+  | 'invalid'
+  | 'key_missing'
+  | 'configured_not_running'
+  | 'missing_from_platform'
+  | 'running_unregistered'
+  | 'disabled_running'
+  | 'unknown'
   source: 'all' | AdminServiceSource
   runtimeStatus: 'all' | AdminServiceStatus
 }

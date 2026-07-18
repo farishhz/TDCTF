@@ -41,7 +41,7 @@ const FEATURES = [
   },
   {
     icon: Server,
-    title: "NXCTL Instance",
+    title: "TDCTL Instance",
     description: "On-demand service creation. Spin up your own challenge environment instantly."
   },
   {
@@ -103,7 +103,7 @@ export default function Home() {
             transition={{ delay: 0.2 }}
             className="text-base sm:text-lg text-gray-600 dark:text-gray-400 max-w-xl mb-8 leading-relaxed"
           >
-            Modern CTF Infrastructure. Featuring <b>nxctl</b> instances, multi-step tasks, and enterprise-grade event management.
+            Modern CTF Infrastructure. Featuring <b>tdctl</b> instances, multi-step tasks, and enterprise-grade event management.
           </motion.p>
 
           <motion.div

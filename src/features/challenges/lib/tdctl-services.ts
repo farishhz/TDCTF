@@ -1,16 +1,16 @@
-export type NxctlServiceOptions = {
+export type TDCTLServiceOptions = {
   type?: string
   user?: string
   pass?: string
 }
 
-export type NxctlServiceEntry = {
+export type TDCTLServiceEntry = {
   name: string
   key: string
-  options: NxctlServiceOptions
+  options: TDCTLServiceOptions
 }
 
-type RawNxctlServiceObject = {
+type RawTDCTLServiceObject = {
   name?: unknown
   key?: unknown
   challenge_key?: unknown
@@ -18,12 +18,12 @@ type RawNxctlServiceObject = {
   options?: unknown
 }
 
-export function parseNxctlService(raw: string): NxctlServiceEntry {
+export function parseTDCTLService(raw: string): TDCTLServiceEntry {
   const value = String(raw ?? '').trim()
   if (!value) return { name: '', key: '', options: {} }
 
   try {
-    const parsed = JSON.parse(value) as RawNxctlServiceObject
+    const parsed = JSON.parse(value) as RawTDCTLServiceObject
     if (parsed && typeof parsed === 'object') {
       const name = typeof parsed.name === 'string' ? parsed.name.trim() : ''
       const key =
@@ -37,21 +37,21 @@ export function parseNxctlService(raw: string): NxctlServiceEntry {
       const rawOptions = parsed.options && typeof parsed.options === 'object'
         ? parsed.options as Record<string, unknown>
         : {}
-      const options = normalizeNxctlServiceOptions(rawOptions)
+      const options = normalizeTDCTLServiceOptions(rawOptions)
 
       if (name || key || Object.keys(options).length > 0) return { name, key, options }
     }
   } catch {
-    // Legacy services are stored as plain NXCTL names.
+    // Legacy services are stored as plain TDCTL names.
   }
 
   return { name: value, key: '', options: {} }
 }
 
-export function serializeNxctlService(service: Pick<NxctlServiceEntry, 'name'> & Partial<Omit<NxctlServiceEntry, 'name'>>): string {
+export function serializeTDCTLService(service: Pick<TDCTLServiceEntry, 'name'> & Partial<Omit<TDCTLServiceEntry, 'name'>>): string {
   const name = String(service.name ?? '').trim()
   const key = String(service.key ?? '').trim()
-  const options = normalizeNxctlServiceOptions(service.options)
+  const options = normalizeTDCTLServiceOptions(service.options)
 
   if (!key && Object.keys(options).length === 0) return name
 
@@ -62,14 +62,14 @@ export function serializeNxctlService(service: Pick<NxctlServiceEntry, 'name'> &
   })
 }
 
-export function normalizeNxctlServiceValues(rawServices: string[]): string[] {
+export function normalizeTDCTLServiceValues(rawServices: string[]): string[] {
   return (rawServices || [])
-    .map(parseNxctlService)
+    .map(parseTDCTLService)
     .filter((service) => service.name.trim() !== '')
-    .map(serializeNxctlService)
+    .map(serializeTDCTLService)
 }
 
-function normalizeNxctlServiceOptions(rawOptions?: NxctlServiceOptions | Record<string, unknown> | null): NxctlServiceOptions {
+function normalizeTDCTLServiceOptions(rawOptions?: TDCTLServiceOptions | Record<string, unknown> | null): TDCTLServiceOptions {
   if (!rawOptions || typeof rawOptions !== 'object') return {}
 
   const rawRecord = rawOptions as Record<string, unknown>

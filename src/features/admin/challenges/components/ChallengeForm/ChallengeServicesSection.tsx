@@ -2,7 +2,7 @@ import React from 'react'
 import { Label, Input, Button, Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/ui'
 import { Loader2, X as XIcon } from 'lucide-react'
 import { ChallengeFormData } from '../../types'
-import { parseNxctlService, serializeNxctlService, type NxctlServiceOptions } from '@/features/challenges/lib/nxctl-services'
+import { parseTDCTLService, serializeTDCTLService, type TDCTLServiceOptions } from '@/features/challenges/lib/tdctl-services'
 import { getChallengesList } from '@/shared/lib'
 import toast from 'react-hot-toast'
 import {
@@ -17,12 +17,12 @@ interface ChallengeServicesSectionProps {
   onChange: (data: ChallengeFormData) => void
 }
 
-type NxctlServiceQuickPick = {
+type TDCTLServiceQuickPick = {
   id: string
   name: string
   key: string
-  options: NxctlServiceOptions
-  source: 'nxctl' | 'supabase'
+  options: TDCTLServiceOptions
+  source: 'tdctl' | 'supabase'
   label?: string
   enabled: boolean | null
   keyAvailable: boolean | null
@@ -61,23 +61,23 @@ export const ChallengeServicesSection: React.FC<ChallengeServicesSectionProps> =
   formData,
   onChange,
 }) => {
-  const [nxctlOptions, setNxctlOptions] = React.useState<NxctlServiceQuickPick[]>([])
-  const [supabaseOptions, setSupabaseOptions] = React.useState<NxctlServiceQuickPick[]>([])
-  const [nxctlLoaded, setNxctlLoaded] = React.useState(false)
+  const [tdctlOptions, setTDCTLOptions] = React.useState<TDCTLServiceQuickPick[]>([])
+  const [supabaseOptions, setSupabaseOptions] = React.useState<TDCTLServiceQuickPick[]>([])
+  const [tdctlLoaded, setTDCTLLoaded] = React.useState(false)
   const [supabaseLoaded, setSupabaseLoaded] = React.useState(false)
-  const [nxctlLoading, setNxctlLoading] = React.useState(false)
+  const [tdctlLoading, setTDCTLLoading] = React.useState(false)
   const [supabaseLoading, setSupabaseLoading] = React.useState(false)
 
-  const updateService = (index: number, patch: Partial<{ name: string; key: string; options: NxctlServiceOptions }>) => {
-    const current = parseNxctlService(formData.services[index] || '')
+  const updateService = (index: number, patch: Partial<{ name: string; key: string; options: TDCTLServiceOptions }>) => {
+    const current = parseTDCTLService(formData.services[index] || '')
     const next = [...formData.services]
-    next[index] = serializeNxctlService({ ...current, ...patch })
+    next[index] = serializeTDCTLService({ ...current, ...patch })
     onChange({ ...formData, services: next })
   }
 
-  const loadNxctlOptions = React.useCallback(async () => {
-    if (nxctlLoaded || nxctlLoading) return
-    setNxctlLoading(true)
+  const loadTDCTLOptions = React.useCallback(async () => {
+    if (tdctlLoaded || tdctlLoading) return
+    setTDCTLLoading(true)
     try {
       const { supabase } = await import('@/lib/supabase/client')
       const { data: sessionData } = await supabase.auth.getSession()
@@ -85,12 +85,12 @@ export const ChallengeServicesSection: React.FC<ChallengeServicesSectionProps> =
       if (!accessToken) return
 
       const headers = { Authorization: `Bearer ${accessToken}` }
-      const nxctlRes = await fetch('/api/nxctl?action=admin-challenges', { headers })
-      const nxctlData = nxctlRes.ok ? await nxctlRes.json() : []
-      const picks = new Map<string, NxctlServiceQuickPick>()
+      const tdctlRes = await fetch('/api/tdctl?action=admin-challenges', { headers })
+      const tdctlData = tdctlRes.ok ? await tdctlRes.json() : []
+      const picks = new Map<string, TDCTLServiceQuickPick>()
 
-      if (Array.isArray(nxctlData)) {
-        nxctlData.forEach((item) => {
+      if (Array.isArray(tdctlData)) {
+        tdctlData.forEach((item) => {
           const record = item && typeof item === 'object' ? item as Record<string, unknown> : {}
           const name = getPlatformName(record)
           if (!name) return
@@ -103,7 +103,7 @@ export const ChallengeServicesSection: React.FC<ChallengeServicesSectionProps> =
             name,
             key: key || (existing ? existing.key : ''),
             options: {},
-            source: 'nxctl',
+            source: 'tdctl',
             enabled: firstBoolean(record.enabled, record.is_enabled, record.active, record.is_active) ?? true,
             keyAvailable: !!(key || (existing ? existing.key : '')),
           })
@@ -117,29 +117,29 @@ export const ChallengeServicesSection: React.FC<ChallengeServicesSectionProps> =
         if (!aValid && bValid) return 1
         return a.name.localeCompare(b.name)
       })
-      setNxctlOptions(sorted)
-      setNxctlLoaded(true)
+      setTDCTLOptions(sorted)
+      setTDCTLLoaded(true)
     } catch (error) {
       console.error(error)
-      toast.error('Failed to load NXCTL services')
+      toast.error('Failed to load TDCTL services')
     } finally {
-      setNxctlLoading(false)
+      setTDCTLLoading(false)
     }
-  }, [nxctlLoaded, nxctlLoading])
+  }, [tdctlLoaded, tdctlLoading])
 
   const loadSupabaseOptions = React.useCallback(async () => {
     if (supabaseLoaded || supabaseLoading) return
     setSupabaseLoading(true)
     try {
       const challenges = await getChallengesList(undefined, true, 'all')
-      const picks = new Map<string, NxctlServiceQuickPick>()
+      const picks = new Map<string, TDCTLServiceQuickPick>()
 
       challenges.forEach((challenge: any) => {
         const rawServices = Array.isArray(challenge?.services) ? challenge.services : []
         rawServices.forEach((rawService: string, index: number) => {
-          const service = parseNxctlService(rawService)
+          const service = parseTDCTLService(rawService)
           if (!service.name.trim()) return
-          const serialized = serializeNxctlService(service)
+          const serialized = serializeTDCTLService(service)
           const id = `${service.name.toLowerCase()}:${serialized}`
           if (picks.has(id)) return
           picks.set(id, {
@@ -168,8 +168,8 @@ export const ChallengeServicesSection: React.FC<ChallengeServicesSectionProps> =
     }
   }, [supabaseLoaded, supabaseLoading])
 
-  const applyQuickPick = (pick: NxctlServiceQuickPick) => {
-    const existing = formData.services.map(raw => parseNxctlService(raw))
+  const applyQuickPick = (pick: TDCTLServiceQuickPick) => {
+    const existing = formData.services.map(raw => parseTDCTLService(raw))
     const alreadyExists = existing.some(s => s.name.toLowerCase() === pick.name.toLowerCase())
 
     if (alreadyExists) {
@@ -177,7 +177,7 @@ export const ChallengeServicesSection: React.FC<ChallengeServicesSectionProps> =
       return
     }
 
-    const serialized = serializeNxctlService({ name: pick.name, key: pick.key, options: pick.options })
+    const serialized = serializeTDCTLService({ name: pick.name, key: pick.key, options: pick.options })
     onChange({ ...formData, services: [...formData.services, serialized] })
     toast.success(`Successfully added service "${pick.name}"`)
   }
@@ -185,29 +185,29 @@ export const ChallengeServicesSection: React.FC<ChallengeServicesSectionProps> =
   return (
     <div className="w-full space-y-4">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-        <Label className="text-sm font-semibold">NXCTL Services</Label>
+        <Label className="text-sm font-semibold">TDCTL Services</Label>
         <div className="flex flex-wrap gap-2 pt-0">
           <Select
             value=""
             onValueChange={(id) => {
-              const pick = nxctlOptions.find(o => o.id === id)
+              const pick = tdctlOptions.find(o => o.id === id)
               if (pick) applyQuickPick(pick)
             }}
-            onOpenChange={(open) => { if (open) loadNxctlOptions() }}
+            onOpenChange={(open) => { if (open) loadTDCTLOptions() }}
           >
             <SelectTrigger className={`${ADMIN_SELECT_TRIGGER_CLASS} h-8 w-[180px] text-xs`}>
-              <SelectValue placeholder="Add from NXCTL" />
+              <SelectValue placeholder="Add from TDCTL" />
             </SelectTrigger>
             <SelectContent className={`${ADMIN_SELECT_CONTENT_CLASS} max-h-[250px] overflow-y-auto`}>
-              {nxctlLoading && (
+              {tdctlLoading && (
                 <div className="flex items-center justify-center py-3 gap-2 text-xs text-muted-foreground">
                   <Loader2 size={14} className="animate-spin" /> Loading...
                 </div>
               )}
-              {!nxctlLoading && nxctlLoaded && nxctlOptions.length === 0 && (
-                <div className="py-3 text-center text-xs text-muted-foreground">No NXCTL services with keys found</div>
+              {!tdctlLoading && tdctlLoaded && tdctlOptions.length === 0 && (
+                <div className="py-3 text-center text-xs text-muted-foreground">No TDCTL services with keys found</div>
               )}
-              {nxctlOptions.map((opt) => (
+              {tdctlOptions.map((opt) => (
                 <SelectItem key={opt.id} value={opt.id}>
                   {opt.name} (Key: {opt.key})
                 </SelectItem>
@@ -255,10 +255,10 @@ export const ChallengeServicesSection: React.FC<ChallengeServicesSectionProps> =
           </Button>
         </div>
       </div>
-      {formData.services.length === 0 && <p className={ADMIN_FORM_HELPER_CLASS}>No NXCTL services added</p>}
+      {formData.services.length === 0 && <p className={ADMIN_FORM_HELPER_CLASS}>No TDCTL services added</p>}
       <div className="space-y-2">
         {formData.services.map((rawService, idx) => {
-          const service = parseNxctlService(rawService)
+          const service = parseTDCTLService(rawService)
           const isSshService = service.options.type === 'ssh'
 
           return (

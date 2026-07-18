@@ -1,19 +1,19 @@
 import type { Challenge, Event } from '@/shared/types'
-import { parseNxctlService } from '@/features/challenges/lib/nxctl-services'
+import { parseTDCTLService } from '@/features/challenges/lib/tdctl-services'
 import {
-  buildNxctlHeaders,
-  buildNxctlLiveServicesUrl,
-  buildNxctlStatusHeaders as buildNxctlServiceStatusHeaders,
-  buildNxctlStatusUrl as buildNxctlServiceStatusUrl,
+  buildTDCTLHeaders,
+  buildTDCTLLiveServicesUrl,
+  buildTDCTLStatusHeaders as buildTDCTLServiceStatusHeaders,
+  buildTDCTLStatusUrl as buildTDCTLServiceStatusUrl,
   firstBoolean,
   firstString,
-  getNxctlErrorMessage,
-} from '@/features/challenges/lib/nxctl-service-utils'
+  getTDCTLErrorMessage,
+} from '@/features/challenges/lib/tdctl-service-utils'
 import {
   formatDateTime,
   formatDuration,
   getLiveServiceEndpoints,
-  getNxctlStatusMap,
+  getTDCTLStatusMap,
   getRemainingSeconds,
   getRemainingSecondsFromDetail,
   getRuntimeStatusFromDetail,
@@ -22,12 +22,12 @@ import {
   getServiceType,
   getUniqueOptions,
   normalizeLookup,
-  normalizeNxctlStatusDetail,
-  normalizeNxctlStatusList,
+  normalizeTDCTLStatusDetail,
+  normalizeTDCTLStatusList,
 } from './admin-service-status-utils'
 import type {
   AdminLiveServiceRow,
-  AdminNxctlStatusDetail,
+  AdminTDCTLStatusDetail,
   AdminPlatformChallengeEntry,
   AdminPlatformChallengeGroup,
   AdminPlatformChallengeKeyGroup,
@@ -40,12 +40,12 @@ import type {
   AdminServiceStatus,
 } from '../types'
 
-export { buildNxctlHeaders, getNxctlErrorMessage }
+export { buildTDCTLHeaders, getTDCTLErrorMessage }
 export {
   formatDateTime,
   formatDuration,
   getLiveServiceEndpoints,
-  getNxctlStatusMap,
+  getTDCTLStatusMap,
   getRemainingSeconds,
   getRemainingSecondsFromDetail,
   getRuntimeStatusFromDetail,
@@ -53,8 +53,8 @@ export {
   getServiceStatus,
   getServiceType,
   getUniqueOptions,
-  normalizeNxctlStatusDetail,
-  normalizeNxctlStatusList,
+  normalizeTDCTLStatusDetail,
+  normalizeTDCTLStatusList,
 }
 
 const COMPARISON_SEVERITY: Record<AdminServiceComparisonStatus, number> = {
@@ -68,16 +68,16 @@ const COMPARISON_SEVERITY: Record<AdminServiceComparisonStatus, number> = {
   valid: 0,
 }
 
-export function buildNxctlStatusHeaders(rows: AdminServiceRow[]): Record<string, string> {
-  return buildNxctlServiceStatusHeaders(rows.map((row) => row.service))
+export function buildTDCTLStatusHeaders(rows: AdminServiceRow[]): Record<string, string> {
+  return buildTDCTLServiceStatusHeaders(rows.map((row) => row.service))
 }
 
-export function buildNxctlStatusUrl(rows: AdminServiceRow[]) {
-  return buildNxctlServiceStatusUrl(rows.map((row) => row.service))
+export function buildTDCTLStatusUrl(rows: AdminServiceRow[]) {
+  return buildTDCTLServiceStatusUrl(rows.map((row) => row.service))
 }
 
 export function buildLiveServicesUrl(rows: AdminServiceRow[]) {
-  return buildNxctlLiveServicesUrl(rows.map((row) => row.service))
+  return buildTDCTLLiveServicesUrl(rows.map((row) => row.service))
 }
 
 export function buildServiceRows(challenges: Challenge[], events: Event[]): AdminServiceRow[] {
@@ -87,7 +87,7 @@ export function buildServiceRows(challenges: Challenge[], events: Event[]): Admi
     const rawServices = Array.isArray(challenge.services) ? challenge.services : []
 
     return rawServices
-      .map(parseNxctlService)
+      .map(parseTDCTLService)
       .filter((service) => service.name.trim() !== '')
       .map((service, index) => ({
         id: `${challenge.id}:${service.name}:${index}`,
@@ -186,7 +186,7 @@ function matchPlatformEntries(entries: AdminPlatformChallengeEntry[], names: Set
   })
 }
 
-function matchLiveDetail(details: AdminNxctlStatusDetail[], names: Set<string>) {
+function matchLiveDetail(details: AdminTDCTLStatusDetail[], names: Set<string>) {
   return details.find((detail) => names.has(normalizeLookup(detail.challenge.name))) || null
 }
 
@@ -201,7 +201,7 @@ function dedupeServiceRows(rows: AdminServiceRow[]) {
 
 function getPlatformEntryComparison(
   entry: AdminPlatformChallengeEntry,
-  liveDetails: AdminNxctlStatusDetail | null,
+  liveDetails: AdminTDCTLStatusDetail | null,
   liveFetchedAt: number | null,
   now = Date.now()
 ): AdminServiceComparisonStatus {
@@ -264,7 +264,7 @@ function groupEntriesByKey(entries: AdminPlatformChallengeEntry[]): AdminPlatfor
 export function buildPlatformChallengeGroups(
   entries: AdminPlatformChallengeEntry[],
   serviceRows: AdminServiceRow[],
-  liveDetails: AdminNxctlStatusDetail[],
+  liveDetails: AdminTDCTLStatusDetail[],
   liveFetchedAt: number | null,
   now = Date.now()
 ): AdminPlatformChallengeGroup[] {
@@ -308,7 +308,7 @@ export function buildPlatformChallengeGroups(
       requiresKey: Boolean(serviceKey),
       keyAvailable: Boolean(serviceKey),
       keySource: relatedKeys.length > 0
-        ? `Supabase challenge.services; NXCTL keys: ${relatedKeys.join(', ')}`
+        ? `Supabase challenge.services; TDCTL keys: ${relatedKeys.join(', ')}`
         : 'Supabase challenge.services',
       enabled: true,
       raw: null,
@@ -359,13 +359,13 @@ export function buildPlatformChallengeGroups(
 }
 
 export function buildLiveServiceRows(
-  liveDetails: AdminNxctlStatusDetail[],
+  liveDetails: AdminTDCTLStatusDetail[],
   serviceRows: AdminServiceRow[],
   platformEntries: AdminPlatformChallengeEntry[],
   liveFetchedAt: number | null,
   now = Date.now()
 ): AdminLiveServiceRow[] {
-  const detailsByName = new Map<string, AdminNxctlStatusDetail>()
+  const detailsByName = new Map<string, AdminTDCTLStatusDetail>()
   liveDetails.forEach((detail) => {
     const key = normalizeLookup(detail.challenge.name)
     if (key && !detailsByName.has(key)) detailsByName.set(key, detail)

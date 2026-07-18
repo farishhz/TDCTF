@@ -29,7 +29,7 @@ const CategoriesContext = createContext<CategoriesContextType | undefined>(
   undefined,
 );
 
-const CACHE_KEY = "nxctf_categories_cache";
+const CACHE_KEY = "tdctf_categories_cache";
 const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 
 export function CategoriesProvider({

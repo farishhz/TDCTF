@@ -1,5 +1,5 @@
 /**
- * Typography scale and styles for NXCTF
+ * Typography scale and styles for TDCTF
  */
 
 export const TYPO_PAGE_TITLE_CLASS = 

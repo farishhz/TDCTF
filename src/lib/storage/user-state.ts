@@ -6,9 +6,9 @@ export type CtfUserStateV1 = {
   logs?: { seen_ids?: string[] }
 }
 
-export const USER_STATE_CHANGED_EVENT = 'nxctf:user-state-changed'
+export const USER_STATE_CHANGED_EVENT = 'tdctf:user-state-changed'
 
-const STORE_KEY_PREFIX = 'nxctf_user_state_v1:'
+const STORE_KEY_PREFIX = 'tdctf_user_state_v1:'
 
 const safeJsonParse = <T,>(raw: string | null): T | null => {
   if (!raw) return null
@@ -53,7 +53,7 @@ const migrateLegacyKeysIfNeeded = (userId: Nullable<string>): CtfUserStateV1 => 
   let changed = false
 
   // Legacy notifications seen
-  const legacyNotifKey = `nxctf_seen_notifications_v1:${targetUserId}`
+  const legacyNotifKey = `tdctf_seen_notifications_v1:${targetUserId}`
   const legacyNotifSeen = safeJsonParse<string[]>(window.localStorage.getItem(legacyNotifKey))
   if (legacyNotifSeen && legacyNotifSeen.length > 0) {
     const current = state.notif?.seen_ids || []
@@ -68,7 +68,7 @@ const migrateLegacyKeysIfNeeded = (userId: Nullable<string>): CtfUserStateV1 => 
   }
 
   // Legacy logs seen
-  const legacyLogsKey = `nxctf_seen_logs_v1:${targetUserId}`
+  const legacyLogsKey = `tdctf_seen_logs_v1:${targetUserId}`
   const legacyLogsSeen = safeJsonParse<string[]>(window.localStorage.getItem(legacyLogsKey))
   if (legacyLogsSeen && legacyLogsSeen.length > 0) {
     const current = state.logs?.seen_ids || []

@@ -1,6 +1,6 @@
 import React from 'react'
 import APP from '@/config'
-import { NXCTF } from '@/_vars/const'
+import { TDCTF } from '@/_vars/const'
 import { VERSION, BUILD_TIME } from "@/_vars/version";
 import { useSystemSettings } from '@/shared/contexts/SystemSettingsContext'
 import { Github, Coffee, Code2, Shield } from 'lucide-react'
@@ -21,11 +21,11 @@ const Footer: React.FC = () => {
             <div className="flex items-center gap-2">
               <Shield className="w-5 h-5 text-blue-600 dark:text-blue-400 flex-shrink-0" />
               <a
-                href={NXCTF.nxctf_url}
+                href={TDCTF.tdctf_url}
                 target="_blank"
                 rel="noopener"
                 className="text-lg font-black tracking-tighter text-gray-900 dark:text-white uppercase leading-none transition-colors hover:text-blue-600 dark:hover:text-blue-400"
-                title={`${NXCTF.nxctf_title} website`}
+                title={`${TDCTF.tdctf_title} website`}
               >
                 {APP.shortName}<span className="text-blue-600"></span>
               </a>
@@ -43,14 +43,14 @@ const Footer: React.FC = () => {
           {/* KOLOM TENGAH: Support & Links */}
           <div className="flex flex-col items-center justify-center space-y-4">
             <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-[10px] font-black uppercase tracking-widest text-gray-500 dark:text-gray-400">
-              <a href={NXCTF.nxctf_url} className="hover:text-blue-500 transition-colors">Site</a>
-              <a href={NXCTF.nxctf_github} className="hover:text-blue-500 transition-colors">Repo</a>
-              <a href={NXCTF.nxctf_docs} className="hover:text-blue-500 transition-colors">Docs</a>
-              <a href={NXCTF.nxctf_discord} className="hover:text-blue-500 transition-colors">Discord</a>
+              <a href={TDCTF.tdctf_url} className="hover:text-blue-500 transition-colors">Site</a>
+              <a href={TDCTF.tdctf_github} className="hover:text-blue-500 transition-colors">Repo</a>
+              <a href={TDCTF.tdctf_docs} className="hover:text-blue-500 transition-colors">Docs</a>
+              <a href={TDCTF.tdctf_discord} className="hover:text-blue-500 transition-colors">Discord</a>
             </div>
 
             <a
-              href={NXCTF.nxctf_donation}
+              href={TDCTF.tdctf_donation}
               target="_blank"
               rel="noopener"
               className="group flex items-center gap-2 rounded-full border border-blue-500/20 bg-blue-600/5 px-3 py-2 text-blue-600 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-blue-500/40 hover:bg-blue-500/10 hover:text-blue-700 dark:bg-blue-400/5 dark:text-blue-400 dark:hover:text-blue-300"
@@ -64,7 +64,7 @@ const Footer: React.FC = () => {
           <div className="flex items-center justify-center md:justify-end gap-3">
             {/* Org Link */}
             <a
-              href={NXCTF.nxctf_github_org}
+              href={TDCTF.tdctf_github_org}
               target="_blank"
               className={`group flex items-center gap-3 py-3 pl-3 pr-4 ${SURFACE_GLASS_CARD_COMPACT_CLASS} hover:border-blue-500/40`}
               title="Organization"
@@ -74,13 +74,13 @@ const Footer: React.FC = () => {
               </div>
               <div className="flex flex-col items-start leading-none">
                 <span className="text-[9px] font-bold text-gray-400 uppercase tracking-tighter">Org</span>
-                <span className="text-xs font-black text-gray-900 dark:text-white group-hover:text-blue-500 transition-colors">{NXCTF.nxctf_title}</span>
+                <span className="text-xs font-black text-gray-900 dark:text-white group-hover:text-blue-500 transition-colors">{TDCTF.tdctf_title}</span>
               </div>
             </a>
 
             {/* Personal Link Card */}
             <a
-              href={NXCTF.nxctf_author}
+              href={TDCTF.tdctf_author}
               target="_blank"
               className={`group flex items-center gap-3 py-3 pl-3 pr-4 ${SURFACE_GLASS_CARD_COMPACT_CLASS} hover:border-blue-500/40`}
             >
@@ -89,7 +89,7 @@ const Footer: React.FC = () => {
               </div>
               <div className="flex flex-col items-start leading-none">
                 <span className="text-[9px] font-bold text-gray-400 uppercase tracking-tighter">Creator</span>
-                <span className="text-xs font-black text-gray-900 dark:text-white group-hover:text-blue-500 transition-colors">Aria Fatah</span>
+                <span className="text-xs font-black text-gray-900 dark:text-white group-hover:text-blue-500 transition-colors">alfarisi azmir</span>
               </div>
             </a>
           </div>

@@ -1,10 +1,10 @@
 export const APP = {
-  shortName: "NXCTF",
-  fullName: "NXCTF",
-  description: "Aplikasi CTF minimalis dengan Next.js dan Supabase",
+  shortName: "TDCTF",
+  fullName: "TDCTF",
+  description: "Platform CTF dengan integrasi Next.js dan Supabase, dikembangkan khusus oleh Alfarisi Tenka Developer",
 
   image_icon: "favicon.ico",
-  image_logo: "/logo.svg",
+  image_logo: "logo.png",
   image_preview: "og-image.png",
 
   /* Setting Config */

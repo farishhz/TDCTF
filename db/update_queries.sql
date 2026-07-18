@@ -3624,7 +3624,7 @@ USING (
 -- Queries: geo_challenges
 -- GeoGuessr-style challenge support
 -- Flag format: prefix{geo:lat,lng,radius_km}
--- Example:   nxctf{geo:-6.2000,106.8160,1.500}
+-- Example:   tdctf{geo:-6.2000,106.8160,1.500}
 -- ==============================================
 -- -----------------------------------------------
 -- Helper: haversine_distance
@@ -6512,11 +6512,11 @@ VALUES
   ('disable_signup', 'false', 'Disable new user registrations'),
   ('disable_default_challenges', 'false', 'Disable default/main challenges (not bound to any event)'),
   ('max_team_members', '5', 'Maximum number of members allowed per team'),
-  ('discord_link', 'https://discord.gg/5etKks6aQQ', 'Community Discord invitation URL'),
+  ('discord_link', 'https://github.com/tenka-developer', 'Community Discord invitation URL'),
   ('event_main_label', 'main', 'The label name for the main featured event'),
-  ('event_main_image_url', 'https://raw.githubusercontent.com/nxctf/assets/refs/heads/main/event/active_nxctf.png', 'Banner image URL of the main featured event'),
+  ('event_main_image_url', 'https://raw.githubusercontent.com/tdctf/assets/refs/heads/main/event/active_tdctf.png', 'Banner image URL of the main featured event'),
   ('event_fallback_image_url', '', 'Default banner image URL fallback for events without one'),
-  ('flag_format', 'NXCTF{your_flag_here}', 'The standard format for flag submission')
+  ('flag_format', 'TDCTF{your_flag_here}', 'The standard format for flag submission')
 ON CONFLICT (key) DO NOTHING;
 -- Seed default categories
 INSERT INTO public.categories (name, icon, color, description, sort_order)

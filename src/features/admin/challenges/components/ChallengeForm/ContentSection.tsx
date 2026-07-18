@@ -47,7 +47,7 @@ export const ContentSection: React.FC<ContentSectionProps> = ({
 
   const resolvedTemplate = CHALLENGE_DESC_TEMPLATE.replace(
     '{{FLAG_FORMAT}}',
-    settings.flag_format || 'NXCTF{your_flag_here}'
+    settings.flag_format || 'TDCTF{your_flag_here}'
   )
 
   const handleGeoMapClick = async () => {
