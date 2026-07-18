@@ -1,0 +1,7 @@
+export { AdminChallengesPage } from './challenges'
+export { AdminOverviewPage } from './overview'
+export { AdminEventPage } from './event'
+export { AdminSolversPage } from './solvers'
+export { AdminServicesPage } from './service-monitoring'
+export { AdminAdminsPage } from './admins'
+export { AdminUsersPage } from './users'

@@ -1,0 +1,83 @@
+'use client'
+
+import React from 'react'
+import Link from 'next/link'
+import { Mail } from 'lucide-react'
+import { useForgotPassword } from '../hooks'
+import { THEME_PRIMARY_TEXT_CLASS } from '@/shared/styles'
+import {
+  AuthButton,
+  AuthCard,
+  AuthHeader,
+  AuthInput,
+  AuthStatusMessage,
+  AuthTurnstile,
+} from './ui'
+
+export default function ForgotPasswordForm() {
+  const {
+    email,
+    setEmail,
+    handleSubmit,
+    loading,
+    error,
+    success,
+    setCaptchaToken,
+    turnstileKey,
+    captchaEnabled,
+    captchaSiteKey
+  } = useForgotPassword()
+
+  return (
+    <AuthCard>
+      <AuthHeader
+        badge="Password Recovery"
+        title="Reset your password"
+        subtitle="We'll send you a reset link"
+      />
+
+      <form className="space-y-5" onSubmit={handleSubmit}>
+        <AuthInput
+          type="email"
+          name="email"
+          required
+          placeholder="Email address"
+          icon={Mail}
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+        />
+        
+        {captchaEnabled && (
+          <AuthTurnstile
+            turnstileKey={turnstileKey}
+            siteKey={captchaSiteKey}
+            onSuccess={(token) => setCaptchaToken(token)}
+            onExpire={() => setCaptchaToken(null)}
+          />
+        )}
+        
+        {error && (
+          <AuthStatusMessage tone="error">{error}</AuthStatusMessage>
+        )}
+        
+        {success && (
+          <AuthStatusMessage tone="success" title="Check your email for reset instructions">
+            {success}
+          </AuthStatusMessage>
+        )}
+        
+        <AuthButton type="submit" loading={loading}>
+          Send Reset Email
+        </AuthButton>
+      </form>
+      <div className="mt-6 text-center">
+        <Link
+          href="/login"
+          className={`text-sm font-semibold transition-colors hover:text-blue-500 dark:hover:text-blue-300 ${THEME_PRIMARY_TEXT_CLASS}`}
+        >
+          Back to Login
+        </Link>
+      </div>
+    </AuthCard>
+  )
+}
