@@ -12,6 +12,7 @@ import { AuthProvider } from '@/shared/contexts/AuthContext'
 import { ThemeProvider } from '@/shared/contexts/ThemeContext'
 import { CategoriesProvider } from '@/shared/contexts/CategoriesContext'
 import { SystemSettingsProvider } from '@/shared/contexts/SystemSettingsContext'
+import { PresenceProvider } from '@/shared/contexts'
 import { getPageMinHeightStyle, PAGE_BG_BASE_CLASS } from '@/shared/styles/page-background'
 import { THEME_PRIMARY_SELECTION_CLASS } from '@/shared/styles/theme-colors'
 import APP from '@/config'
@@ -116,12 +117,14 @@ export default async function RootLayout({
             <ThemeProvider>
               <SystemSettingsProvider>
                 <AuthProvider>
-                  <CategoriesProvider>
-                    <Navbar />
-                    <div className="pt-14">{children}</div>
-                    <Toaster position="top-right" reverseOrder={false} />
-                    <ScrollToggle />
-                  </CategoriesProvider>
+                  <PresenceProvider>
+                    <CategoriesProvider>
+                      <Navbar />
+                      <div className="pt-14">{children}</div>
+                      <Toaster position="top-right" reverseOrder={false} />
+                      <ScrollToggle />
+                    </CategoriesProvider>
+                  </PresenceProvider>
                 </AuthProvider>
               </SystemSettingsProvider>
             </ThemeProvider>

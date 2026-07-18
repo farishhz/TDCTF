@@ -22,6 +22,7 @@ export type SiteInfo = {
 
 export type ChallengeFormData = {
   title: string
+  author: string
   description: string
   category: string
   points: number | ''

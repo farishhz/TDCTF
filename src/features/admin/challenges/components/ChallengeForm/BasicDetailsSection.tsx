@@ -96,6 +96,17 @@ export const BasicDetailsSection: React.FC<BasicDetailsSectionProps> = ({
         />
       </div>
 
+      {/* Row: Author (Full Width) */}
+      <div className={`${ADMIN_FORM_FIELD_CLASS} md:col-span-2`}>
+        <Label>Author</Label>
+        <Input
+          value={formData.author || ''}
+          onChange={e => onChange({ ...formData, author: e.target.value })}
+          placeholder="e.g. TenkaDeveloper"
+          className={ADMIN_INPUT_CLASS}
+        />
+      </div>
+
       {/* Row 2: Category */}
       <div className={ADMIN_FORM_FIELD_CLASS}>
         <Label className={cn(hasNoCategory && "text-amber-500 font-bold")}>Category</Label>

@@ -20,7 +20,7 @@ export function AuthHeader({ badge, title, subtitle }: AuthHeaderProps) {
           <img
             src={logoUrl}
             alt="Logo"
-            className="h-16 w-16 object-contain select-none"
+            className="h-16 w-auto max-w-[200px] object-contain select-none"
           />
         )}
         {badge ? (

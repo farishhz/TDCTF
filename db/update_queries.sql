@@ -6512,7 +6512,7 @@ VALUES
   ('disable_signup', 'false', 'Disable new user registrations'),
   ('disable_default_challenges', 'false', 'Disable default/main challenges (not bound to any event)'),
   ('max_team_members', '5', 'Maximum number of members allowed per team'),
-  ('discord_link', 'https://github.com/tenka-developer', 'Community Discord invitation URL'),
+  ('discord_link', 'https://discord.gg/DUU439SAg', 'Community Discord invitation URL'),
   ('event_main_label', 'main', 'The label name for the main featured event'),
   ('event_main_image_url', 'https://raw.githubusercontent.com/tdctf/assets/refs/heads/main/event/active_tdctf.png', 'Banner image URL of the main featured event'),
   ('event_fallback_image_url', '', 'Default banner image URL fallback for events without one'),

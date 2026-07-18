@@ -2,7 +2,7 @@ export const TDCTF = {
   tdctf_title: 'TDCTF',
   tdctf_url: 'alfarisiazmir.my.id',
   tdctf_logo: '/logo-no-bg.svg',
-  tdctf_discord: 'https://github.com/tenka-developer',
+  tdctf_discord: 'https://discord.gg/DUU439SAg',
   tdctf_donation: 'https://clicky.id/farisdev/support/traktir-saya-minum',
   tdctf_github: 'https://github.com/tenka-developer/tdctf',
   tdctf_github_org: 'https://github.com/tenka-developer',
