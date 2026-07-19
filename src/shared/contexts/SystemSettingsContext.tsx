@@ -26,7 +26,7 @@ export const DEFAULT_SETTINGS: SystemSettings = {
   disable_signup: false,
   disable_default_challenges: false,
   max_team_members: 5,
-  discord_link: 'https://github.com/tenka-developer',
+  discord_link: 'https://discord.gg/DUU439SAg',
   event_main_label: 'main',
   event_main_image_url: 'https://raw.githubusercontent.com/tdctf/assets/refs/heads/main/event/active_tdctf.png',
   event_fallback_image_url: '',

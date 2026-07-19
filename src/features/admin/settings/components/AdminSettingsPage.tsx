@@ -160,7 +160,7 @@ export default function AdminSettingsPage() {
         const settingsMap: Record<string, string> = {}
         // Initialize with default values
         CONFIG_KEYS.forEach((cfg) => {
-          if (cfg.key === 'discord_link') settingsMap[cfg.key] = 'https://github.com/tenka-developer'
+          if (cfg.key === 'discord_link') settingsMap[cfg.key] = 'https://discord.gg/DUU439SAg'
           else if (cfg.key === 'event_main_label') settingsMap[cfg.key] = 'main'
           else if (cfg.key === 'event_main_image_url') settingsMap[cfg.key] = 'https://raw.githubusercontent.com/tdctf/assets/refs/heads/main/event/active_tdctf.png'
           else if (cfg.key === 'event_fallback_image_url') settingsMap[cfg.key] = ''
