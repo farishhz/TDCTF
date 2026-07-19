@@ -65,6 +65,8 @@ export default function GeoMapSelector({
   onCancel,
 }: GeoMapSelectorProps) {
   const [prefix, setPrefix] = useState('TDCTF')
+  const [unit, setUnit] = useState<'km' | 'm'>('km')
+  const [radiusInput, setRadiusInput] = useState('1.5')
   const [radius, setRadius] = useState(1.5)
   const [coords, setCoords] = useState<GeoCoordinates | null>(null)
   const [isMoving, setIsMoving] = useState(false)
@@ -80,19 +82,54 @@ export default function GeoMapSelector({
   const [latInput, setLatInput] = useState('')
   const [lngInput, setLngInput] = useState('')
 
+  // Sync radius (in km) when radiusInput or unit changes
+  useEffect(() => {
+    const val = parseFloat(radiusInput)
+    if (!isNaN(val) && val > 0) {
+      if (unit === 'm') {
+        setRadius(val / 1000)
+      } else {
+        setRadius(val)
+      }
+    } else {
+      setRadius(0.1)
+    }
+  }, [radiusInput, unit])
+
   // Parse initial flag on mount — pre-populate prefix, radius, and coordinates
   useEffect(() => {
     const parsed = parseGeoFlagClient(initialFlag)
     if (parsed) {
       setPrefix(parsed.prefix)
-      setRadius(parsed.radius_km)
       const c = { lat: parsed.lat, lng: parsed.lng }
       setCoords(c)
       setLatInput(parsed.lat.toFixed(6))
       setLngInput(parsed.lng.toFixed(6))
       setFlyTrigger(1)
+
+      if (parsed.radius_km < 1) {
+        setUnit('m')
+        setRadiusInput(Math.round(parsed.radius_km * 1000).toString())
+      } else {
+        setUnit('km')
+        setRadiusInput(parsed.radius_km.toString())
+      }
+      setRadius(parsed.radius_km)
     }
   }, [initialFlag])
+
+  const handleUnitChange = (newUnit: 'km' | 'm') => {
+    if (newUnit === unit) return
+    const val = parseFloat(radiusInput)
+    if (!isNaN(val) && val > 0) {
+      if (newUnit === 'm') {
+        setRadiusInput(Math.round(val * 1000).toString())
+      } else {
+        setRadiusInput((val / 1000).toString())
+      }
+    }
+    setUnit(newUnit)
+  }
 
   // Sync lat/lng inputs when coords change via map click
   const applyCoords = (c: GeoCoordinates, shouldFly = false) => {
@@ -180,16 +217,52 @@ export default function GeoMapSelector({
           />
         </div>
         <div className="flex flex-col gap-1.5">
-          <Label className="text-xs font-bold text-gray-500">Radius Toleransi (KM)</Label>
-          <Input
-            type="number"
-            step="0.05"
-            min="0.01"
-            value={radius}
-            onChange={(e) => setRadius(parseFloat(e.target.value) || 0.1)}
-            placeholder="e.g. 1.5"
-            className="h-9 text-sm"
-          />
+          <div className="flex items-center justify-between">
+            <Label className="text-xs font-bold text-gray-500">Radius Toleransi</Label>
+            <div className="flex rounded-md bg-gray-100 dark:bg-gray-800 p-0.5 text-[10px] font-bold">
+              <button
+                type="button"
+                onClick={() => handleUnitChange('m')}
+                className={`px-2 py-0.5 rounded transition-all cursor-pointer ${
+                  unit === 'm'
+                    ? 'bg-white dark:bg-gray-700 text-blue-600 dark:text-blue-400 shadow-sm'
+                    : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-200'
+                }`}
+              >
+                Meter (m)
+              </button>
+              <button
+                type="button"
+                onClick={() => handleUnitChange('km')}
+                className={`px-2 py-0.5 rounded transition-all cursor-pointer ${
+                  unit === 'km'
+                    ? 'bg-white dark:bg-gray-700 text-blue-600 dark:text-blue-400 shadow-sm'
+                    : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-200'
+                }`}
+              >
+                KM
+              </button>
+            </div>
+          </div>
+          <div className="relative">
+            <Input
+              type="number"
+              step={unit === 'm' ? '10' : '0.1'}
+              min={unit === 'm' ? '1' : '0.001'}
+              value={radiusInput}
+              onChange={(e) => setRadiusInput(e.target.value)}
+              placeholder={unit === 'm' ? 'e.g. 500' : 'e.g. 0.5'}
+              className="h-9 text-sm pr-14"
+            />
+            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-semibold text-gray-400 pointer-events-none select-none">
+              {unit === 'm' ? 'meter' : 'km'}
+            </span>
+          </div>
+          <span className="text-[10px] text-gray-400 font-medium">
+            {unit === 'm'
+              ? `= ${(parseFloat(radiusInput) / 1000 || 0).toFixed(3)} km`
+              : `= ${Math.round((parseFloat(radiusInput) || 0) * 1000)} meter`}
+          </span>
         </div>
       </div>
 
@@ -284,7 +357,7 @@ export default function GeoMapSelector({
             </>
           )}
         </BaseMap>
-        <div className="absolute top-2 right-2 z-20 bg-white/95 dark:bg-black/90 border rounded p-2 text-[10px] text-gray-500 font-mono shadow pointer-events-none select-none">
+        <div className="absolute bottom-2 left-2 z-20 bg-white/95 dark:bg-black/90 border rounded p-2 text-[10px] text-gray-500 font-mono shadow pointer-events-none select-none">
           Click on map to select location
         </div>
       </div>

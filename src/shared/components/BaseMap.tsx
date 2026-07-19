@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useEffect } from 'react'
-import { MapContainer as LeafletMapContainer, TileLayer, useMap } from 'react-leaflet'
+import { MapContainer as LeafletMapContainer, TileLayer, useMap, LayersControl } from 'react-leaflet'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 
@@ -75,10 +75,21 @@ export function BaseMap({ center, zoom, children, style, className }: BaseMapPro
       className={className}
       attributionControl={false}
     >
-      <TileLayer
-        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-      />
+      <LayersControl position="topright">
+        <LayersControl.BaseLayer name="Map Streets">
+          <TileLayer
+            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          />
+        </LayersControl.BaseLayer>
+        <LayersControl.BaseLayer checked name="Satellite Hybrid">
+          <TileLayer
+            attribution='&copy; Google Maps'
+            url="https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}"
+            maxZoom={20}
+          />
+        </LayersControl.BaseLayer>
+      </LayersControl>
       <InvalidateMapSize />
       {children}
     </LeafletMapContainer>
