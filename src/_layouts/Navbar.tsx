@@ -364,7 +364,7 @@ export default function Navbar() {
 
 
               {/* Live Status Counter */}
-              {authReady && user && user.is_admin && (
+              {authReady && user && adminStatus && (
                 <div 
                   className="hidden lg:flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-green-500/10 border border-green-500/20 text-green-600 dark:text-green-400 text-xs font-semibold select-none cursor-default shadow-[0_0_8px_rgba(34,197,94,0.1)]"
                   title={`${onlineCount} user(s) online`}

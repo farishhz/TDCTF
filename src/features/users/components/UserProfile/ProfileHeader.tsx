@@ -1,6 +1,6 @@
 'use client'
 
-import React from 'react'
+import React, { useState, useEffect } from 'react'
 import { CalendarDays, Clock3 } from 'lucide-react'
 import { ImageWithFallback } from '@/shared/components'
 import EventSelect from '@/features/events/components/EventSelect'
@@ -44,7 +44,21 @@ export default function ProfileHeader({
 }: ProfileHeaderProps) {
   const { user: currentUser } = useAuth()
   const { isUserOnline, getUserPresence } = usePresence()
-  const isOnline = !!currentUser?.is_admin && isUserOnline(userDetail.id)
+  const [isAdmin, setIsAdmin] = useState(false)
+
+  useEffect(() => {
+    if (!currentUser) return
+    let active = true
+    import('@/features/admin/services/admin.service').then(async ({ isAdmin: checkAdmin }) => {
+      const res = await checkAdmin()
+      if (active) setIsAdmin(res)
+    })
+    return () => {
+      active = false
+    }
+  }, [currentUser])
+
+  const isOnline = isAdmin && isUserOnline(userDetail.id)
   const presence = getUserPresence(userDetail.id)
 
   return (
