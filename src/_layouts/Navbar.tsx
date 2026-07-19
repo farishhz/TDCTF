@@ -13,6 +13,7 @@ import { TDCTF } from '@/_vars/const'
 import ImageWithFallback from '@/shared/components/ImageWithFallback'
 import { useAuth } from '@/shared/contexts/AuthContext'
 import { useTheme } from '@/shared/contexts/ThemeContext'
+import { usePresence } from '@/shared/contexts'
 import {
   SURFACE_NAVBAR_CLASS,
   SURFACE_NAV_DROPDOWN_CLASS,
@@ -53,6 +54,7 @@ function normalizeNavbarImageSrc(src?: string | null, fallback: string | null = 
 export default function Navbar() {
   const router = useRouter()
   const { user, setUser, loading } = useAuth()
+  const { onlineCount } = usePresence()
   const pathname = usePathname()
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
@@ -360,6 +362,20 @@ export default function Navbar() {
               </div>
 
 
+
+              {/* Live Status Counter */}
+              {authReady && user && user.is_admin && (
+                <div 
+                  className="hidden lg:flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-green-500/10 border border-green-500/20 text-green-600 dark:text-green-400 text-xs font-semibold select-none cursor-default shadow-[0_0_8px_rgba(34,197,94,0.1)]"
+                  title={`${onlineCount} user(s) online`}
+                >
+                  <span className="relative flex h-1.5 w-1.5">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-green-500"></span>
+                  </span>
+                  <span>{onlineCount} Live</span>
+                </div>
+              )}
 
               {/* Notifications */}
               {authReady && user && (

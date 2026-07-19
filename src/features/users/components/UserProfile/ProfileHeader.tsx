@@ -12,6 +12,7 @@ import {
   TYPO_METADATA_CLASS
 } from '@/shared/styles'
 import { cn } from '@/shared/lib/utils'
+import { usePresence, useAuth } from '@/shared/contexts'
 import { UserDetail, Badge } from '../../types'
 import EditProfileModal from './EditProfileModal'
 
@@ -41,6 +42,11 @@ export default function ProfileHeader({
   refreshUserDetail,
   onUpdateUserDetail
 }: ProfileHeaderProps) {
+  const { user: currentUser } = useAuth()
+  const { isUserOnline, getUserPresence } = usePresence()
+  const isOnline = !!currentUser?.is_admin && isUserOnline(userDetail.id)
+  const presence = getUserPresence(userDetail.id)
+
   return (
     <SurfaceCard
       variant="glass"
@@ -101,10 +107,20 @@ export default function ProfileHeader({
                 <CalendarDays className="h-3.5 w-3.5 text-blue-500" />
                 Joined {userDetail.created_at ? formatRelativeDate(userDetail.created_at) : '-'}
               </span>
-              <span className={cn("inline-flex items-center gap-1.5 rounded-full border border-gray-200/50 bg-white/40 px-3 py-1 backdrop-blur-sm dark:border-white/5 dark:bg-white/5", TYPO_METADATA_CLASS)}>
-                <Clock3 className="h-3.5 w-3.5 text-blue-500" />
-                Last login {userDetail.last_login_at ? formatRelativeDate(userDetail.last_login_at) : 'Never'}
-              </span>
+              {isOnline ? (
+                <span className={cn("inline-flex items-center gap-1.5 rounded-full border border-green-500/20 bg-green-500/10 px-3 py-1 backdrop-blur-sm dark:border-green-500/30 dark:bg-green-500/10 text-green-600 dark:text-green-400 font-semibold shadow-[0_0_8px_rgba(34,197,94,0.15)]", TYPO_METADATA_CLASS)}>
+                  <span className="relative flex h-2 w-2">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+                  </span>
+                  Active Now: {presence?.currentActivity || 'Online'}
+                </span>
+              ) : (
+                <span className={cn("inline-flex items-center gap-1.5 rounded-full border border-gray-200/50 bg-white/40 px-3 py-1 backdrop-blur-sm dark:border-white/5 dark:bg-white/5", TYPO_METADATA_CLASS)}>
+                  <Clock3 className="h-3.5 w-3.5 text-blue-500" />
+                  Last login {userDetail.last_login_at ? formatRelativeDate(userDetail.last_login_at) : 'Never'}
+                </span>
+              )}
             </div>
 
             {userDetail.sosmed && (
