@@ -18,6 +18,7 @@ import { normalizeTDCTLServiceValues } from '@/features/challenges/lib/tdctl-ser
 
 export const EMPTY_CHALLENGE_FORM: ChallengeFormData = {
   title: '',
+  author: '',
   description: '',
   category: '',
   points: 100,
@@ -96,13 +97,23 @@ export function useChallengeForm() {
       }
     }
 
+    const desc = full.description || ''
+    const authorMatch = desc.match(/^>\s*Author:\s*(.*?)\r?\n\r?\n/i)
+    let author = ''
+    let cleanDescription = desc
+    if (authorMatch) {
+      author = authorMatch[1].trim()
+      cleanDescription = desc.substring(authorMatch[0].length)
+    }
+
     setEditing(full)
     const subChallengeRows = await getAdminSubChallenges(c.id)
     const normalized = normalizeSubChallenges(subChallengeRows)
 
     setFormData({
       title: full.title,
-      description: full.description || '',
+      author: author,
+      description: cleanDescription,
       category: full.category || 'Web',
       points: full.points != null ? Math.max(0, full.points) : 100,
       max_points: full.max_points != null ? Math.max(0, full.max_points) : (full.points != null ? Math.max(0, full.points) : 100),
@@ -177,9 +188,14 @@ export function useChallengeForm() {
   const handleSubmit = async () => {
     setSubmitting(true)
     try {
+      let finalDescription = (formData.description || '').trim()
+      if (formData.author && formData.author.trim() !== '') {
+        finalDescription = `> Author: ${formData.author.trim()}\n\n${finalDescription}`
+      }
+
       const payload: ChallengePayload = {
         title: (formData.title || '').trim(),
-        description: (formData.description || '').trim(),
+        description: finalDescription,
         category: (formData.category || '').trim(),
         points: Number(formData.points) || 0,
         hint: (formData.hint && formData.hint.length > 0) ? formData.hint.filter(h => h.trim() !== '') : null,
@@ -244,7 +260,41 @@ export function useChallengeForm() {
 
   const attachmentOps = {
     add: () => setFormData(p => ({ ...p, attachments: [...p.attachments, { name: '', url: '', type: 'file' }] })),
-    update: (i: number, f: keyof Attachment, v: string) => setFormData(p => ({ ...p, attachments: p.attachments.map((a, idx) => idx === i ? { ...a, [f]: v } : a) })),
+    update: (i: number, f: keyof Attachment, v: string) => setFormData(p => {
+      let finalVal = v
+      if (f === 'url') {
+        const trimmed = v.trim()
+        const githubBlobRegex = /^https:\/\/github\.com\/([^/]+)\/([^/]+)\/blob\/([^/]+)\/(.+)$/i
+        const match = trimmed.match(githubBlobRegex)
+        if (match) {
+          finalVal = `https://raw.githubusercontent.com/${match[1]}/${match[2]}/${match[3]}/${match[4]}`
+        }
+      }
+
+      let updatedAttachments = p.attachments.map((a, idx) => idx === i ? { ...a, [f]: finalVal } : a)
+      if (f === 'url') {
+        const currentAttachment = updatedAttachments[i]
+        if (!currentAttachment.name && finalVal.trim() !== '') {
+          try {
+            const urlObj = new URL(finalVal)
+            const pathname = urlObj.pathname
+            const filename = pathname.substring(pathname.lastIndexOf('/') + 1)
+            if (filename) {
+              updatedAttachments = updatedAttachments.map((a, idx) => idx === i ? { ...a, name: decodeURIComponent(filename) } : a)
+            }
+          } catch {
+            const lastSlash = finalVal.lastIndexOf('/')
+            if (lastSlash !== -1) {
+              const filename = finalVal.substring(lastSlash + 1)
+              if (filename) {
+                updatedAttachments = updatedAttachments.map((a, idx) => idx === i ? { ...a, name: decodeURIComponent(filename) } : a)
+              }
+            }
+          }
+        }
+      }
+      return { ...p, attachments: updatedAttachments }
+    }),
     remove: (i: number) => setFormData(p => ({ ...p, attachments: p.attachments.filter((_, idx) => idx !== i) }))
   }
 
