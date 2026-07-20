@@ -6,7 +6,7 @@ import {
   formatDuration,
 } from './tdctl-service-utils'
 
-export type ServiceAction = 'up' | 'restart' | 'extend'
+export type ServiceAction = 'up' | 'restart' | 'extend' | 'down'
 export type ServiceActionLoadingState = ServiceAction | null
 
 export type ChallengeServiceEndpoint = {

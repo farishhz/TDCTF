@@ -3,6 +3,7 @@
 import React, { useEffect, useMemo, useState } from 'react'
 import { AlertTriangle, Clock, Loader2, Play, Power, PowerOff, RefreshCcw, Server } from 'lucide-react'
 import toast from 'react-hot-toast'
+import { useAuth } from '@/shared/contexts/AuthContext'
 import { parseTDCTLService, type TDCTLServiceEntry } from '../lib/tdctl-services'
 import {
   formatExtendWaitDuration,
@@ -42,6 +43,7 @@ const ChallengeServicesPanel: React.FC<ChallengeServicesPanelProps> = ({
   open,
   services = [],
 }) => {
+  const { user } = useAuth()
   const startBtnClass =
     'inline-flex h-7 w-[76px] items-center justify-center gap-1 rounded-lg bg-emerald-500/10 px-2.5 text-[11px] font-bold text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20 disabled:cursor-not-allowed disabled:opacity-40 transition-all duration-200 shrink-0'
 
@@ -50,6 +52,9 @@ const ChallengeServicesPanel: React.FC<ChallengeServicesPanelProps> = ({
 
   const extendBtnClass =
     'inline-flex h-7 w-[104px] items-center justify-center gap-1 rounded-lg bg-cyan-500/10 px-2.5 text-[11px] font-bold text-cyan-600 dark:text-cyan-400 border border-cyan-500/20 hover:bg-cyan-500/20 disabled:cursor-not-allowed disabled:opacity-40 transition-all duration-200 shrink-0'
+
+  const stopBtnClass =
+    'inline-flex h-7 w-[76px] items-center justify-center gap-1 rounded-lg bg-red-500/10 px-2.5 text-[11px] font-bold text-red-600 dark:text-red-400 border border-red-500/20 hover:bg-red-500/20 disabled:cursor-not-allowed disabled:opacity-40 transition-all duration-200 shrink-0'
 
   const serviceActionButtonIconClass = 'shrink-0'
   const rawServicesKey = services.join('\u0000')
@@ -638,6 +643,29 @@ const ChallengeServicesPanel: React.FC<ChallengeServicesPanelProps> = ({
                       </span>
                     )}
                   </button>
+                  {user?.is_admin && (
+                    <button
+                      type="button"
+                      className={stopBtnClass}
+                      onClick={() => handleServiceAction(service, 'down')}
+                      title={(() => {
+                        if (isLoading) return 'Checking status...'
+                        if (errorMessage) return `Error: ${errorMessage}`
+                        if (isActionLoading) return 'Please wait...'
+                        if (!isRunning) return 'Cannot stop: service is not running'
+                        return 'Stop Service'
+                      })()}
+                      disabled={
+                        isLoading ||
+                        !!errorMessage ||
+                        isActionLoading ||
+                        !isRunning
+                      }
+                    >
+                      {actionLoading === 'down' ? <Loader2 size={12} className={`${serviceActionButtonIconClass} animate-spin`} /> : <PowerOff size={12} className={serviceActionButtonIconClass} />}
+                      <span>Stop</span>
+                    </button>
+                  )}
                 </div>
 
                 {isRunning && remainingSec !== null ? (
