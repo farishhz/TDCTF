@@ -1,6 +1,6 @@
 export const rulesConfig = {
   showHiddenFlag: true,
-  hiddenFlagBase64: "TlhDVEZ7UmVhZF9UaGVfUnVsZXNfQmVmb3JlX0hhY2tpbmd9",
+  hiddenFlagBase64: "VERDVEZ7UmVhZF9UaGVfUnVsZXNfQmVmb3JlX0hhY2tpbmd9",
 
   rules: [
     {
