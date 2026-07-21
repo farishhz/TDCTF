@@ -5,6 +5,7 @@ import JoinEventPageClient from '@/features/events/components/JoinEventPageClien
 import { BASE_URL } from '@/_vars/const'
 import type { Event } from '@/shared/types'
 import { headers } from 'next/headers'
+import Footer from '@/_layouts/Footer'
 
 interface Props {
   params: { id: string }
@@ -99,6 +100,8 @@ export default async function Page({ params }: Props) {
       <main className="relative flex-1 flex items-center justify-center p-4 md:p-8">
         <JoinEventPageClient event={normalizedEvent} />
       </main>
+
+      <Footer />
     </div>
   )
 }
