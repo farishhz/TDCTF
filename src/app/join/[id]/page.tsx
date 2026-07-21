@@ -4,6 +4,7 @@ import { supabase } from '@/lib/supabase/client'
 import JoinEventPageClient from '@/features/events/components/JoinEventPageClient'
 import { BASE_URL } from '@/_vars/const'
 import type { Event } from '@/shared/types'
+import { headers } from 'next/headers'
 
 interface Props {
   params: { id: string }
@@ -24,9 +25,21 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     }
   }
 
+  const headersList = headers()
+  const host = headersList.get('host') || 'localhost:3000'
+  const protocol = headersList.get('x-forwarded-proto') || 'https'
+  const dynamicBaseUrl = `${protocol}://${host}`
+
   const title = `Gabung Event: ${event.name} | TDCTF`
   const description = event.description || 'Ikuti tantangan CTF seru di event ini!'
-  const imageUrl = event.image_url || 'https://raw.githubusercontent.com/tdctf/assets/refs/heads/main/event/active_tdctf.png'
+  const rawImageUrl = event.image_url || 'https://raw.githubusercontent.com/tdctf/assets/refs/heads/main/event/active_tdctf.png'
+  
+  let imageUrl = rawImageUrl
+  if (!/^https?:\/\//i.test(rawImageUrl)) {
+    imageUrl = rawImageUrl.startsWith('/')
+      ? `${dynamicBaseUrl}${rawImageUrl}`
+      : `${dynamicBaseUrl}/${rawImageUrl}`
+  }
 
   return {
     title,
@@ -34,7 +47,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     openGraph: {
       title,
       description,
-      url: `${BASE_URL}/join/${id}`,
+      url: `${dynamicBaseUrl}/join/${id}`,
       siteName: 'TDCTF',
       images: [
         {
