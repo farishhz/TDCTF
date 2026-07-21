@@ -3,7 +3,7 @@
 // React Imports
 import Link from 'next/link'
 import dynamic from 'next/dynamic'
-import { Compass, BookOpen, Flag, Trophy, Shield, Users, Gavel, User, ChevronDown, Loader2, Menu, X } from 'lucide-react';
+import { Compass, BookOpen, Flag, Trophy, Shield, Users, Gavel, User, ChevronDown, Loader2, Menu, X, LogOut } from 'lucide-react';
 import { useRouter, usePathname } from 'next/navigation'
 import { useEffect, useState, useRef } from 'react'
 
@@ -66,6 +66,9 @@ export default function Navbar() {
 
   const [docsOpen, setDocsOpen] = useState(false)
   const docsMenuRef = useRef<HTMLDivElement | null>(null)
+
+  const [profileOpen, setProfileOpen] = useState(false)
+  const profileMenuRef = useRef<HTMLDivElement | null>(null)
 
   const { theme, toggleTheme } = useTheme()
   const authReady = !loading
@@ -150,6 +153,20 @@ export default function Navbar() {
       document.removeEventListener('mousedown', handleClickOutside)
     }
   }, [docsOpen])
+
+  useEffect(() => {
+    if (!profileOpen) return
+    const handleClickOutside = (event: MouseEvent) => {
+      if (!profileMenuRef.current) return
+      if (!profileMenuRef.current.contains(event.target as Node)) {
+        setProfileOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [profileOpen])
 
   useEffect(() => {
     if (mobileMenuOpen) {
@@ -320,49 +337,6 @@ export default function Navbar() {
 
             {/* Right section */}
             <div className="flex items-center space-x-5">
-              <div className="hidden sm:flex items-center space-x-3">
-                {!authReady ? null : user ? (
-                  <div className="flex items-center space-x-3 animate-in fade-in duration-300">
-                    <Link
-                      href="/profile"
-                      className="group flex items-center gap-2 caret-transparent rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/40 focus-visible:ring-offset-0"
-                      data-tour="navbar-profile"
-                    >
-                      <ImageWithFallback src={avatarSrc} alt={user.username} size={36} className="rounded-full" />
-                      <span
-                        className={`text-[15px] font-semibold ${theme === 'dark' ? 'text-white' : 'text-gray-900'} transition-all duration-150 group-hover:text-blue-500 dark:group-hover:text-blue-400 truncate whitespace-nowrap max-w-[100px] md:max-w-[160px] block`}
-                        title={user.username}
-                      >
-                        {user.username}
-                      </span>
-                    </Link>
-                    <button
-                      onClick={handleLogout}
-                      className="hidden md:block bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-[15px] font-medium shadow transition-all duration-150"
-                    >
-                      Logout
-                    </button>
-                  </div>
-                ) : (
-                  <div className="flex items-center space-x-3 animate-in fade-in duration-300">
-                    <Link
-                      href="/login"
-                      className={`px-4 py-2 rounded-lg text-[15px] font-medium shadow transition-all duration-150 ${theme === 'dark' ? 'bg-blue-500 hover:bg-blue-600 text-white' : 'bg-blue-600 hover:bg-blue-700 text-white'}`}
-                    >
-                      Login
-                    </Link>
-                    <Link
-                      href="/register"
-                      className={`px-4 py-2 rounded-lg text-[15px] font-medium shadow transition-all duration-150 ${theme === 'dark' ? 'bg-gray-800 hover:bg-gray-700 text-gray-200' : 'bg-gray-100 hover:bg-gray-200 text-gray-800'}`}
-                    >
-                      Register
-                    </Link>
-                  </div>
-                )}
-              </div>
-
-
-
               {/* Live Status Counter */}
               {authReady && user && adminStatus && (
                 <div 
@@ -389,6 +363,71 @@ export default function Navbar() {
 
               {/* Dev Config Widget */}
               <DevConfig key="dev-config" />
+
+              {/* Profile / Auth actions - Now rightmost */}
+              <div className="hidden sm:flex items-center space-x-3">
+                {!authReady ? null : user ? (
+                  <div ref={profileMenuRef} className="relative flex items-center space-x-3 animate-in fade-in duration-300">
+                    <button
+                      type="button"
+                      onClick={() => setProfileOpen((v) => !v)}
+                      className="group flex items-center gap-2 caret-transparent rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/40 focus-visible:ring-offset-0"
+                    >
+                      <ImageWithFallback src={avatarSrc} alt={user.username} size={36} className="rounded-full border border-gray-200/50 dark:border-gray-800/80" />
+                      <span
+                        className={`text-[15px] font-semibold ${theme === 'dark' ? 'text-white' : 'text-gray-900'} transition-all duration-150 group-hover:text-blue-500 dark:group-hover:text-blue-400 truncate whitespace-nowrap max-w-[100px] md:max-w-[160px] block`}
+                        title={user.username}
+                      >
+                        {user.username}
+                      </span>
+                      <ChevronDown className={`h-4 w-4 opacity-60 transition-transform duration-150 ${profileOpen ? 'rotate-180' : ''}`} />
+                    </button>
+                    {profileOpen && (
+                      <div className={`${SURFACE_NAV_DROPDOWN_CLASS} right-0 left-auto mt-2 w-48 shadow-xl absolute top-full`}>
+                        <div className="px-3.5 py-2.5 border-b border-gray-200/60 dark:border-gray-800/60 bg-gray-50/50 dark:bg-gray-900/30">
+                          <p className="text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Signed in as</p>
+                          <p className="text-xs font-black text-gray-900 dark:text-white truncate mt-0.5">{user.username}</p>
+                        </div>
+                        
+                        <Link
+                          href="/profile"
+                          onClick={() => setProfileOpen(false)}
+                          className={`${SURFACE_NAV_DROPDOWN_ITEM_CLASS} flex items-center gap-2`}
+                        >
+                          <User size={16} className="text-gray-400" />
+                          <span>My Profile</span>
+                        </Link>
+
+                        <button
+                          onClick={() => {
+                            setProfileOpen(false)
+                            void handleLogout()
+                          }}
+                          className={`${SURFACE_NAV_DROPDOWN_ITEM_CLASS} w-full text-left flex items-center gap-2 text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 dark:hover:bg-red-500/10 hover:bg-red-50`}
+                        >
+                          <LogOut size={16} />
+                          <span>Logout</span>
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="flex items-center space-x-3 animate-in fade-in duration-300">
+                    <Link
+                      href="/login"
+                      className={`px-4 py-2 rounded-lg text-[15px] font-medium shadow transition-all duration-150 ${theme === 'dark' ? 'bg-blue-500 hover:bg-blue-600 text-white' : 'bg-blue-600 hover:bg-blue-700 text-white'}`}
+                    >
+                      Login
+                    </Link>
+                    <Link
+                      href="/register"
+                      className={`px-4 py-2 rounded-lg text-[15px] font-medium shadow transition-all duration-150 ${theme === 'dark' ? 'bg-gray-800 hover:bg-gray-700 text-gray-200' : 'bg-gray-100 hover:bg-gray-200 text-gray-800'}`}
+                    >
+                      Register
+                    </Link>
+                  </div>
+                )}
+              </div>
 
               {/* Theme Switcher - DISABLED TEMPORARILY */}
               {/* <button
@@ -573,9 +612,10 @@ export default function Navbar() {
                 )}
                 <button
                   onClick={handleLogout}
-                  className="w-full text-left bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded-lg text-[15px] font-medium shadow transition-all duration-150"
+                  className="w-full flex items-center gap-2 border border-red-500/25 text-red-600 dark:text-red-400 dark:hover:text-red-300 hover:bg-red-500/5 px-3 py-2 rounded-lg text-[15px] font-semibold transition-all duration-150"
                 >
-                  Logout
+                  <LogOut size={16} />
+                  <span>Logout</span>
                 </button>
               </>
             )}

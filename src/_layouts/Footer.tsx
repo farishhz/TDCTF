@@ -1,3 +1,5 @@
+'use client'
+
 import React from 'react'
 import APP from '@/config'
 import { TDCTF } from '@/_vars/const'

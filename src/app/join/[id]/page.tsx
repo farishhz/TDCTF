@@ -5,7 +5,9 @@ import JoinEventPageClient from '@/features/events/components/JoinEventPageClien
 import { BASE_URL } from '@/_vars/const'
 import type { Event } from '@/shared/types'
 import { headers } from 'next/headers'
-import Footer from '@/_layouts/Footer'
+import dynamic from 'next/dynamic'
+
+const Footer = dynamic(() => import('@/_layouts/Footer'), { ssr: false })
 
 interface Props {
   params: { id: string }
