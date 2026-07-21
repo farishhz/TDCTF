@@ -29,21 +29,25 @@ export default function StatsGrid({
         icon={Crown}
         label="Rank"
         value={(!userDetail.rank || solvedChallengesCount === 0) ? '-' : `#${userDetail.rank}`}
+        colorScheme="amber"
       />
       <UserStat
         icon={Trophy}
         label="Score"
         value={userDetail.score ?? 0}
+        colorScheme="cyan"
       />
       <UserStat
         icon={CheckCircle2}
         label="Solved Challenges"
         value={solvedChallengesCount}
+        colorScheme="emerald"
       />
       <UserStat
         icon={Droplet}
         label="First Bloods"
         value={firstBloodCount}
+        colorScheme="rose"
       />
       {showTeam && teamInfo ? (
         <UserStat
@@ -57,6 +61,7 @@ export default function StatsGrid({
           detail={`${teamInfo.members.length} member${teamInfo.members.length !== 1 ? 's' : ''}`}
           onClick={() => router.push(`/teams/${encodeURIComponent(teamInfo.team.name)}`)}
           className="col-span-2 sm:col-span-1"
+          colorScheme="purple"
         />
       ) : null}
     </section>

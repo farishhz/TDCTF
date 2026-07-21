@@ -1,3 +1,5 @@
+'use client'
+
 import React from 'react'
 import APP from '@/config'
 import { TDCTF } from '@/_vars/const'
@@ -89,7 +91,7 @@ const Footer: React.FC = () => {
               </div>
               <div className="flex flex-col items-start leading-none">
                 <span className="text-[9px] font-bold text-gray-400 uppercase tracking-tighter">Creator</span>
-                <span className="text-xs font-black text-gray-900 dark:text-white group-hover:text-blue-500 transition-colors">alfarisi azmir</span>
+                <span className="text-xs font-black text-gray-900 dark:text-white group-hover:text-blue-500 transition-colors">Alfarisi Azmir</span>
               </div>
             </a>
           </div>

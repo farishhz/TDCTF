@@ -173,19 +173,7 @@ const ChallengeDetailDialog: React.FC<ChallengeDetailDialogProps> = ({
       })
       .join('\n')
 
-    const wgetCommands = fileAttachments.length > 0
-      ? '\n\n```bash\n' +
-      fileAttachments.map((a, idx) => {
-        const absUrl = getAbsoluteUrl(a.url)
-        const filename = a.name || absUrl.split('/').pop() || `file-${idx}`
-        const escUrl = absUrl.replace(/'/g, "'\\'\'")
-        const escName = filename.replace(/'/g, "'\\'\'")
-        return `wget '${escUrl}' -O '${escName}'`
-      }).join(' && ') +
-      '\n```'
-      : ''
-
-    const filesContent = fileList ? `${fileList}${wgetCommands}` : '- (No files)'
+    const filesContent = fileList || '- (No files)'
 
     const links = (challenge.attachments || [])
       .filter((a) => a.type !== 'file')
