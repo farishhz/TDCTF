@@ -20,6 +20,7 @@ export type UserDetail = {
   solved_challenges: ChallengeWithSolve[]
   flag_stats?: { correct_submissions: number; incorrect_submissions: number } | null
   tags?: string[] | null
+  is_admin?: boolean
 }
 
 export type UserProfileProps = {

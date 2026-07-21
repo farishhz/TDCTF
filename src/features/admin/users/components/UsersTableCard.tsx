@@ -4,6 +4,7 @@ import { useMemo, useState } from 'react'
 import Link from 'next/link'
 import { Check, ChevronLeft, ChevronRight, Copy, ExternalLink, KeyRound, Ban, Unlock, Tag } from 'lucide-react'
 import { ImageWithFallback } from '@/shared/components'
+import { usePresence } from '@/shared/contexts'
 import {
   Button,
   Table,
@@ -137,6 +138,8 @@ export default function UsersTableCard({
   // Administrative Dialog & Form States
   const [changePasswordUser, setChangePasswordUser] = useState<AdminUserRow | null>(null)
   const [newPassword, setNewPassword] = useState('')
+
+  const { isUserOnline, getUserPresence } = usePresence()
 
   const [banUser, setBanUser] = useState<AdminUserRow | null>(null)
   const [banDuration, setBanDuration] = useState('5')
@@ -276,17 +279,31 @@ export default function UsersTableCard({
                         <TableCell className="pl-6">
                           {(() => {
                             const isCurrentlyBanned = listedUser.banned_until && new Date(listedUser.banned_until) > new Date()
+                            const isOnline = isUserOnline(listedUser.id)
+                            const presence = getUserPresence(listedUser.id)
                             return (
-                              <div className="flex min-w-[180px] items-center gap-3">
-                                <ImageWithFallback
-                                  src={listedUser.profile_picture_url}
-                                  alt={listedUser.username}
-                                  size={38}
-                                  className={`shrink-0 rounded-full ring-1 ${
-                                    isCurrentlyBanned ? 'ring-red-500/30 grayscale-[30%]' : 'ring-blue-500/15'
-                                  }`}
-                                  fallbackBg="bg-blue-500/10 dark:bg-blue-500/15"
-                                />
+                              <div className="flex min-w-[200px] items-center gap-3">
+                                <div className="relative shrink-0">
+                                  <ImageWithFallback
+                                    src={listedUser.profile_picture_url}
+                                    alt={listedUser.username}
+                                    size={38}
+                                    className={`shrink-0 rounded-full ring-1 ${
+                                      isCurrentlyBanned
+                                        ? 'ring-red-500/30 grayscale-[30%]'
+                                        : isOnline
+                                        ? 'ring-emerald-500/60 shadow-[0_0_8px_rgba(16,185,129,0.3)]'
+                                        : 'ring-blue-500/15'
+                                    }`}
+                                    fallbackBg="bg-blue-500/10 dark:bg-blue-500/15"
+                                  />
+                                  {isOnline && (
+                                    <span
+                                      className="absolute -bottom-0.5 -right-0.5 h-3.5 w-3.5 rounded-full bg-emerald-500 border-2 border-[#0b0f19] ring-1 ring-emerald-500/40 shadow-[0_0_6px_rgba(16,185,129,0.8)] z-10 animate-pulse"
+                                      title="Online now"
+                                    />
+                                  )}
+                                </div>
                                 <div className="min-w-0">
                                   <div className="flex items-center gap-1.5">
                                     {profileHref ? (
@@ -313,13 +330,26 @@ export default function UsersTableCard({
                                       </span>
                                     )}
                                   </div>
-                                  <span className={`block truncate text-xs ${
-                                    isCurrentlyBanned ? 'text-red-400 font-semibold' : 'text-muted-foreground'
-                                  }`}>
-                                    {isCurrentlyBanned
-                                      ? `Suspended until ${new Date(listedUser.banned_until!).toLocaleString()}`
-                                      : 'Profile record'}
-                                  </span>
+                                  {isOnline ? (
+                                    <span
+                                      className="flex items-center gap-1 text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 mt-0.5 truncate max-w-[210px]"
+                                      title={presence?.currentActivity || 'Online 🟢'}
+                                    >
+                                      <span className="relative flex h-1.5 w-1.5 shrink-0">
+                                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                                        <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500" />
+                                      </span>
+                                      <span className="truncate">{presence?.currentActivity || 'Online 🟢'}</span>
+                                    </span>
+                                  ) : (
+                                    <span className={`block truncate text-xs ${
+                                      isCurrentlyBanned ? 'text-red-400 font-semibold' : 'text-muted-foreground'
+                                    }`}>
+                                      {isCurrentlyBanned
+                                        ? `Suspended until ${new Date(listedUser.banned_until!).toLocaleString()}`
+                                        : 'Offline'}
+                                    </span>
+                                  )}
                                 </div>
                               </div>
                             )

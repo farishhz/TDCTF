@@ -21,6 +21,7 @@ export type UserDetail = {
   solved_challenges: ChallengeWithSolve[]
   flag_stats: { correct_submissions: number; incorrect_submissions: number }
   tags?: string[] | null
+  is_admin?: boolean
 }
 
 export type UserProfileLite = {
@@ -86,6 +87,7 @@ export async function getUserDetail(userId: string, eventId?: string | null, eve
         incorrect_submissions: data.flag_stats?.incorrect_submissions ?? 0,
       },
       tags: data.user.tags ?? [],
+      is_admin: Boolean(data.user?.is_admin),
     }
   } catch (error) {
     console.error('Error fetching user detail:', error)
