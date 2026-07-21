@@ -37,7 +37,9 @@ export function useLogin() {
         setError(error)
       } else if (user) {
         setUser(user)
-        router.push('/challenges')
+        const params = new URLSearchParams(window.location.search)
+        const redirectTo = params.get('redirectTo') || '/challenges'
+        router.push(redirectTo)
       }
     } catch {
       setError('Login failed')

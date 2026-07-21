@@ -2,12 +2,15 @@
 
 import { AnimatePresence } from 'framer-motion'
 import { CalendarDays, GitBranch, Users } from 'lucide-react'
+import { useState } from 'react'
 import ConfirmDialog from '@/shared/components/ConfirmDialog'
 import BulkAssignChallengesCard from './BulkAssignChallengesCard'
 import EventFormDialog from './EventFormDialog'
 import EventListCard from './EventListCard'
 import EventMembersCard from './EventMembersCard'
+import ShareEventDialog from './ShareEventDialog'
 import { Button } from '@/shared/ui'
+import type { Event } from '../types'
 import { useAdminEventData } from '../hooks/useAdminEventData'
 import { AdminContentLoading, AdminPageShell, AdminStickyToolbar, AdminTabs, useTabState } from '../../ui'
 
@@ -21,6 +24,7 @@ const EVENT_TABS = [
 
 export default function AdminEventPage() {
   const [activeTab, setActiveTab] = useTabState<AdminEventTab>('tab', 'event-list')
+  const [shareEvent, setShareEvent] = useState<Event | null>(null)
   const {
     user,
     authLoading,
@@ -117,6 +121,7 @@ export default function AdminEventPage() {
               events={sortedEvents}
               onEdit={openEdit}
               onDelete={askDelete}
+              onShare={setShareEvent}
             />
           ) : null}
 
@@ -201,6 +206,12 @@ export default function AdminEventPage() {
         }
         confirmLabel="Delete"
         onConfirm={doDelete}
+      />
+
+      <ShareEventDialog
+        open={!!shareEvent}
+        onOpenChange={(open) => !open && setShareEvent(null)}
+        event={shareEvent}
       />
     </>
   )

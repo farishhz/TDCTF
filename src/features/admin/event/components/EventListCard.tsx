@@ -1,6 +1,6 @@
 import React from 'react'
 import { motion } from 'framer-motion'
-import { CalendarClock, Eye, KeyRound, Lock, Unlock } from 'lucide-react'
+import { CalendarClock, Eye, KeyRound, Lock, Share2, Unlock } from 'lucide-react'
 import Image from 'next/image'
 import APP from '@/config'
 import { Button } from '@/shared/ui'
@@ -12,6 +12,7 @@ interface EventListCardProps {
   events: Event[]
   onEdit: (evt: Event) => void
   onDelete: (evt: Event) => void
+  onShare: (evt: Event) => void
 }
 
 function formatEventDate(value?: string | null) {
@@ -46,7 +47,7 @@ function getJoinModeMeta(joinMode?: Event['join_mode']) {
   return { label: 'Open', icon: Unlock }
 }
 
-const EventListCard: React.FC<EventListCardProps> = ({ events, onEdit, onDelete }) => {
+const EventListCard: React.FC<EventListCardProps> = ({ events, onEdit, onDelete, onShare }) => {
   return (
     <AdminDataSurface
       empty={events.length === 0 ? (
@@ -68,6 +69,7 @@ const EventListCard: React.FC<EventListCardProps> = ({ events, onEdit, onDelete 
               event={evt}
               onEdit={onEdit}
               onDelete={onDelete}
+              onShare={onShare}
             />
           ))}
         </AdminListSurface>
@@ -80,10 +82,12 @@ function EventListItem({
   event,
   onEdit,
   onDelete,
+  onShare,
 }: {
   event: Event
   onEdit: (evt: Event) => void
   onDelete: (evt: Event) => void
+  onShare: (evt: Event) => void
 }) {
   const eventState = getEventState(event)
   const joinMode = getJoinModeMeta(event.join_mode)
@@ -148,6 +152,10 @@ function EventListItem({
       </div>
 
       <div className="flex shrink-0 items-center gap-2 lg:self-center">
+        <Button variant="outline" size="sm" onClick={() => onShare(event)} className="rounded-xl inline-flex items-center gap-1.5 border-blue-500/20 text-blue-600 dark:text-blue-400 hover:bg-blue-500/5 hover:border-blue-500/40">
+          <Share2 className="h-3.5 w-3.5" />
+          <span>Share</span>
+        </Button>
         <Button variant="outline" size="sm" onClick={() => onEdit(event)} className="rounded-xl">
           Edit
         </Button>

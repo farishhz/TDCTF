@@ -13,7 +13,9 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (!authLoading && user) {
-      router.push('/challenges')
+      const params = new URLSearchParams(window.location.search)
+      const redirectTo = params.get('redirectTo') || '/challenges'
+      router.push(redirectTo)
     }
   }, [user, authLoading, router])
 
