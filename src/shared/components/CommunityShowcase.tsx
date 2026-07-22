@@ -118,21 +118,11 @@ function ContributorCard({ item }: { item: ContributorItem }) {
       href={profileUrl}
       target="_blank"
       rel="noopener noreferrer"
-      className={`group relative flex shrink-0 items-center gap-3.5 px-4 py-2.5 ${SURFACE_GLASS_CARD_COMPACT_CLASS} rounded-2xl transition-all duration-300 hover:scale-105 hover:z-20 ${
-        isCreator
-          ? "border-amber-500/40 dark:border-amber-500/30 bg-amber-500/5 hover:bg-amber-500/10 shadow-[0_4px_20px_rgba(245,158,11,0.15)]"
-          : "border-blue-500/30 dark:border-blue-500/20 bg-blue-500/5 hover:bg-blue-500/10 shadow-[0_4px_20px_rgba(59,130,246,0.15)]"
-      }`}
+      className={`group relative flex shrink-0 items-center gap-3.5 px-4 py-2.5 ${SURFACE_GLASS_CARD_COMPACT_CLASS} rounded-2xl transition-all duration-300 hover:scale-105 hover:z-20 hover:border-blue-500/50 hover:bg-white/80 dark:hover:bg-gray-800/80 hover:shadow-[0_6px_20px_rgba(59,130,246,0.15)]`}
     >
-      {/* AVATAR WITH ANIMATED GLOW RING */}
+      {/* AVATAR */}
       <div className="relative flex shrink-0">
-        <div
-          className={`relative w-10 h-10 rounded-full overflow-hidden p-0.5 transition-all duration-300 group-hover:scale-110 ${
-            isCreator
-              ? "bg-gradient-to-tr from-amber-500 via-orange-500 to-yellow-300 ring-2 ring-amber-400/50 shadow-md shadow-amber-500/20"
-              : "bg-gradient-to-tr from-blue-600 via-indigo-500 to-cyan-400 ring-2 ring-blue-400/50 shadow-md shadow-blue-500/20"
-          }`}
-        >
+        <div className="relative w-10 h-10 rounded-full overflow-hidden transition-all duration-300 group-hover:scale-110">
           {!loaded && !errored && (
             <div className="w-full h-full rounded-full bg-gray-300 dark:bg-gray-700 animate-pulse" />
           )}
@@ -153,28 +143,12 @@ function ContributorCard({ item }: { item: ContributorItem }) {
             />
           )}
         </div>
-
-        {/* BADGE ICON */}
-        <span
-          className={`absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full text-white text-[9px] font-black shadow-md border border-white dark:border-gray-900 ${
-            isCreator ? "bg-amber-500 animate-pulse" : "bg-blue-600"
-          }`}
-          title={isCreator ? "Creator & Lead Architect" : "Organization Core"}
-        >
-          {isCreator ? "★" : "⚡"}
-        </span>
       </div>
 
       {/* USER INFORMATION */}
       <div className="flex flex-col text-left">
         <div className="flex items-center gap-1.5">
-          <span
-            className={`text-xs font-extrabold tracking-tight transition-colors ${
-              isCreator
-                ? "text-amber-600 dark:text-amber-400 group-hover:text-amber-500"
-                : "text-blue-600 dark:text-blue-400 group-hover:text-blue-500"
-            }`}
-          >
+          <span className="text-xs font-extrabold tracking-tight text-gray-800 dark:text-gray-200 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
             @{username}
           </span>
 
