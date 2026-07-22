@@ -25,26 +25,26 @@ const PresenceContext = createContext<PresenceContextType | undefined>(undefined
 
 function getActivityFromPath(pathname: string): string {
   if (!pathname) return 'Menjelajahi platform 🌐'
-  if (pathname.startsWith('/challenges/')) {
+  if (pathname.startsWith('/challenges')) {
     return 'Sedang mengerjakan challenge 🧩'
   }
-  if (pathname === '/challenges') {
-    return 'Melihat daftar challenge 🛡️'
-  }
-  if (pathname === '/scoreboard') {
+  if (pathname.startsWith('/scoreboard')) {
     return 'Melihat Scoreboard 📈'
   }
-  if (pathname === '/teams') {
-    return 'Melihat daftar tim 👥'
+  if (pathname.startsWith('/teams')) {
+    return 'Melihat tim 👥'
   }
-  if (pathname.startsWith('/teams/')) {
-    return 'Melihat profil tim 👥'
+  if (pathname.startsWith('/join')) {
+    return 'Bergabung ke event 🚀'
   }
   if (pathname.startsWith('/profile')) {
     return 'Mengatur profil ⚙️'
   }
   if (pathname.startsWith('/admin')) {
     return 'Mengelola panel admin 🔐'
+  }
+  if (pathname.startsWith('/info')) {
+    return 'Melihat informasi platform ℹ️'
   }
   return 'Menjelajahi platform 🌐'
 }
@@ -174,15 +174,11 @@ export function PresenceProvider({ children }: { children: React.ReactNode }) {
 
       const payload = {
         userId: user.id,
-        username: user.username,
+        username: user.username || (user as any).email?.split('@')[0] || 'User',
         currentPath: pathname,
         currentActivity,
         lastActiveAt: new Date().toISOString(),
       }
-
-      try {
-        void channelRef.current.untrack()
-      } catch (e) {}
 
       void channelRef.current.track(payload).catch((err: any) => {
         console.error('[Presence] Failed to track activity:', err)
