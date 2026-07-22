@@ -68,6 +68,9 @@ export function PresenceProvider({ children }: { children: React.ReactNode }) {
 
     console.log('[Presence] Initializing channel for user:', user.id)
 
+    // Touch activity in DB immediately on mount/session load
+    void (supabase as any).rpc('touch_user_activity')
+
     const channel = supabase.channel('online-users', {
       config: {
         presence: {
@@ -142,8 +145,8 @@ export function PresenceProvider({ children }: { children: React.ReactNode }) {
             currentActivity,
             lastActiveAt: new Date().toISOString(),
           })
-          // Silently update last_login_at in users table
-          void (supabase as any).from('users').update({ last_login_at: new Date().toISOString() }).eq('id', user.id)
+          // Update activity timestamp in database via SECURITY DEFINER RPC
+          void (supabase as any).rpc('touch_user_activity')
         } else {
           isSubscribedRef.current = false
         }
@@ -186,7 +189,7 @@ export function PresenceProvider({ children }: { children: React.ReactNode }) {
       })
 
       if (!isHidden) {
-        void (supabase as any).from('users').update({ last_login_at: new Date().toISOString() }).eq('id', user.id)
+        void (supabase as any).rpc('touch_user_activity')
       }
     }
 
@@ -205,7 +208,7 @@ export function PresenceProvider({ children }: { children: React.ReactNode }) {
       if (channelRef.current && isSubscribedRef.current) {
         void channelRef.current.untrack()
       }
-      void (supabase as any).from('users').update({ last_login_at: new Date().toISOString() }).eq('id', user.id)
+      void (supabase as any).rpc('touch_user_activity')
     }
 
     document.addEventListener('visibilitychange', handleVisibilityChange)
@@ -220,28 +223,53 @@ export function PresenceProvider({ children }: { children: React.ReactNode }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pathname, user?.id])
 
-  const isUserOnline = (userId: string): boolean => {
-    if (!userId) return false
-    const target = String(userId).toLowerCase()
-    return Object.keys(onlineUsers).some(
-      (key) => key.toLowerCase() === target && onlineUsers[key]?.length > 0
-    )
+  const isUserOnline = (identifier: string): boolean => {
+    if (!identifier) return false
+    const target = String(identifier).toLowerCase()
+
+    return Object.keys(onlineUsers).some((key) => {
+      const presences = onlineUsers[key] || []
+      return presences.some((p) => {
+        const matchesUser =
+          key.toLowerCase() === target ||
+          p.userId?.toLowerCase() === target ||
+          p.username?.toLowerCase() === target
+        return matchesUser && p.currentActivity !== 'Offline'
+      })
+    })
   }
 
-  const getUserPresence = (userId: string): PresenceUser | null => {
-    if (!userId) return null
-    const target = String(userId).toLowerCase()
-    const matchingKey = Object.keys(onlineUsers).find((key) => key.toLowerCase() === target)
+  const getUserPresence = (identifier: string): PresenceUser | null => {
+    if (!identifier) return null
+    const target = String(identifier).toLowerCase()
+
+    const matchingKey = Object.keys(onlineUsers).find((key) => {
+      if (key.toLowerCase() === target) return true
+      const presences = onlineUsers[key] || []
+      return presences.some(
+        (p) =>
+          p.userId?.toLowerCase() === target ||
+          p.username?.toLowerCase() === target
+      )
+    })
+
     if (matchingKey && onlineUsers[matchingKey]?.length > 0) {
       const userPresences = onlineUsers[matchingKey]
-      return [...userPresences].sort(
-        (a, b) => new Date(b.lastActiveAt).getTime() - new Date(a.lastActiveAt).getTime()
-      )[0]
+      const activePresences = userPresences.filter((p) => p.currentActivity !== 'Offline')
+      if (activePresences.length > 0) {
+        return [...activePresences].sort(
+          (a, b) => new Date(b.lastActiveAt).getTime() - new Date(a.lastActiveAt).getTime()
+        )[0]
+      }
     }
-    return recentLastSeenMapRef.current[target] || null
+
+    return null
   }
 
-  const onlineCount = Object.keys(onlineUsers).length
+  const onlineCount = Object.keys(onlineUsers).filter((key) => {
+    const list = onlineUsers[key] || []
+    return list.some((p) => p.currentActivity !== 'Offline')
+  }).length
 
   return (
     <PresenceContext.Provider value={{ onlineUsers, isUserOnline, getUserPresence, onlineCount }}>

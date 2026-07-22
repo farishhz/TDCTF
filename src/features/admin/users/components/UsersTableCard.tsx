@@ -58,6 +58,7 @@ type UsersTableCardProps = {
   setPageSize: (size: number) => void
   page: number
   setPage: React.Dispatch<React.SetStateAction<number>>
+  statusFilter?: 'all' | 'online' | 'banned' | 'active'
   onRefresh?: () => void
 }
 
@@ -131,6 +132,7 @@ export default function UsersTableCard({
   setPageSize,
   page,
   setPage,
+  statusFilter = 'all',
   onRefresh,
 }: UsersTableCardProps) {
   const [copiedUserId, setCopiedUserId] = useState<string | null>(null)
@@ -228,10 +230,26 @@ export default function UsersTableCard({
     setNewPassword(generated)
   }
 
-  const pageCount = Math.max(1, Math.ceil(totalCount / pageSize))
+  const displayUsers = useMemo(() => {
+    if (statusFilter !== 'online') return users
+    return users.filter((listedUser) => {
+      const isOnlineViaPresence = isUserOnline(listedUser.id) || isUserOnline(listedUser.username)
+      const presence = getUserPresence(listedUser.id) || getUserPresence(listedUser.username)
+      const lastActiveIso = listedUser.updated_at || listedUser.created_at
+      const isRecentlyActiveDb = Boolean(
+        !presence &&
+        lastActiveIso &&
+        (Date.now() - new Date(lastActiveIso).getTime()) < 3 * 60 * 1000
+      )
+      return isOnlineViaPresence || isRecentlyActiveDb
+    })
+  }, [users, statusFilter, isUserOnline, getUserPresence])
+
+  const effectiveTotalCount = statusFilter === 'online' ? displayUsers.length : totalCount
+  const pageCount = Math.max(1, Math.ceil(effectiveTotalCount / pageSize))
   const safePage = Math.min(page, pageCount)
-  const firstResult = totalCount === 0 ? 0 : (safePage - 1) * pageSize + 1
-  const lastResult = Math.min(safePage * pageSize, totalCount)
+  const firstResult = effectiveTotalCount === 0 ? 0 : (safePage - 1) * pageSize + 1
+  const lastResult = Math.min(safePage * pageSize, effectiveTotalCount)
 
   const handleCopyUserId = async (id: string) => {
     if (!navigator.clipboard) return
@@ -245,10 +263,10 @@ export default function UsersTableCard({
 
   return (
     <AdminDataSurface
-      empty={users.length === 0 ? (
+      empty={displayUsers.length === 0 ? (
         <AdminEmptyState
           title="No users match the current filters"
-          description="Try adjusting your search, role filter, or sort."
+          description="Try adjusting your search, role filter, or status."
         />
       ) : null}
     >
@@ -266,7 +284,7 @@ export default function UsersTableCard({
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {users.map((listedUser) => {
+                  {displayUsers.map((listedUser) => {
                     const profileHref = listedUser.username
                       ? `/user/${encodeURIComponent(listedUser.username)}`
                       : null
@@ -279,8 +297,25 @@ export default function UsersTableCard({
                         <TableCell className="pl-6">
                           {(() => {
                             const isCurrentlyBanned = listedUser.banned_until && new Date(listedUser.banned_until) > new Date()
-                            const isOnline = isUserOnline(listedUser.id)
-                            const presence = getUserPresence(listedUser.id)
+                            
+                            // Check presence state via ID or Username
+                            const isOnlineViaPresence = isUserOnline(listedUser.id) || isUserOnline(listedUser.username)
+                            const presence = getUserPresence(listedUser.id) || getUserPresence(listedUser.username)
+
+                            // DB recent activity fallback checks updated_at or created_at (within 3 minutes) if presence isn't explicit
+                            const lastActiveIso = listedUser.updated_at || listedUser.created_at
+                            const isRecentlyActiveDb = Boolean(
+                              !presence &&
+                              lastActiveIso &&
+                              (Date.now() - new Date(lastActiveIso).getTime()) < 3 * 60 * 1000
+                            )
+
+                            const isOnline = isOnlineViaPresence || isRecentlyActiveDb
+                            const rawActivity = presence?.currentActivity
+                            const activityText = (rawActivity && rawActivity !== 'Offline')
+                              ? rawActivity
+                              : 'Online 🟢'
+
                             return (
                               <div className="flex min-w-[200px] items-center gap-3">
                                 <div className="relative shrink-0">
@@ -333,13 +368,13 @@ export default function UsersTableCard({
                                   {isOnline ? (
                                     <span
                                       className="flex items-center gap-1 text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 mt-0.5 truncate max-w-[210px]"
-                                      title={presence?.currentActivity || 'Online 🟢'}
+                                      title={activityText}
                                     >
                                       <span className="relative flex h-1.5 w-1.5 shrink-0">
                                         <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
                                         <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500" />
                                       </span>
-                                      <span className="truncate">{presence?.currentActivity || 'Online 🟢'}</span>
+                                      <span className="truncate">{activityText}</span>
                                     </span>
                                   ) : (
                                     <span className={`block truncate text-xs ${

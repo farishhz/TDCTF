@@ -20,6 +20,7 @@ function normalizeAdminUser(row: any): AdminUserRow {
     ban_reason: row.ban_reason ? String(row.ban_reason) : null,
     created_at: String(row.created_at ?? ''),
     updated_at: String(row.updated_at ?? ''),
+    last_login_at: row.last_login_at ? String(row.last_login_at) : null,
   }
 }
 

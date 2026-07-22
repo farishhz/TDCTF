@@ -21,7 +21,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     import('@/features/auth/services/auth.service')
       .then(({ AuthService }) => AuthService.getCurrentUser())
       .then((currentUser) => {
-        if (active) setUser(currentUser)
+        if (active) {
+          setUser(currentUser)
+          if (currentUser) {
+            import('@/lib/supabase/client').then(({ supabase }) => {
+              void (supabase as any).rpc('touch_user_activity')
+            }).catch(() => {})
+          }
+        }
       })
       .finally(() => {
         if (active) setLoading(false)
