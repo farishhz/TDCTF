@@ -14,7 +14,9 @@ import Loader from '@/shared/components/Loader'
 import ImageWithFallback from '@/shared/components/ImageWithFallback'
 import BrandLogo from '@/shared/components/BrandLogo'
 import PageBackground from '@/shared/components/PageBackground'
+import CommunityShowcase from '@/shared/components/CommunityShowcase'
 import Footer from "@/_layouts/Footer";
+
 import { useAuth } from '@/shared/contexts/AuthContext'
 import {
   SURFACE_GLASS_CARD_COMPACT_CLASS,
@@ -242,68 +244,8 @@ export default function InfoPage() {
           })}
         </motion.div>
 
-        {/* CONTRIBUTORS MARQUEE */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.6 }}
-          className="relative mb-6 w-full max-w-5xl"
-        >
-          <div className="mb-4 text-center">
-            <h2 className="flex items-center justify-center gap-2 text-sm sm:text-lg font-black uppercase tracking-widest text-gray-900 dark:text-white">
-              <Users size={20} className="text-blue-500 sm:w-6 sm:h-6" /> Built by the Community
-            </h2>
-          </div>
-
-          <div className="marquee-group relative w-full overflow-hidden space-y-3 py-2 [mask-image:linear-gradient(to_right,transparent,white_20%,white_80%,transparent)]">
-
-            {/* ROW 1 */}
-            <div className="marquee marquee-left">
-              <div className="marquee-track" style={{ willChange: 'transform' }}>
-                {[...filledContributors, ...filledContributors].map((name, i) => {
-                  const username = name.replace("@", "");
-                  return (
-                    <a
-                      key={`top-${i}`}
-                      href={`https://github.com/${username}`}
-                      target="_blank"
-                      rel="noopener"
-                      className={`group mx-2 flex shrink-0 items-center gap-3 px-4 py-2 ${SURFACE_GLASS_CARD_COMPACT_CLASS} rounded-full hover:border-blue-500/40`}
-                    >
-                      <ProfileAvatar username={username} />
-                      <span className="text-sm font-medium text-gray-700 dark:text-gray-300 group-hover:text-blue-500 transition-colors">
-                        {username}
-                      </span>
-                    </a>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* ROW 2 */}
-            <div className="marquee marquee-right">
-              <div className="marquee-track" style={{ willChange: 'transform' }}>
-                {[...filledContributors, ...filledContributors].map((name, i) => {
-                  const username = name.replace("@", "");
-                  return (
-                    <a
-                      key={`bot-${i}`}
-                      href={`https://github.com/${username}`}
-                      target="_blank"
-                      rel="noopener"
-                      className={`group mx-2 flex shrink-0 items-center gap-3 px-4 py-2 ${SURFACE_GLASS_CARD_COMPACT_CLASS} rounded-full hover:border-blue-500/40`}
-                    >
-                      <ProfileAvatar username={username} />
-                      <span className="text-sm font-medium text-gray-700 dark:text-gray-300 group-hover:text-blue-500 transition-colors">
-                        {username}
-                      </span>
-                    </a>
-                  );
-                })}
-              </div>
-            </div>
-          </div>
-        </motion.div>
+        {/* CONTRIBUTORS MARQUEE & COMMUNITY SHOWCASE */}
+        <CommunityShowcase />
 
       </main>
 
@@ -312,39 +254,3 @@ export default function InfoPage() {
   );
 }
 
-function ProfileAvatar({ username, size = 32 }: { username: string; size?: number }) {
-  const [loaded, setLoaded] = useState(false)
-  const [errored, setErrored] = useState(false)
-  const url = `https://github.com/${username}.png`
-
-  useEffect(() => {
-    let cancelled = false
-    setLoaded(false)
-    setErrored(false)
-    const img = new window.Image()
-    img.src = url
-    img.onload = () => { if (!cancelled) setLoaded(true) }
-    img.onerror = () => { if (!cancelled) setErrored(true) }
-    return () => { cancelled = true }
-  }, [url])
-
-  const sizeClass = size === 32 ? 'w-8 h-8' : `w-[${size}px] h-[${size}px]`
-
-  if (!loaded) {
-    return (
-      <div className={`${sizeClass} rounded-full bg-gray-200 dark:bg-gray-700 animate-pulse`} aria-hidden />
-    )
-  }
-
-  return (
-    <Image
-      src={url}
-      alt={`${username} avatar`}
-      width={size}
-      height={size}
-      className={`${sizeClass} rounded-full grayscale group-hover:grayscale-0 transition-all duration-300 shadow-sm`}
-      style={{ opacity: loaded && !errored ? 1 : 0 }}
-      unoptimized
-    />
-  )
-}

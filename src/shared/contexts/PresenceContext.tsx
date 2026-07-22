@@ -83,21 +83,21 @@ export function PresenceProvider({ children }: { children: React.ReactNode }) {
       console.log('[Presence] Synced state:', state)
       const formattedState: Record<string, PresenceUser[]> = {}
 
-      Object.entries(state).forEach(([userId, presences]) => {
+      Object.entries(state).forEach(([userIdKey, presences]) => {
+        const normKey = String(userIdKey).toLowerCase()
         const mapped = (presences as any[]).map((p) => ({
           presence_ref: p.presence_ref,
-          userId: p.userId || userId,
+          userId: p.userId || userIdKey,
           username: p.username || 'Anonymous',
           currentPath: p.currentPath || '',
           currentActivity: p.currentActivity || 'Online',
           lastActiveAt: p.lastActiveAt || new Date().toISOString(),
-        }))
-        formattedState[userId] = mapped
+        })).sort((a, b) => new Date(b.lastActiveAt).getTime() - new Date(a.lastActiveAt).getTime())
+
+        const latestArray = mapped.length > 0 ? [mapped[0]] : []
+        formattedState[normKey] = latestArray
         if (mapped.length > 0) {
-          const latest = [...mapped].sort(
-            (a, b) => new Date(b.lastActiveAt).getTime() - new Date(a.lastActiveAt).getTime()
-          )[0]
-          recentLastSeenMapRef.current[String(userId).toLowerCase()] = latest
+          recentLastSeenMapRef.current[normKey] = mapped[0]
         }
       })
 
@@ -160,52 +160,62 @@ export function PresenceProvider({ children }: { children: React.ReactNode }) {
 
   // 2. Track activity when pathname or tab visibility changes
   useEffect(() => {
-    if (!isSupabaseConfigured || !user || !channelRef.current || !isSubscribedRef.current) return
+    if (!isSupabaseConfigured || !user) return
 
-    const updatePresenceState = async () => {
+    const sendPresence = (activityText?: string) => {
       if (!channelRef.current || !isSubscribedRef.current) return
       const isHidden = typeof document !== 'undefined' && document.hidden
-      const currentActivity = isHidden
+      const currentActivity = activityText || (isHidden
         ? 'Tidak aktif (Background tab) 🌙'
-        : getActivityFromPath(pathname)
+        : getActivityFromPath(pathname))
+
+      const payload = {
+        userId: user.id,
+        username: user.username,
+        currentPath: pathname,
+        currentActivity,
+        lastActiveAt: new Date().toISOString(),
+      }
 
       try {
-        await channelRef.current.track({
-          userId: user.id,
-          username: user.username,
-          currentPath: pathname,
-          currentActivity,
-          lastActiveAt: new Date().toISOString(),
-        })
-        if (!isHidden) {
-          void (supabase as any).from('users').update({ last_login_at: new Date().toISOString() }).eq('id', user.id)
-        }
-      } catch (err) {
+        void channelRef.current.untrack()
+      } catch (e) {}
+
+      void channelRef.current.track(payload).catch((err: any) => {
         console.error('[Presence] Failed to track activity:', err)
+      })
+
+      if (!isHidden) {
+        void (supabase as any).from('users').update({ last_login_at: new Date().toISOString() }).eq('id', user.id)
       }
     }
 
-    void updatePresenceState()
+    sendPresence()
 
     const handleVisibilityChange = () => {
-      void updatePresenceState()
+      const isHidden = typeof document !== 'undefined' && document.hidden
+      if (isHidden) {
+        sendPresence('Tidak aktif (Background tab) 🌙')
+      } else {
+        sendPresence()
+      }
     }
 
     const handleBeforeUnload = () => {
-      if (channelRef.current) {
+      if (channelRef.current && isSubscribedRef.current) {
         void channelRef.current.untrack()
       }
       void (supabase as any).from('users').update({ last_login_at: new Date().toISOString() }).eq('id', user.id)
     }
 
-    window.addEventListener('visibilitychange', handleVisibilityChange)
-    window.addEventListener('beforeunload', handleBeforeUnload)
+    document.addEventListener('visibilitychange', handleVisibilityChange)
     window.addEventListener('pagehide', handleBeforeUnload)
+    window.addEventListener('beforeunload', handleBeforeUnload)
 
     return () => {
-      window.removeEventListener('visibilitychange', handleVisibilityChange)
-      window.removeEventListener('beforeunload', handleBeforeUnload)
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
       window.removeEventListener('pagehide', handleBeforeUnload)
+      window.removeEventListener('beforeunload', handleBeforeUnload)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pathname, user?.id])

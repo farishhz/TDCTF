@@ -10,3 +10,7 @@ export { BaseModal, ModalBody, ModalFooter, ModalHeader } from '@/shared/compone
 export { SegmentedTabs } from '@/shared/components/SegmentedTabs'
 export { RouteError } from '@/shared/components/RouteError'
 export { default as DateBadge } from '@/shared/components/DateBadge'
+export { default as CommunityShowcase } from '@/shared/components/CommunityShowcase'
+export { default as EcosystemSection } from '@/shared/components/EcosystemSection'
+
+
