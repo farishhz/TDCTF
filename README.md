@@ -24,7 +24,7 @@ TDCTF is a **full-featured CTF (Capture The Flag) competition platform** designe
 ### 1. Clone & Install
 Clone the repo and install dependencies:
 ```bash
-git clone https://github.com/tenka-developer/tdctf
+git clone https://github.com/farishhz
 cd tdctf
 ```
 

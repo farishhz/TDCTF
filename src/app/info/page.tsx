@@ -64,7 +64,7 @@ const filledContributors = fillContributors(CONTRIBUTORS, 14);
 
 const LINKS = [
   { name: "Website", href: TDCTF.tdctf_url || "#", icon: Globe, description: "Official site" },
-  { name: "GitHub", href: TDCTF.tdctf_github || "#", icon: Github, description: "Source code" },
+  { name: "GitHub", href: TDCTF.tdctf_github || "#", icon: Github, description: "Creator" },
   { name: "Docs", href: TDCTF.tdctf_docs || "#", icon: BookOpen, description: "Documentation" },
   { name: "Discord", href: TDCTF?.tdctf_discord || "#", icon: MessageSquare, description: "Community chat" },
 ];

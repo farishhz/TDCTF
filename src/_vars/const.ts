@@ -1,13 +1,13 @@
 export const TDCTF = {
   tdctf_title: 'TDCTF',
-  tdctf_url: 'alfarisiazmir.my.id',
+  tdctf_url: 'https://ctf.tenkadeveloper.web.id',
   tdctf_logo: '/logo-no-bg.svg',
   tdctf_discord: 'https://discord.gg/DUU439SAg',
   tdctf_donation: 'https://clicky.id/farisdev/support/traktir-saya-minum',
-  tdctf_github: 'https://github.com/tenka-developer/tdctf',
+  tdctf_github: 'https://github.com/farishhz',
   tdctf_github_org: 'https://github.com/tenka-developer',
   tdctf_author: 'https://github.com/farishhz',
-  tdctf_docs: 'alfarisiazmir.my.id'
+  tdctf_docs: 'https://ctf.tenkadeveloper.web.id'
 }
 
 export const LINKS = {
