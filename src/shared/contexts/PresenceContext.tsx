@@ -195,6 +195,11 @@ export function PresenceProvider({ children }: { children: React.ReactNode }) {
 
     sendPresence()
 
+    // Periodic heartbeat ping every 15 seconds to keep presence & DB activity fresh
+    const heartbeatTimer = setInterval(() => {
+      sendPresence()
+    }, 15000)
+
     const handleVisibilityChange = () => {
       const isHidden = typeof document !== 'undefined' && document.hidden
       if (isHidden) {
@@ -216,6 +221,7 @@ export function PresenceProvider({ children }: { children: React.ReactNode }) {
     window.addEventListener('beforeunload', handleBeforeUnload)
 
     return () => {
+      clearInterval(heartbeatTimer)
       document.removeEventListener('visibilitychange', handleVisibilityChange)
       window.removeEventListener('pagehide', handleBeforeUnload)
       window.removeEventListener('beforeunload', handleBeforeUnload)

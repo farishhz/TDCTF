@@ -92,6 +92,16 @@ export function useAdminUsersData() {
     }
   }, [isAllowed, searchQuery, roleFilter, sortMode, pageSize, page, statusFilter, refreshTrigger])
 
+  // Auto-refresh admin user table every 10 seconds so new users & active status update automatically in real-time without manual page refresh
+  useEffect(() => {
+    if (!isAllowed) return
+    const interval = setInterval(() => {
+      setRefreshTrigger((prev) => prev + 1)
+    }, 10000)
+
+    return () => clearInterval(interval)
+  }, [isAllowed])
+
   return {
     user,
     authLoading,
