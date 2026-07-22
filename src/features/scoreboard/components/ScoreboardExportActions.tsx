@@ -2,12 +2,15 @@ import { useRef, useState } from 'react'
 import { flushSync } from 'react-dom'
 import { Download, Loader2 } from 'lucide-react'
 import { toPng } from 'html-to-image'
+import { toast } from 'react-hot-toast'
 import { Button } from '@/shared/ui/button'
 import { Input } from '@/shared/ui/input'
 import { Label } from '@/shared/ui/label'
 import { Switch } from '@/shared/ui/switch'
 import { cn } from '@/shared/lib/utils'
 import APP from '@/config'
+import { TDCTF } from '@/_vars/const'
+import ImageWithFallback from '@/shared/components/ImageWithFallback'
 import type { LeaderboardEntry } from '@/shared/types'
 import ScoreboardChart from './ScoreboardChart'
 import ScoreboardTable from './ScoreboardTable'
@@ -93,13 +96,38 @@ function ScoreboardExportSnapshotView({
   const platformName = APP.fullName || APP.shortName || 'TDCTF'
   const exportDescription = `Top ${modeLabel} Rank ${snapshot.fromRank}-${displayedToRank}`
 
+  const safeTableEntries = (snapshot.tableEntries as any[]).map(entry => ({
+    ...entry,
+    picture: null // Force local inline SVG fallback to avoid CORS failures during PNG export
+  }))
+
+  const safeChartEntries = (snapshot.chartEntries as any[]).map(entry => ({
+    ...entry,
+    picture: null
+  }))
+
+  const safeSnapshot = {
+    ...snapshot,
+    tableEntries: safeTableEntries,
+    chartEntries: safeChartEntries,
+  }
+
   return (
     <div className="w-[1180px] bg-gray-50 p-6 text-gray-950 dark:bg-[#060912] dark:text-gray-100">
       <div className="mb-4 rounded-2xl border border-gray-200/80 bg-white/90 px-6 py-5 shadow-sm dark:border-gray-800/80 dark:bg-[#0b0f19]/95">
         <div className="grid grid-cols-[minmax(0,1fr)_minmax(300px,auto)] gap-x-8 gap-y-3">
-          <div className="min-w-0">
-            <div className="text-[11px] font-black uppercase tracking-[0.28em] text-blue-600 dark:text-blue-400">{platformName}</div>
-            <h1 className="mt-2 truncate text-3xl font-black tracking-tight text-gray-950 dark:text-white">{snapshot.eventLabel}</h1>
+          <div className="flex items-center gap-4 min-w-0">
+            <ImageWithFallback
+              src={TDCTF.tdctf_logo}
+              alt="TDCTF Logo"
+              size={48}
+              rounded={false}
+              className="shrink-0 object-contain"
+            />
+            <div className="min-w-0">
+              <div className="text-[11px] font-black uppercase tracking-[0.28em] text-blue-600 dark:text-blue-400">{platformName}</div>
+              <h1 className="mt-1 truncate text-3xl font-black tracking-tight text-gray-950 dark:text-white">{snapshot.eventLabel}</h1>
+            </div>
           </div>
           <div className="text-right">
             <div className="text-[11px] font-black uppercase tracking-[0.2em] text-gray-500 dark:text-gray-400">Exported at</div>
@@ -116,12 +144,12 @@ function ScoreboardExportSnapshotView({
       </div>
 
       <div className="space-y-4">
-        {includeChart && isFirstPage && snapshot.chartEntries.length > 0 && (
-          renderChart ? renderChart(snapshot) : <ScoreboardChart leaderboard={snapshot.chartEntries as LeaderboardEntry[]} />
+        {includeChart && isFirstPage && safeChartEntries.length > 0 && (
+          renderChart ? renderChart(safeSnapshot) : <ScoreboardChart leaderboard={safeChartEntries as LeaderboardEntry[]} />
         )}
-        {renderTable ? renderTable(snapshot) : (
+        {renderTable ? renderTable(safeSnapshot) : (
           <ScoreboardTable
-            leaderboard={snapshot.tableEntries as LeaderboardEntry[]}
+            leaderboard={safeTableEntries as LeaderboardEntry[]}
             scoreColumnLabel={modeLabel}
             scoreColumnRenderer={(entry) => entry.score}
             rankOffset={snapshot.fromRank - 1}
@@ -158,6 +186,7 @@ export default function ScoreboardExportActions({
     if (isExporting) return
 
     setIsExporting(true)
+    const toastId = toast.loading('Preparing scoreboard export...')
     try {
       const sourceUrl = window.location.href
       const freshSnapshot = fetchSnapshot
@@ -173,19 +202,45 @@ export default function ScoreboardExportActions({
         })
 
       flushSync(() => setSnapshot(freshSnapshot))
+      
+      // Wait for layout calculation and chart renders
       await new Promise((resolve) => window.requestAnimationFrame(() => requestAnimationFrame(resolve)))
       if (includeChart && canIncludeChart) {
         await new Promise((resolve) => window.setTimeout(resolve, 800))
       }
-      if (!exportRef.current) return
+      if (!exportRef.current) {
+        toast.error('Export element not found', { id: toastId })
+        return
+      }
 
-      const dataUrl = await toPng(exportRef.current, {
-        pixelRatio: 2,
-        cacheBust: true,
-        backgroundColor: document.documentElement.classList.contains('dark') ? '#060912' : '#f9fafb',
-      })
+      toast.loading('Generating image, please wait...', { id: toastId })
+
+      let dataUrl = ''
+      try {
+        dataUrl = await toPng(exportRef.current, {
+          pixelRatio: 2,
+          cacheBust: false,
+          skipFonts: true,
+          backgroundColor: document.documentElement.classList.contains('dark') ? '#060912' : '#f9fafb',
+          imagePlaceholder: 'data:image/svg+xml;charset=utf-8,<svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="%23ccc" stroke-width="2"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4z" /><path d="M6 20c0-3.31 2.69-6 6-6s6 2.69 6 6" /></svg>',
+        })
+      } catch (firstErr) {
+        console.warn('[ScoreboardExport] High-res export attempt failed, retrying with fallback settings:', firstErr)
+        dataUrl = await toPng(exportRef.current, {
+          pixelRatio: 1,
+          cacheBust: false,
+          skipFonts: true,
+          backgroundColor: document.documentElement.classList.contains('dark') ? '#060912' : '#f9fafb',
+          imagePlaceholder: 'data:image/svg+xml;charset=utf-8,<svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="%23ccc" stroke-width="2"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4z" /><path d="M6 20c0-3.31 2.69-6 6-6s6 2.69 6 6" /></svg>',
+        })
+      }
+
       downloadDataUrl(dataUrl, createScoreboardExportFilename(freshSnapshot))
+      toast.success('Scoreboard exported successfully!', { id: toastId })
       setIsSettingsOpen(false)
+    } catch (err: any) {
+      console.error('[ScoreboardExport] Error exporting PNG:', err)
+      toast.error(err?.message || 'Failed to export scoreboard PNG.', { id: toastId })
     } finally {
       setIsExporting(false)
     }
@@ -275,8 +330,18 @@ export default function ScoreboardExportActions({
         </div>
       )}
 
-      <div className="pointer-events-none fixed -left-[9999px] top-0 overflow-hidden" aria-hidden="true">
-        <div ref={exportRef}>
+      <div className="pointer-events-none fixed -left-[9999px] top-0 overflow-hidden" style={{ width: '1200px', height: 'auto' }} aria-hidden="true">
+        <style dangerouslySetInnerHTML={{ __html: `
+          .export-wrapper * {
+            overflow: visible !important;
+            max-height: none !important;
+            scrollbar-width: none !important;
+          }
+          .export-wrapper *::-webkit-scrollbar {
+            display: none !important;
+          }
+        `}} />
+        <div ref={exportRef} className="export-wrapper" style={{ width: '1200px' }}>
           {snapshot && (
             <ScoreboardExportSnapshotView
               snapshot={snapshot}
