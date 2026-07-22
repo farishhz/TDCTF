@@ -1,6 +1,6 @@
 export const APP = {
   shortName: "TDCTF",
-  fullName: "TDCTF",
+  fullName: "Cybersecurity Arena",
   description: "Platform CTF dengan integrasi Next.js dan Supabase, dikembangkan khusus oleh Alfarisi Tenka Developer",
 
   image_icon: "favicon.ico",
