@@ -372,14 +372,11 @@ input[type='password']::-ms-clear {
 }
 
 
-/* Pause semua marquee-track saat hover parent group */
-/* .marquee:hover .marquee-track {
+/* Pause marquee-track saat hover parent group */
+.marquee-group:hover .marquee-track {
   animation-play-state: paused;
 }
 
-.marquee-group:hover .marquee-track {
-  animation-play-state: paused;
-} */
 
 /* arah kiri */
 .marquee-left .marquee-track {

@@ -390,9 +390,9 @@ BEGIN
     v_suffix := v_suffix + 1;
   END LOOP;
 
-  INSERT INTO public.users (id, username)
-  VALUES (p_id, v_username)
-  ON CONFLICT (id) DO NOTHING;
+  INSERT INTO public.users (id, username, last_login_at)
+  VALUES (p_id, v_username, now())
+  ON CONFLICT (id) DO UPDATE SET last_login_at = now(), updated_at = now();
 
   WITH base AS (
     SELECT
@@ -606,6 +606,25 @@ $$ LANGUAGE plpgsql
 SECURITY DEFINER;
 
 GRANT EXECUTE ON FUNCTION cleanup_orphaned_users_and_solves() TO authenticated;
+
+CREATE OR REPLACE FUNCTION public.touch_user_activity()
+RETURNS void AS $$
+BEGIN
+  IF auth.uid() IS NOT NULL THEN
+    UPDATE public.users
+    SET last_login_at = now(),
+        updated_at = now()
+    WHERE id = auth.uid();
+  END IF;
+END;
+$$ LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public, auth;
+
+GRANT EXECUTE ON FUNCTION public.touch_user_activity() TO authenticated;
+GRANT EXECUTE ON FUNCTION public.touch_user_activity() TO anon;
+
+DROP FUNCTION IF EXISTS public.get_admin_users_paginated(text, text, text, int, int, text);
 
 CREATE OR REPLACE FUNCTION public.get_admin_users_paginated(
   p_search text default null,

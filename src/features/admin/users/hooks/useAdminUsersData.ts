@@ -25,7 +25,7 @@ export function useAdminUsersData() {
   const [sortMode, setSortMode] = useState<'newest' | 'oldest' | 'username_asc' | 'updated_desc' | 'role'>('newest')
   const [pageSize, setPageSize] = useState(100)
   const [page, setPage] = useState(1)
-  const [statusFilter, setStatusFilter] = useState<'all' | 'banned' | 'active'>('all')
+  const [statusFilter, setStatusFilter] = useState<'all' | 'online' | 'banned' | 'active'>('all')
   const [refreshTrigger, setRefreshTrigger] = useState(0)
 
   const onRefresh = () => setRefreshTrigger((prev) => prev + 1)
@@ -68,13 +68,14 @@ export function useAdminUsersData() {
     const fetchData = async () => {
       setIsDataLoading(true)
       const offset = (page - 1) * pageSize
+      const dbStatusParam = statusFilter === 'online' ? 'all' : statusFilter
       const result = await getAdminUsers({
         search: searchQuery,
         role: roleFilter,
         sortBy: sortMode,
         limit: pageSize,
         offset: offset,
-        status: statusFilter,
+        status: dbStatusParam,
       })
 
       if (!mounted) return
@@ -90,6 +91,16 @@ export function useAdminUsersData() {
       mounted = false
     }
   }, [isAllowed, searchQuery, roleFilter, sortMode, pageSize, page, statusFilter, refreshTrigger])
+
+  // Auto-refresh admin user table every 10 seconds so new users & active status update automatically in real-time without manual page refresh
+  useEffect(() => {
+    if (!isAllowed) return
+    const interval = setInterval(() => {
+      setRefreshTrigger((prev) => prev + 1)
+    }, 10000)
+
+    return () => clearInterval(interval)
+  }, [isAllowed])
 
   return {
     user,

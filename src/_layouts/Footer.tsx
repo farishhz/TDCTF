@@ -23,7 +23,7 @@ const Footer: React.FC = () => {
             <div className="flex items-center gap-2">
               <Shield className="w-5 h-5 text-blue-600 dark:text-blue-400 flex-shrink-0" />
               <a
-                href={TDCTF.tdctf_url}
+                href="https://www.alfarisiazmir.my.id"
                 target="_blank"
                 rel="noopener"
                 className="text-lg font-black tracking-tighter text-gray-900 dark:text-white uppercase leading-none transition-colors hover:text-blue-600 dark:hover:text-blue-400"
@@ -45,7 +45,7 @@ const Footer: React.FC = () => {
           {/* KOLOM TENGAH: Support & Links */}
           <div className="flex flex-col items-center justify-center space-y-4">
             <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-[10px] font-black uppercase tracking-widest text-gray-500 dark:text-gray-400">
-              <a href={TDCTF.tdctf_url} className="hover:text-blue-500 transition-colors">Site</a>
+              <a href="https://www.alfarisiazmir.my.id" className="hover:text-blue-500 transition-colors">Site</a>
               <a href={TDCTF.tdctf_github} className="hover:text-blue-500 transition-colors">Repo</a>
               <a href={TDCTF.tdctf_docs} className="hover:text-blue-500 transition-colors">Docs</a>
               <a href={TDCTF.tdctf_discord} className="hover:text-blue-500 transition-colors">Discord</a>

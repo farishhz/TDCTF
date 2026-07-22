@@ -36,14 +36,12 @@ export default function EditTeamModal({
   const [name, setName] = useState(currentName)
   const [pictureUrl, setPictureUrl] = useState(currentPictureUrl || '')
   const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
 
   const handleOpenChange = (val: boolean) => {
     setOpen(val)
     if (val) {
       setName(currentName)
       setPictureUrl(currentPictureUrl || '')
-      setError(null)
     }
   }
 
@@ -63,15 +61,16 @@ export default function EditTeamModal({
     }
 
     setLoading(true)
-    setError(null)
+    const toastId = toast.loading('Saving team changes...')
 
     const res = await onSave(trimmed, normalizedPictureUrl)
     setLoading(false)
 
     if (res.success) {
+      toast.success('Team updated successfully!', { id: toastId })
       setOpen(false)
     } else {
-      setError(res.error || 'Failed to update team name')
+      toast.error(res.error || 'Failed to update team name', { id: toastId })
     }
   }
 
@@ -125,12 +124,7 @@ export default function EditTeamModal({
               </p>
             </div>
 
-            {error && (
-              <div className="text-red-500 dark:text-red-400 text-sm text-center font-semibold">
-                {error}
-              </div>
-            )}
-          </div>
+            </div>
 
           <DialogFooter className="gap-2 pt-2">
             <Button

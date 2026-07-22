@@ -85,15 +85,16 @@ export default function AdminUsersPage() {
                   <AdminFilterSelect
                     value={adminUsersData.statusFilter}
                     onValueChange={(value) => {
-                      adminUsersData.setStatusFilter(value as 'all' | 'banned' | 'active')
+                      adminUsersData.setStatusFilter(value as 'all' | 'online' | 'banned' | 'active')
                       adminUsersData.setPage(1)
                     }}
                     placeholder="Status"
-                    className="w-full sm:w-[130px]"
+                    className="w-full sm:w-[140px]"
                     options={[
                       { value: 'all', label: 'All status' },
-                      { value: 'banned', label: 'Suspended' },
+                      { value: 'online', label: '🟢 Online' },
                       { value: 'active', label: 'Active' },
+                      { value: 'banned', label: 'Suspended' },
                     ]}
                   />
 

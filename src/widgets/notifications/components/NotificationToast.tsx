@@ -1,6 +1,7 @@
 import React from 'react'
-import { X, Bell, Megaphone, Server, Flag, Skull } from 'lucide-react'
+import { X, Megaphone, Server, Flag, Skull } from 'lucide-react'
 import { cn } from '@/shared/lib/utils'
+import ImageWithFallback from '@/shared/components/ImageWithFallback'
 
 function getToastIcon(level: string) {
   switch (level) {
@@ -11,12 +12,12 @@ function getToastIcon(level: string) {
     case 'info':
       return { Icon: Megaphone, bg: 'bg-orange-500/10', ring: 'ring-orange-500/20', text: 'text-orange-400', progressColor: 'bg-orange-500' }
     default:
-      return { Icon: Bell, bg: 'bg-blue-500/10', ring: 'ring-blue-500/20', text: 'text-blue-400', progressColor: 'bg-blue-500' }
+      return { Icon: Flag, bg: 'bg-blue-500/10', ring: 'ring-blue-500/20', text: 'text-blue-400', progressColor: 'bg-blue-500' }
   }
 }
 
 type NotificationToastProps = {
-  solveToasts: Array<{ id: string; username: string; challenge: string; isFirstBlood?: boolean }>
+  solveToasts: Array<{ id: string; username: string; challenge: string; isFirstBlood?: boolean; picture?: string | null; points?: number; teamName?: string | null }>
   notifToasts: Array<{ id: string; title: string; message: string; level: string }>
   onDismissSolve: (id: string) => void
   onDismissToast: (id: string) => void
@@ -46,64 +47,108 @@ export default function NotificationToast({
         toast.isFirstBlood ? (
           <div
             key={toast.id}
-            className="pointer-events-auto relative overflow-hidden flex flex-col gap-2 rounded-xl border border-red-500/20 bg-[#0d0e12]/95 px-4 py-3.5 shadow-[0_4px_20px_rgba(220,38,38,0.12)] animate-toast-in animate-blood-shake"
+            className="pointer-events-auto relative overflow-hidden flex flex-col gap-2 rounded-xl border border-red-500/30 bg-[#0d0708]/95 backdrop-blur-md px-4 py-3.5 shadow-[0_0_25px_rgba(239,68,68,0.2)] animate-toast-in animate-blood-shake hover:border-red-500/50 transition-all duration-300"
           >
-            {/* Top Row: Icon, Badges, Username, Close */}
-            <div className="flex items-center gap-2 relative z-10">
-              <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-red-500/5 border border-red-500/20 text-red-400">
-                <Skull size={14} />
+            <div className="flex gap-3.5 items-center relative z-10">
+              {/* Profile Image with Skull Badge Overlay */}
+              <div className="relative shrink-0">
+                <div className="rounded-full p-[1.5px] bg-gradient-to-tr from-red-600/20 via-red-500/50 to-rose-500/20 shadow-md">
+                  <ImageWithFallback
+                    src={toast.picture}
+                    alt={toast.username}
+                    size={42}
+                    rounded={true}
+                    className="h-[42px] w-[42px] rounded-full object-cover"
+                  />
+                </div>
+                <div className="absolute -bottom-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full border border-red-500 bg-red-600 text-white shadow-sm shadow-red-950/50">
+                  <Skull size={10} />
+                </div>
               </div>
-              <span className="shrink-0 bg-red-500/10 border border-red-500/20 text-red-400 font-bold px-1.5 py-0.5 rounded text-[9px] tracking-wider font-mono">FIRST BLOOD</span>
-              <span className="truncate text-[13px] text-gray-100 font-semibold">{toast.username}</span>
 
+              {/* Info Column */}
+              <div className="flex-1 min-w-0">
+                <div className="flex flex-col gap-0.5 min-w-0">
+                  <div className="flex flex-wrap items-center gap-1.5 leading-none">
+                    <span className="truncate text-[13px] font-black text-gray-100">{toast.username}</span>
+                    <span className="shrink-0 bg-red-500/10 border border-red-500/20 text-red-400 font-extrabold px-1.5 py-0.5 rounded text-[8px] tracking-wider font-mono">FIRST BLOOD</span>
+                  </div>
+                  {toast.teamName && (
+                    <span className="truncate text-[10px] font-semibold text-gray-400 leading-none">
+                      Team: <span className="text-gray-300 font-bold">{toast.teamName}</span>
+                    </span>
+                  )}
+                </div>
+                <div className="mt-2 text-[12px] leading-tight text-gray-300 font-semibold">
+                  secured first blood on <span className="font-extrabold text-red-400">{toast.challenge}</span> <span className="text-rose-500 font-extrabold">(+{toast.points || 0} pts)</span>
+                </div>
+              </div>
+
+              {/* Close Button */}
               <button
                 onClick={() => onDismissSolve(toast.id)}
-                className="ml-auto shrink-0 rounded p-1 text-gray-500 transition-all hover:bg-white/5 hover:text-gray-300"
+                className="shrink-0 self-start -mt-1 -mr-1 rounded p-1 text-gray-500 transition-all hover:bg-white/5 hover:text-gray-300"
                 aria-label="Dismiss"
               >
                 <X size={14} />
               </button>
             </div>
 
-            {/* Bottom Row: Solve Description (Left Aligned) */}
-            <div className="text-[12px] text-gray-400 relative z-10">
-              secured first blood on <span className="font-semibold text-red-400">{toast.challenge}</span>
-            </div>
-
             {/* Animated progress bar */}
-            <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-red-950/40">
-              <div className="h-full bg-gradient-to-r from-red-500 to-rose-600 animate-toast-progress-12s" />
+            <div className="absolute bottom-0 left-0 right-0 h-[2.5px] bg-red-950/40">
+              <div className="h-full bg-gradient-to-r from-red-600 via-rose-500 to-red-600 animate-toast-progress-12s shadow-[0_0_8px_rgba(239,68,68,0.8)]" />
             </div>
           </div>
         ) : (
           <div
             key={toast.id}
-            className="pointer-events-auto relative overflow-hidden flex flex-col gap-2 rounded-xl border border-blue-500/20 bg-[#090d16]/90 backdrop-blur-md px-4 py-3.5 shadow-[0_0_25px_rgba(59,130,246,0.15)] ring-1 ring-blue-500/10 transition-all hover:border-blue-500/40 animate-toast-in"
+            className="pointer-events-auto relative overflow-hidden flex flex-col gap-2 rounded-xl border border-emerald-500/25 bg-[#060b13]/95 backdrop-blur-md px-4 py-3.5 shadow-[0_0_25px_rgba(16,185,129,0.12)] transition-all duration-300 hover:border-emerald-500/45 animate-toast-in"
           >
-            {/* Top Row: Icon, Username, Close */}
-            <div className="flex items-center gap-2.5 relative z-10">
-              <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-blue-500/10 ring-1 ring-blue-500/20">
-                <Bell size={14} className="text-blue-400" />
+            <div className="flex gap-3.5 items-center relative z-10">
+              {/* Profile Image with Flag Badge Overlay */}
+              <div className="relative shrink-0">
+                <div className="rounded-full p-[1.5px] bg-gradient-to-tr from-emerald-600/20 via-emerald-500/50 to-teal-500/20 shadow-md">
+                  <ImageWithFallback
+                    src={toast.picture}
+                    alt={toast.username}
+                    size={42}
+                    rounded={true}
+                    className="h-[42px] w-[42px] rounded-full object-cover"
+                  />
+                </div>
+                <div className="absolute -bottom-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full border border-emerald-500 bg-emerald-600 text-white shadow-sm shadow-emerald-950/50">
+                  <Flag size={10} />
+                </div>
               </div>
-              <span className="truncate text-[13px] font-bold text-gray-100">{toast.username}</span>
 
+              {/* Info Column */}
+              <div className="flex-1 min-w-0">
+                <div className="flex flex-col gap-0.5 min-w-0">
+                  <span className="truncate text-[13px] font-black text-gray-100">{toast.username}</span>
+                  {toast.teamName && (
+                    <span className="truncate text-[10px] font-semibold text-gray-400 leading-none">
+                      Team: <span className="text-gray-300 font-bold">{toast.teamName}</span>
+                    </span>
+                  )}
+                </div>
+                <div className="mt-2 text-[12px] leading-tight text-gray-300 font-semibold">
+                  just solved <span className="font-extrabold text-blue-400">{toast.challenge}</span> <span className="text-emerald-400 font-extrabold">(+{toast.points || 0} pts)</span>
+                </div>
+              </div>
+
+              {/* Close Button */}
               <button
                 onClick={() => onDismissSolve(toast.id)}
-                className="ml-auto shrink-0 rounded p-1 text-gray-400 transition-all hover:bg-white/10 hover:text-gray-300"
+                className="shrink-0 self-start -mt-1 -mr-1 rounded p-1 text-gray-400 transition-all hover:bg-white/10 hover:text-gray-300"
                 aria-label="Dismiss"
               >
                 <X size={14} />
               </button>
             </div>
 
-            {/* Bottom Row: Solve Description (Left Aligned) */}
-            <div className="text-[12px] text-gray-300 font-medium relative z-10">
-              just solved <span className="font-extrabold text-blue-400">{toast.challenge}</span>
-            </div>
-
             {/* Animated progress bar */}
-            <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-blue-950">
-              <div className="h-full bg-gradient-to-r from-blue-600 to-blue-400 shadow-[0_0_8px_rgba(59,130,246,0.6)] animate-toast-progress-12s" />
+            <div className="absolute bottom-0 left-0 right-0 h-[2.5px] bg-[#0c2419]">
+              <div className="h-full bg-gradient-to-r from-emerald-600 via-teal-500 to-emerald-600 shadow-[0_0_8px_rgba(16,185,129,0.6)] animate-toast-progress-12s" />
             </div>
           </div>
         )

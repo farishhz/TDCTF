@@ -2,10 +2,9 @@
 
 import { useState } from "react"
 import Link from "next/link"
+import toast from "react-hot-toast"
 import type { LucideIcon } from "lucide-react"
 import {
-  AlertCircle,
-  CheckCircle2,
   Globe,
   ImageIcon,
   Instagram,
@@ -156,19 +155,16 @@ export default function EditProfileModal({
   const [profilePictureUrl, setProfilePictureUrl] = useState(currentProfilePictureUrl || "")
   const [sosmed, setSosmed] = useState<SocialLinks>(currentSosmed || {})
   const [loading, setLoading] = useState(false)
-  const [error, setError] = useState("")
-  const [success, setSuccess] = useState("")
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault()
-    setError("")
-    setSuccess("")
     setLoading(true)
+    const toastId = toast.loading("Saving profile changes...")
 
     const usernameTrimmed = username.trim()
     const usernameError = isValidUsername(usernameTrimmed)
     if (usernameError) {
-      setError(usernameError)
+      toast.error(usernameError, { id: toastId })
       setLoading(false)
       return
     }
@@ -178,7 +174,7 @@ export default function EditProfileModal({
     if (usernameTrimmed !== currentUsername) {
       const { error: errUsername, username: newUsername } = await updateUsername(userId, usernameTrimmed)
       if (errUsername) {
-        setError(errUsername)
+        toast.error(errUsername, { id: toastId })
         setLoading(false)
         return
       }
@@ -197,7 +193,7 @@ export default function EditProfileModal({
     if (profilePictureUrl.trim() !== (currentProfilePictureUrl || "").trim()) {
       const { error: errPicture } = await updateProfilePicture(userId, profilePictureUrl)
       if (errPicture) {
-        setError(errPicture)
+        toast.error(errPicture, { id: toastId })
         setLoading(false)
         return
       }
@@ -206,7 +202,7 @@ export default function EditProfileModal({
     if (bio.trim() !== "") {
       const { error: errBio } = await updateBio(userId, bio)
       if (errBio) {
-        setError(errBio)
+        toast.error(errBio, { id: toastId })
         setLoading(false)
         return
       }
@@ -215,22 +211,21 @@ export default function EditProfileModal({
     if (Object.values(sosmed).some((value) => value && value.trim() !== "")) {
       const { error: errSosmed } = await updateSosmed(userId, sosmed)
       if (errSosmed) {
-        setError(errSosmed)
+        toast.error(errSosmed, { id: toastId })
         setLoading(false)
         return
       }
     }
 
-    setSuccess("Profile updated!")
+    toast.success("Profile updated!", { id: toastId })
     onSaved?.()
+    setOpen(false)
     setLoading(false)
   }
 
   const handleOpenChange = (value: boolean) => {
     setOpen(value)
     if (value) {
-      setError("")
-      setSuccess("")
       setUsername(currentUsername)
       setBio(currentBio || "")
       setProfilePictureUrl(currentProfilePictureUrl || "")
@@ -354,19 +349,6 @@ export default function EditProfileModal({
             </ProfileSection>
           ) : null}
 
-          {error ? (
-            <div className="flex items-start gap-2 rounded-2xl border border-red-500/20 bg-red-500/10 p-3 text-sm font-semibold text-red-600 dark:text-red-400">
-              <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
-              <span>{error}</span>
-            </div>
-          ) : null}
-
-          {success ? (
-            <div className="flex items-start gap-2 rounded-2xl border border-green-500/20 bg-green-500/10 p-3 text-sm font-semibold text-green-600 dark:text-green-400">
-              <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" />
-              <span>{success}</span>
-            </div>
-          ) : null}
         </ModalBody>
 
         <ModalFooter className="px-4 py-3 md:px-5" contentClassName="sm:justify-between">

@@ -1133,7 +1133,7 @@ export function subscribeToNotifications(onNotif: (payload: { id: string; title:
  * @param onSolve callback({ username, challenge }) dipanggil setiap ada solve baru
  * @returns unsubscribe function
  */
-export function subscribeToSolves(onSolve: (payload: { username: string, challenge: string, isFirstBlood?: boolean }) => void) {
+export function subscribeToSolves(onSolve: (payload: { username: string, challenge: string, isFirstBlood?: boolean, picture?: string | null, points?: number, teamName?: string | null }) => void) {
   console.log('[subscribeToSolves] Subscribing to solves-insert channel...')
   const channel = supabase
     .channel('solves-insert')
@@ -1166,7 +1166,7 @@ export function subscribeToSolves(onSolve: (payload: { username: string, challen
             .maybeSingle();
           if (latestError || !latestSolve || !latestSolve.user_id || !latestSolve.challenge_id) {
             console.warn('[subscribeToSolves] Still cannot get user_id or challenge_id from latest solve:', latestError, latestSolve)
-            onSolve({ username: 'Unknown', challenge: 'Unknown', isFirstBlood: false });
+            onSolve({ username: 'Unknown', challenge: 'Unknown', isFirstBlood: false, picture: null, points: 0, teamName: null });
             return;
           }
           solve = latestSolve;
@@ -1207,18 +1207,65 @@ export function subscribeToSolves(onSolve: (payload: { username: string, challen
 
         if (error) {
           console.warn('[subscribeToSolves] Error fetching solve info via RPC:', error);
-          onSolve({ username: 'Unknown', challenge: 'Unknown', isFirstBlood });
+          onSolve({ username: 'Unknown', challenge: 'Unknown', isFirstBlood, picture: null, points: 0, teamName: null });
           return;
         }
 
+        let picture: string | null = null;
+        try {
+          const { data: pictureData } = await supabase
+            .rpc('resolve_user_pictures', {
+              p_user_ids: [solve.user_id]
+            });
+          if (pictureData && pictureData.length > 0) {
+            picture = pictureData[0].picture || null;
+          }
+        } catch (err) {
+          console.warn('[subscribeToSolves] Failed to resolve user picture:', err);
+        }
+
+        let points = 0;
+        try {
+          const { data: challengeData } = await supabase
+            .from('challenges')
+            .select('points')
+            .eq('id', solve.challenge_id)
+            .maybeSingle();
+          if (challengeData) {
+            points = challengeData.points || 0;
+          }
+        } catch (err) {
+          console.warn('[subscribeToSolves] Failed to fetch challenge points:', err);
+        }
+
+        let teamName: string | null = null;
+        try {
+          const { data: tmData } = await supabase
+            .from('team_members')
+            .select('team_id')
+            .eq('user_id', solve.user_id)
+            .maybeSingle();
+          if (tmData && tmData.team_id) {
+            const { data: tData } = await supabase
+              .from('teams')
+              .select('name')
+              .eq('id', tmData.team_id)
+              .maybeSingle();
+            if (tData) {
+              teamName = tData.name || null;
+            }
+          }
+        } catch (err) {
+          console.warn('[subscribeToSolves] Failed to fetch team name:', err);
+        }
+
         if (data && data.length > 0) {
-          // Pastikan type string dan fallback jika null/undefined
           const username = typeof data[0].username === 'string' && data[0].username ? data[0].username : 'Unknown';
           const challenge = typeof data[0].challenge === 'string' && data[0].challenge ? data[0].challenge : 'Unknown';
-          onSolve({ username, challenge, isFirstBlood });
+          onSolve({ username, challenge, isFirstBlood, picture, points, teamName });
           console.log(`[subscribeToSolves] Real-time solve: ${username} solved ${challenge} (First Blood: ${isFirstBlood})`);
         } else {
-          onSolve({ username: 'Unknown', challenge: 'Unknown', isFirstBlood });
+          onSolve({ username: 'Unknown', challenge: 'Unknown', isFirstBlood, picture, points, teamName });
         }
       } catch (err) {
         console.error('[subscribeToSolves] Error handling solve event:', err)

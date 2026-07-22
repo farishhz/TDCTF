@@ -1,6 +1,6 @@
 'use client'
 
-import React, { createContext, useContext, useEffect, useState, useRef } from 'react'
+import React, { createContext, useContext, useEffect, useState, useRef, useCallback } from 'react'
 import { usePathname } from 'next/navigation'
 import { useAuth } from '@/shared/contexts/AuthContext'
 import { supabase, isSupabaseConfigured } from '@/lib/supabase/client'
@@ -25,27 +25,13 @@ const PresenceContext = createContext<PresenceContextType | undefined>(undefined
 
 function getActivityFromPath(pathname: string): string {
   if (!pathname) return 'Menjelajahi platform 🌐'
-  if (pathname.startsWith('/challenges/')) {
-    return 'Sedang mengerjakan challenge 🧩'
-  }
-  if (pathname === '/challenges') {
-    return 'Melihat daftar challenge 🛡️'
-  }
-  if (pathname === '/scoreboard') {
-    return 'Melihat Scoreboard 📈'
-  }
-  if (pathname === '/teams') {
-    return 'Melihat daftar tim 👥'
-  }
-  if (pathname.startsWith('/teams/')) {
-    return 'Melihat profil tim 👥'
-  }
-  if (pathname.startsWith('/profile')) {
-    return 'Mengatur profil ⚙️'
-  }
-  if (pathname.startsWith('/admin')) {
-    return 'Mengelola panel admin 🔐'
-  }
+  if (pathname.startsWith('/challenges')) return 'Sedang mengerjakan challenge 🧩'
+  if (pathname.startsWith('/scoreboard')) return 'Melihat Scoreboard 📈'
+  if (pathname.startsWith('/teams')) return 'Melihat tim 👥'
+  if (pathname.startsWith('/join')) return 'Bergabung ke event 🚀'
+  if (pathname.startsWith('/profile')) return 'Mengatur profil ⚙️'
+  if (pathname.startsWith('/admin')) return 'Mengelola panel admin 🔐'
+  if (pathname.startsWith('/info')) return 'Melihat informasi platform ℹ️'
   return 'Menjelajahi platform 🌐'
 }
 
@@ -53,11 +39,23 @@ export function PresenceProvider({ children }: { children: React.ReactNode }) {
   const { user } = useAuth()
   const pathname = usePathname()
   const [onlineUsers, setOnlineUsers] = useState<Record<string, PresenceUser[]>>({})
+
+  // channelKey increments to force the channel effect to re-run (reconnect after sleep/network drop)
+  const [channelKey, setChannelKey] = useState(0)
+
   const channelRef = useRef<any>(null)
   const isSubscribedRef = useRef(false)
-  const recentLastSeenMapRef = useRef<Record<string, PresenceUser>>({})
+  const pathnameRef = useRef(pathname)
+  const userRef = useRef(user)
 
-  // 1. Manage WebSocket Connection (dependent on user session only)
+  // Timers for delayed offline marking (absorbs the leave+join pair Supabase fires on every track() call)
+  const leaveTimersRef = useRef<Record<string, ReturnType<typeof setTimeout>>>({})
+
+  // Keep refs in sync so event handlers always see latest values without re-registration
+  useEffect(() => { pathnameRef.current = pathname }, [pathname])
+  useEffect(() => { userRef.current = user }, [user])
+
+  // ─── Effect 1: Manage WebSocket channel (reconnects on user change OR channelKey bump) ───
   useEffect(() => {
     if (!isSupabaseConfigured || !user) {
       setOnlineUsers({})
@@ -66,38 +64,34 @@ export function PresenceProvider({ children }: { children: React.ReactNode }) {
       return
     }
 
-    console.log('[Presence] Initializing channel for user:', user.id)
+    console.log('[Presence] Initializing channel for user:', user.id, 'key:', channelKey)
+
+    // Touch activity in DB immediately on mount/reconnect
+    void (supabase as any).rpc('touch_user_activity')
 
     const channel = supabase.channel('online-users', {
-      config: {
-        presence: {
-          key: user.id,
-        },
-      },
+      config: { presence: { key: user.id } },
     })
 
     channelRef.current = channel
 
     const syncPresence = () => {
       const state = channel.presenceState()
-      console.log('[Presence] Synced state:', state)
       const formattedState: Record<string, PresenceUser[]> = {}
 
-      Object.entries(state).forEach(([userId, presences]) => {
+      Object.entries(state).forEach(([userIdKey, presences]) => {
+        const normKey = String(userIdKey).toLowerCase()
         const mapped = (presences as any[]).map((p) => ({
           presence_ref: p.presence_ref,
-          userId: p.userId || userId,
+          userId: p.userId || userIdKey,
           username: p.username || 'Anonymous',
           currentPath: p.currentPath || '',
           currentActivity: p.currentActivity || 'Online',
           lastActiveAt: p.lastActiveAt || new Date().toISOString(),
-        }))
-        formattedState[userId] = mapped
+        })).sort((a, b) => new Date(b.lastActiveAt).getTime() - new Date(a.lastActiveAt).getTime())
+
         if (mapped.length > 0) {
-          const latest = [...mapped].sort(
-            (a, b) => new Date(b.lastActiveAt).getTime() - new Date(a.lastActiveAt).getTime()
-          )[0]
-          recentLastSeenMapRef.current[String(userId).toLowerCase()] = latest
+          formattedState[normKey] = [mapped[0]]
         }
       })
 
@@ -106,132 +100,199 @@ export function PresenceProvider({ children }: { children: React.ReactNode }) {
 
     channel
       .on('presence', { event: 'sync' }, () => {
-        console.log('[Presence] Sync event received')
+        console.log('[Presence] Sync event')
         syncPresence()
       })
-      .on('presence', { event: 'join' }, ({ key, newPresences }) => {
-        console.log('[Presence] Join event:', key, newPresences)
-        syncPresence()
-      })
-      .on('presence', { event: 'leave' }, ({ key, leftPresences }) => {
-        console.log('[Presence] Leave event:', key, leftPresences)
-        if (leftPresences && (leftPresences as any[]).length > 0) {
-          const targetKey = String(key).toLowerCase()
-          const p = (leftPresences as any[])[0]
-          recentLastSeenMapRef.current[targetKey] = {
-            presence_ref: p.presence_ref || '',
-            userId: p.userId || key,
-            username: p.username || 'Anonymous',
-            currentPath: p.currentPath || '',
-            currentActivity: 'Offline',
-            lastActiveAt: new Date().toISOString(),
-          }
+      .on('presence', { event: 'join' }, ({ key }) => {
+        console.log('[Presence] Join event:', key)
+        // Cancel any pending offline timer — absorbs leave+join pair from track() updates
+        const targetKey = String(key).toLowerCase()
+        if (leaveTimersRef.current[targetKey]) {
+          clearTimeout(leaveTimersRef.current[targetKey])
+          delete leaveTimersRef.current[targetKey]
         }
         syncPresence()
       })
+      .on('presence', { event: 'leave' }, ({ key }) => {
+        console.log('[Presence] Leave event:', key)
+        // Delay offline marking 3.5s — if a join arrives within that window, user stays Online
+        const targetKey = String(key).toLowerCase()
+        if (leaveTimersRef.current[targetKey]) {
+          clearTimeout(leaveTimersRef.current[targetKey])
+        }
+        leaveTimersRef.current[targetKey] = setTimeout(() => {
+          delete leaveTimersRef.current[targetKey]
+          setOnlineUsers(prev => {
+            const next = { ...prev }
+            const existing = next[targetKey] || []
+            const hasActive = existing.some(p => p.currentActivity !== 'Offline')
+            if (!hasActive) delete next[targetKey]
+            return next
+          })
+        }, 3500)
+        syncPresence()
+      })
       .subscribe(async (status) => {
-        console.log('[Presence] Subscription status:', status)
+        console.log('[Presence] Channel status:', status)
         if (status === 'SUBSCRIBED') {
           isSubscribedRef.current = true
-          // Track initial page presence
-          const currentActivity = getActivityFromPath(pathname)
-          await channel.track({
-            userId: user.id,
-            username: user.username,
-            currentPath: pathname,
-            currentActivity,
-            lastActiveAt: new Date().toISOString(),
-          })
-          // Silently update last_login_at in users table
-          void (supabase as any).from('users').update({ last_login_at: new Date().toISOString() }).eq('id', user.id)
+          const currentUser = userRef.current
+          const currentPath = pathnameRef.current
+          if (currentUser) {
+            await channel.track({
+              userId: currentUser.id,
+              username: currentUser.username || (currentUser as any).email?.split('@')[0] || 'User',
+              currentPath: currentPath,
+              currentActivity: getActivityFromPath(currentPath),
+              lastActiveAt: new Date().toISOString(),
+            })
+            void (supabase as any).rpc('touch_user_activity')
+          }
+        } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+          console.warn('[Presence] Channel error/timeout, marking unsubscribed:', status)
+          isSubscribedRef.current = false
         } else {
           isSubscribedRef.current = false
         }
       })
 
     return () => {
-      console.log('[Presence] Unsubscribing from channel')
+      console.log('[Presence] Cleaning up channel')
       isSubscribedRef.current = false
-      void channel.unsubscribe()
+      Object.values(leaveTimersRef.current).forEach(clearTimeout)
+      leaveTimersRef.current = {}
+      void supabase.removeChannel(channel)
       channelRef.current = null
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user?.id]) // Run ONLY when the user session changes (not pathname)
+  }, [user?.id, channelKey])
 
-  // 2. Track activity when pathname or tab visibility changes
+  // ─── Effect 2: Track activity on nav/visibility + wake-up reconnect detection ───
   useEffect(() => {
-    if (!isSupabaseConfigured || !user || !channelRef.current || !isSubscribedRef.current) return
+    if (!isSupabaseConfigured || !user) return
 
-    const updatePresenceState = async () => {
+    const sendPresence = (activityText?: string) => {
       if (!channelRef.current || !isSubscribedRef.current) return
       const isHidden = typeof document !== 'undefined' && document.hidden
-      const currentActivity = isHidden
+      const currentActivity = activityText || (isHidden
         ? 'Tidak aktif (Background tab) 🌙'
-        : getActivityFromPath(pathname)
+        : getActivityFromPath(pathname))
 
-      try {
-        await channelRef.current.track({
-          userId: user.id,
-          username: user.username,
-          currentPath: pathname,
-          currentActivity,
-          lastActiveAt: new Date().toISOString(),
-        })
-        if (!isHidden) {
-          void (supabase as any).from('users').update({ last_login_at: new Date().toISOString() }).eq('id', user.id)
-        }
-      } catch (err) {
-        console.error('[Presence] Failed to track activity:', err)
+      void channelRef.current.track({
+        userId: user.id,
+        username: user.username || (user as any).email?.split('@')[0] || 'User',
+        currentPath: pathname,
+        currentActivity,
+        lastActiveAt: new Date().toISOString(),
+      }).catch((err: any) => {
+        console.error('[Presence] track() failed:', err)
+      })
+
+      if (!isHidden) {
+        void (supabase as any).rpc('touch_user_activity')
       }
     }
 
-    void updatePresenceState()
+    // Send presence immediately on path/session change
+    sendPresence()
+
+    // Heartbeat every 12s to keep presence fresh
+    const heartbeatTimer = setInterval(() => {
+      if (isSubscribedRef.current) {
+        sendPresence()
+      }
+    }, 12000)
+
+    // ── Wake-up / network-restore handler ──────────────────────────────────────
+    // When laptop wakes from sleep, the WebSocket is dropped. We detect this via:
+    //   1. visibilitychange: page goes hidden→visible (user returns to tab after sleep/alt-tab)
+    //   2. online: network restored after sleep/disconnect
+    // If channel is no longer subscribed, bump channelKey to force a full reconnect.
+
+    const handleWakeUp = () => {
+      if (document.hidden) return // still hidden, skip
+      console.log('[Presence] Wake-up detected, channel subscribed:', isSubscribedRef.current)
+      if (!isSubscribedRef.current) {
+        console.log('[Presence] Channel dropped (sleep/network), triggering reconnect')
+        // Bump channelKey → forces Effect 1 to re-run with a fresh channel
+        setChannelKey(k => k + 1)
+      } else {
+        sendPresence()
+      }
+    }
 
     const handleVisibilityChange = () => {
-      void updatePresenceState()
+      if (document.hidden) {
+        sendPresence('Tidak aktif (Background tab) 🌙')
+      } else {
+        handleWakeUp()
+      }
     }
 
     const handleBeforeUnload = () => {
-      if (channelRef.current) {
+      if (channelRef.current && isSubscribedRef.current) {
         void channelRef.current.untrack()
       }
-      void (supabase as any).from('users').update({ last_login_at: new Date().toISOString() }).eq('id', user.id)
     }
 
-    window.addEventListener('visibilitychange', handleVisibilityChange)
-    window.addEventListener('beforeunload', handleBeforeUnload)
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+    window.addEventListener('online', handleWakeUp)          // Network restored after sleep
+    window.addEventListener('focus', handleWakeUp)           // Window focus after sleep
     window.addEventListener('pagehide', handleBeforeUnload)
+    window.addEventListener('beforeunload', handleBeforeUnload)
 
     return () => {
-      window.removeEventListener('visibilitychange', handleVisibilityChange)
-      window.removeEventListener('beforeunload', handleBeforeUnload)
+      clearInterval(heartbeatTimer)
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
+      window.removeEventListener('online', handleWakeUp)
+      window.removeEventListener('focus', handleWakeUp)
       window.removeEventListener('pagehide', handleBeforeUnload)
+      window.removeEventListener('beforeunload', handleBeforeUnload)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pathname, user?.id])
 
-  const isUserOnline = (userId: string): boolean => {
-    if (!userId) return false
-    const target = String(userId).toLowerCase()
-    return Object.keys(onlineUsers).some(
-      (key) => key.toLowerCase() === target && onlineUsers[key]?.length > 0
-    )
-  }
+  // ─── Stable selectors via useCallback ────────────────────────────────────────
+  const isUserOnline = useCallback((identifier: string): boolean => {
+    if (!identifier) return false
+    const target = String(identifier).toLowerCase()
+    return Object.keys(onlineUsers).some((key) => {
+      const presences = onlineUsers[key] || []
+      return presences.some((p) => {
+        const matchesUser =
+          key.toLowerCase() === target ||
+          p.userId?.toLowerCase() === target ||
+          p.username?.toLowerCase() === target
+        return matchesUser && p.currentActivity !== 'Offline'
+      })
+    })
+  }, [onlineUsers])
 
-  const getUserPresence = (userId: string): PresenceUser | null => {
-    if (!userId) return null
-    const target = String(userId).toLowerCase()
-    const matchingKey = Object.keys(onlineUsers).find((key) => key.toLowerCase() === target)
+  const getUserPresence = useCallback((identifier: string): PresenceUser | null => {
+    if (!identifier) return null
+    const target = String(identifier).toLowerCase()
+    const matchingKey = Object.keys(onlineUsers).find((key) => {
+      if (key.toLowerCase() === target) return true
+      const presences = onlineUsers[key] || []
+      return presences.some(
+        (p) => p.userId?.toLowerCase() === target || p.username?.toLowerCase() === target
+      )
+    })
     if (matchingKey && onlineUsers[matchingKey]?.length > 0) {
-      const userPresences = onlineUsers[matchingKey]
-      return [...userPresences].sort(
-        (a, b) => new Date(b.lastActiveAt).getTime() - new Date(a.lastActiveAt).getTime()
-      )[0]
+      const activePresences = onlineUsers[matchingKey].filter((p) => p.currentActivity !== 'Offline')
+      if (activePresences.length > 0) {
+        return [...activePresences].sort(
+          (a, b) => new Date(b.lastActiveAt).getTime() - new Date(a.lastActiveAt).getTime()
+        )[0]
+      }
     }
-    return recentLastSeenMapRef.current[target] || null
-  }
+    return null
+  }, [onlineUsers])
 
-  const onlineCount = Object.keys(onlineUsers).length
+  const onlineCount = Object.keys(onlineUsers).filter((key) => {
+    const list = onlineUsers[key] || []
+    return list.some((p) => p.currentActivity !== 'Offline')
+  }).length
 
   return (
     <PresenceContext.Provider value={{ onlineUsers, isUserOnline, getUserPresence, onlineCount }}>
