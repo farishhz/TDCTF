@@ -34,7 +34,7 @@ export function useNotifications() {
   const [notifMessage, setNotifMessage] = useState('')
   const [notifLevel, setNotifLevel] = useState<'info' | 'info_platform' | 'info_challenges'>('info_challenges')
 
-  const [solveToasts, setSolveToasts] = useState<Array<{ id: string; username: string; challenge: string; isFirstBlood?: boolean }>>([])
+  const [solveToasts, setSolveToasts] = useState<Array<{ id: string; username: string; challenge: string; isFirstBlood?: boolean; picture?: string | null; points?: number; teamName?: string | null }>>([])
   const [notifToasts, setNotifToasts] = useState<Array<{ id: string; title: string; message: string; level: string }>>([])
 
   const notifPanelRef = useRef<HTMLDivElement>(null)
@@ -271,9 +271,9 @@ export function useNotifications() {
   // Real-time solves subscription
   useEffect(() => {
     if (!user || !APP.notifSolves) return;
-    const unsubscribe = subscribeToSolves(({ username, challenge, isFirstBlood }) => {
+    const unsubscribe = subscribeToSolves(({ username, challenge, isFirstBlood, picture, points, teamName }) => {
       const toastId = `solve-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`
-      setSolveToasts(prev => [...prev, { id: toastId, username, challenge, isFirstBlood }])
+      setSolveToasts(prev => [...prev, { id: toastId, username, challenge, isFirstBlood, picture, points, teamName }])
 
       if (solveSoundEnabled && (isFirstBlood || username !== user.username)) {
         try {
