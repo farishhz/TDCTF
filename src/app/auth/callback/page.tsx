@@ -10,80 +10,93 @@ import Loader from '@/shared/components/Loader'
 /**
  * OAuth Callback Handler
  *
- * Mendukung dua flow Supabase:
- * 1. PKCE (default Supabase v2): /auth/callback?code=XXXX
- *    → Panggil exchangeCodeForSession(code)
- * 2. Implicit (lama): /auth/callback#access_token=...
- *    → getSession() otomatis membaca hash
+ * Menangani dua flow Supabase:
  *
- * Jika keduanya gagal → redirect ke /register?error=oauth_failed
+ * 1. PKCE Flow (supabase v2 default di beberapa config):
+ *    URL: /auth/callback?code=XXXX
+ *    → panggil exchangeCodeForSession(code)
+ *
+ * 2. Implicit Flow (token di hash):
+ *    URL: /auth/callback#access_token=...
+ *    → Supabase JS memproses hash secara async, lalu fire SIGNED_IN via onAuthStateChange
+ *    → JANGAN panggil getSession() langsung, harus tunggu event terlebih dahulu
  */
 export default function AuthCallbackPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const { setUser } = useAuth()
-  const processed = useRef(false)
+  const done = useRef(false)
 
   useEffect(() => {
-    if (processed.current) return
-    processed.current = true
+    let unsubscribe: (() => void) | null = null
 
-    // Timeout 15 detik — jika masih loading, redirect ke register
-    const timeout = setTimeout(() => {
-      console.error('[auth/callback] Timeout — taking too long')
-      router.replace('/register?error=oauth_timeout')
-    }, 15000)
+    const succeed = async (redirectTo = '/challenges') => {
+      if (done.current) return
+      done.current = true
+      unsubscribe?.()
+      clearTimeout(timeoutId)
 
-    async function handleCallback() {
       try {
-        const code = searchParams.get('code')
-        let sessionOk = false
+        const currentUser = await AuthService.getCurrentUser()
+        if (currentUser) setUser(currentUser)
+      } catch {
+        // profile creation error — tetap redirect, user bisa login ulang
+      }
 
-        // ── PKCE Flow ──────────────────────────────────────────────────────
-        if (code) {
-          const { data, error } = await supabase.auth.exchangeCodeForSession(code)
-          if (!error && data?.session) {
-            sessionOk = true
-          } else {
-            console.error('[auth/callback] PKCE exchange failed:', error?.message)
-          }
-        }
+      router.replace(redirectTo)
+    }
 
-        // ── Implicit / Fallback: cek apakah session sudah ada ─────────────
-        if (!sessionOk) {
-          const { data: { session }, error } = await supabase.auth.getSession()
-          if (!error && session) {
-            sessionOk = true
-          } else {
-            console.error('[auth/callback] No session found:', error?.message)
-          }
-        }
+    const fail = () => {
+      if (done.current) return
+      done.current = true
+      unsubscribe?.()
+      clearTimeout(timeoutId)
+      router.replace('/login?error=oauth_failed')
+    }
 
-        if (!sessionOk) {
-          clearTimeout(timeout)
-          router.replace('/register?error=oauth_failed')
+    // Hard timeout 20 detik
+    const timeoutId = setTimeout(fail, 20000)
+
+    async function init() {
+      // ── PKCE Flow: ada ?code= di query param ─────────────────────────
+      const code = searchParams.get('code')
+      if (code) {
+        const { data, error } = await supabase.auth.exchangeCodeForSession(code)
+        if (!error && data?.session) {
+          await succeed(searchParams.get('next') || '/challenges')
           return
         }
+        // PKCE gagal — lanjut coba implicit
+      }
 
-        // ── Buat profil jika user baru ────────────────────────────────────
-        const currentUser = await AuthService.getCurrentUser()
-        if (currentUser) {
-          setUser(currentUser)
+      // ── Implicit Flow: tunggu Supabase selesai memproses hash ─────────
+      // Supabase membaca window.location.hash secara async, lalu fire event
+      // Jangan panggil getSession() sebelum event ini muncul
+      const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+        if (session && (event === 'SIGNED_IN' || event === 'INITIAL_SESSION')) {
+          await succeed(searchParams.get('next') || '/challenges')
+        } else if (event === 'INITIAL_SESSION' && !session) {
+          // Supabase selesai cek, tidak ada session
+          fail()
         }
+      })
 
-        clearTimeout(timeout)
-        const next = searchParams.get('next') || '/challenges'
-        router.replace(next)
-      } catch (err) {
-        console.error('[auth/callback] Unexpected error:', err)
-        clearTimeout(timeout)
-        router.replace('/register?error=oauth_failed')
+      unsubscribe = () => subscription.unsubscribe()
+
+      // Fallback: kalau event sudah fire sebelum kita subscribe,
+      // getSession() akan return session yang sudah ada
+      const { data: { session } } = await supabase.auth.getSession()
+      if (session) {
+        await succeed(searchParams.get('next') || '/challenges')
       }
     }
 
-    handleCallback()
+    init().catch(fail)
 
-    return () => clearTimeout(timeout)
+    return () => {
+      unsubscribe?.()
+      clearTimeout(timeoutId)
+    }
   }, [router, searchParams, setUser])
 
   return <Loader fullscreen />
