@@ -176,7 +176,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql
 SECURITY DEFINER SET search_path = public, auth, extensions;
-GRANT EXECUTE ON FUNCTION get_user_profile(UUID) TO authenticated;
+GRANT EXECUTE ON FUNCTION get_user_profile(UUID) TO authenticated, anon;
 CREATE OR REPLACE FUNCTION detail_user(p_id UUID, p_event_id UUID DEFAULT NULL, p_event_mode TEXT DEFAULT 'any')
 RETURNS JSON
 AS $$
@@ -479,7 +479,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql
 SECURITY DEFINER SET search_path = public, auth, extensions;
-GRANT EXECUTE ON FUNCTION create_profile(UUID, TEXT) TO authenticated;
+GRANT EXECUTE ON FUNCTION create_profile(UUID, TEXT) TO authenticated, anon;
 CREATE OR REPLACE FUNCTION check_username_exists(p_username TEXT)
 RETURNS BOOLEAN
 LANGUAGE plpgsql
