@@ -66,10 +66,10 @@ END $$;
 -- <<< END: schema/_reset_function.sql
 
 -- >>> BEGIN: queries/users.sql
--- ==============================================
--- Queries: users
--- Source: sql/chema.sql
--- ==============================================
+-- Migrations / Schema updates:
+ALTER TABLE public.users ADD COLUMN IF NOT EXISTS role VARCHAR(20) DEFAULT 'user' NOT NULL;
+ALTER TABLE public.users DROP CONSTRAINT IF EXISTS users_role_check;
+ALTER TABLE public.users ADD CONSTRAINT users_role_check CHECK (role IN ('user', 'moderator', 'admin'));
 -- SELECT
 CREATE OR REPLACE FUNCTION public.resolve_profile_picture(
   p_profile_picture_url TEXT,
