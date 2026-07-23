@@ -43,11 +43,12 @@ export default function AuthCallbackPage() {
           router.replace(redirectTo)
         } else {
           console.error('[auth/callback] getCurrentUser returned null')
-          router.replace('/login?error=profile_creation_failed')
+          router.replace('/login?error=profile_creation_failed&details=profile_null')
         }
-      } catch (err) {
+      } catch (err: any) {
         console.error('[auth/callback] Error during succeed getCurrentUser:', err)
-        router.replace('/login?error=profile_creation_failed')
+        const errMsg = encodeURIComponent(err?.message || 'unknown_error')
+        router.replace(`/login?error=profile_creation_failed&details=${errMsg}`)
       }
     }
 

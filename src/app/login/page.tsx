@@ -29,7 +29,9 @@ export default function LoginPage() {
       } else if (error === 'oauth_timeout') {
         toast.error('Sign-in timed out. Please try again.', { id: 'oauth-error' })
       } else if (error === 'profile_creation_failed') {
-        toast.error('Failed to create or load profile. Please contact the administrator.', { id: 'oauth-error', duration: 6000 })
+        const details = searchParams.get('details')
+        const msg = details ? `: ${decodeURIComponent(details)}` : ''
+        toast.error(`Failed to create or load profile${msg}. Please contact the administrator.`, { id: 'oauth-error', duration: 10000 })
       }
     })
   }, [searchParams])

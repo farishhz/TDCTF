@@ -299,24 +299,28 @@ export const AuthService = {
         })
         if (rpcError) {
           console.error('[getCurrentUser] create_profile RPC error:', rpcError.message, rpcError)
-          return null
+          throw new Error(`DB_CREATE_PROFILE_ERROR: ${rpcError.message}`)
         }
 
         const { data: newData, error: newError } = await supabase.rpc('get_user_profile', { p_id: user.id })
         if (newError) {
           console.error('[getCurrentUser] get_user_profile RPC error after creation:', newError.message, newError)
-          return null
+          throw new Error(`DB_GET_PROFILE_ERROR: ${newError.message}`)
         }
         userData = newData && newData.length > 0 ? newData[0] : null
         if (!userData) {
           console.error('[getCurrentUser] get_user_profile returned empty data after creation')
-          return null
+          throw new Error('DB_PROFILE_EMPTY_AFTER_CREATION')
         }
       }
 
       const merged = mergeProfilePicture(userData as any, user, userData)
       return merged
-    } catch (error) {
+    } catch (error: any) {
+      if (error && error.message && (error.message.startsWith('DB_') || error.message.startsWith('DB_CREATE_PROFILE_ERROR'))) {
+        throw error
+      }
+      console.error('[getCurrentUser] Unexpected error:', error)
       return null
     }
   },
