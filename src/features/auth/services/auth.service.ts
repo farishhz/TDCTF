@@ -52,7 +52,7 @@ export const AuthService = {
         return { user: null, error: 'Google Sign-In is not enabled on this platform. Please contact the administrator.' };
       }
 
-      const redirectUrl = `${window.location.origin}/challenges`
+      const redirectUrl = `${window.location.origin}/auth/callback`
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {

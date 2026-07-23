@@ -94,7 +94,7 @@ DECLARE
   v_is_admin BOOLEAN;
   v_user_id UUID := auth.uid()::uuid;
 BEGIN
-  SELECT is_admin INTO v_is_admin FROM public.users WHERE id = v_user_id;
+  SELECT (role IN ('admin', 'moderator')) INTO v_is_admin FROM public.users WHERE id = v_user_id;
   RETURN COALESCE(v_is_admin, FALSE);
 END;
 $$ LANGUAGE plpgsql
@@ -143,7 +143,8 @@ RETURNS TABLE (
   solved_event_ids UUID[],
   has_main_solved BOOLEAN,
   banned_until TIMESTAMPTZ,
-  ban_reason TEXT
+  ban_reason TEXT,
+  role VARCHAR(20)
 ) AS $$
 BEGIN
   RETURN QUERY
@@ -169,7 +170,8 @@ BEGIN
         AND c.event_id IS NULL
     ) AS has_main_solved,
     u.banned_until,
-    u.ban_reason::TEXT
+    u.ban_reason::TEXT,
+    u.role::VARCHAR(20)
   FROM public.users u
   LEFT JOIN auth.users au ON au.id = u.id
   WHERE u.id = p_id;
@@ -190,7 +192,7 @@ DECLARE
   v_correct_flags INT := 0;
   v_incorrect_flags INT := 0;
 BEGIN
-  SELECT id, username, bio, sosmed, profile_picture_url, created_at, tags
+  SELECT id, username, bio, sosmed, profile_picture_url, created_at, tags, role
   INTO v_user
   FROM public.users
   WHERE id = p_id;
@@ -273,7 +275,8 @@ BEGIN
       'profile_picture_url', v_user.profile_picture_url,
       'created_at', v_user.created_at,
       'last_login_at', v_last_login,
-      'tags', COALESCE(v_user.tags, '{}'::TEXT[])
+      'tags', COALESCE(v_user.tags, '{}'::TEXT[]),
+      'role', COALESCE(v_user.role, 'user')
     ),
     'solved_challenges', v_solves,
     'flag_stats', json_build_object(
@@ -418,9 +421,9 @@ BEGIN
     v_username := substring(p_username from 1 for 28) || '_' || v_suffix;
     v_suffix := v_suffix + 1;
   END LOOP;
-  INSERT INTO public.users (id, username)
-  VALUES (p_id, v_username)
-  ON CONFLICT (id) DO NOTHING;
+  INSERT INTO public.users (id, username, last_login_at)
+  VALUES (p_id, v_username, now())
+  ON CONFLICT (id) DO UPDATE SET last_login_at = now(), updated_at = now();
   WITH base AS (
     SELECT
       au.id,
@@ -604,6 +607,22 @@ END;
 $$ LANGUAGE plpgsql
 SECURITY DEFINER;
 GRANT EXECUTE ON FUNCTION cleanup_orphaned_users_and_solves() TO authenticated;
+CREATE OR REPLACE FUNCTION public.touch_user_activity()
+RETURNS void AS $$
+BEGIN
+  IF auth.uid() IS NOT NULL THEN
+    UPDATE public.users
+    SET last_login_at = now(),
+        updated_at = now()
+    WHERE id = auth.uid();
+  END IF;
+END;
+$$ LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public, auth;
+GRANT EXECUTE ON FUNCTION public.touch_user_activity() TO authenticated;
+GRANT EXECUTE ON FUNCTION public.touch_user_activity() TO anon;
+DROP FUNCTION IF EXISTS public.get_admin_users_paginated(text, text, text, int, int, text);
 CREATE OR REPLACE FUNCTION public.get_admin_users_paginated(
   p_search text default null,
   p_role text default 'all',
@@ -617,6 +636,7 @@ RETURNS TABLE (
   username text,
   email text,
   is_admin boolean,
+  role varchar(20),
   bio text,
   sosmed jsonb,
   profile_picture_url text,
@@ -638,6 +658,7 @@ BEGIN
       u.username::text,
       au.email::text,
       COALESCE(u.is_admin, false) AS is_admin,
+      u.role::varchar(20) AS role,
       u.bio::text,
       u.sosmed,
       resolve_profile_picture(u.profile_picture_url, au.raw_user_meta_data)::text AS profile_picture_url,
@@ -657,8 +678,9 @@ BEGIN
       u.tags::text ILIKE '%' || p_search || '%'
     ) AND (
       p_role = 'all' OR
-      (p_role = 'admin' AND u.is_admin = true) OR
-      (p_role = 'user' AND u.is_admin = false)
+      (p_role = 'admin' AND u.role = 'admin') OR
+      (p_role = 'moderator' AND u.role = 'moderator') OR
+      (p_role = 'user' AND u.role = 'user')
     ) AND (
       p_status = 'all' OR
       (p_status = 'banned' AND u.banned_until IS NOT NULL AND u.banned_until > now()) OR
@@ -673,6 +695,7 @@ BEGIN
     f.username,
     f.email,
     f.is_admin,
+    f.role,
     f.bio,
     f.sosmed,
     f.profile_picture_url,
@@ -2641,9 +2664,27 @@ CREATE OR REPLACE FUNCTION get_flag(p_challenge_id uuid)
 RETURNS text AS $$
 DECLARE
   v_flag text;
+  v_user_id uuid := auth.uid()::uuid;
+  v_user_role varchar(20);
+  v_creator_id uuid;
+  v_creator_role varchar(20);
 BEGIN
   IF NOT can_manage_challenge(p_challenge_id) THEN
     RAISE EXCEPTION 'Only admin can see flag';
+  END IF;
+  -- Moderator restriction check: cannot view flag of challenge created by admin
+  SELECT role INTO v_user_role FROM public.users WHERE id = v_user_id;
+  IF v_user_role = 'moderator' THEN
+    SELECT created_by INTO v_creator_id FROM public.challenges WHERE id = p_challenge_id;
+    IF v_creator_id IS NOT NULL THEN
+      SELECT role INTO v_creator_role FROM public.users WHERE id = v_creator_id;
+      IF v_creator_role = 'admin' THEN
+        RAISE EXCEPTION 'Moderators are not allowed to view flags of challenges created by administrators.';
+      END IF;
+    ELSE
+      -- Legacy challenges with no creator are treated as admin-created by default
+      RAISE EXCEPTION 'Moderators are not allowed to view flags of challenges created by administrators.';
+    END IF;
   END IF;
   SELECT flag INTO v_flag
   FROM public.challenge_flags
@@ -3069,8 +3110,8 @@ BEGIN
   IF NOT can_manage_event(p_event_id) THEN
     RAISE EXCEPTION 'Only admin can add challenge';
   END IF;
-  INSERT INTO public.challenges(title, description, category, points, max_points, hint, attachments, difficulty, is_active, is_maintenance, is_dynamic, min_points, decay_per_solve, event_id, flag_placeholder, services)
-  VALUES (p_title, p_description, p_category, p_points, p_max_points, p_hint, p_attachments, p_difficulty, true, p_is_maintenance, p_is_dynamic, p_min_points, p_decay_per_solve, p_event_id, p_flag_placeholder, p_services)
+  INSERT INTO public.challenges(title, description, category, points, max_points, hint, attachments, difficulty, is_active, is_maintenance, is_dynamic, min_points, decay_per_solve, event_id, flag_placeholder, services, created_by)
+  VALUES (p_title, p_description, p_category, p_points, p_max_points, p_hint, p_attachments, p_difficulty, true, p_is_maintenance, p_is_dynamic, p_min_points, p_decay_per_solve, p_event_id, p_flag_placeholder, p_services, v_user_id)
   RETURNING id INTO v_challenge_id;
   INSERT INTO public.challenge_flags(challenge_id, flag)
   VALUES (v_challenge_id, p_flag);

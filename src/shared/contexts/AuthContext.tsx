@@ -39,6 +39,31 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, [])
 
+  // Listen to Supabase auth state changes (e.g. after Google OAuth callback)
+  useEffect(() => {
+    let subscription: { unsubscribe: () => void } | null = null
+
+    import('@/lib/supabase/client').then(({ supabase }) => {
+      const { data } = supabase.auth.onAuthStateChange(async (event, session) => {
+        if (event === 'SIGNED_IN' && session) {
+          // User just signed in (e.g. after Google OAuth callback)
+          // getCurrentUser will create profile if it doesn't exist yet
+          const { AuthService } = await import('@/features/auth/services/auth.service')
+          const currentUser = await AuthService.getCurrentUser()
+          setUser(currentUser)
+          setLoading(false)
+        } else if (event === 'SIGNED_OUT') {
+          setUser(null)
+        }
+      })
+      subscription = data.subscription
+    }).catch(() => {})
+
+    return () => {
+      subscription?.unsubscribe()
+    }
+  }, [])
+
   useEffect(() => {
     if (!user) return
 
