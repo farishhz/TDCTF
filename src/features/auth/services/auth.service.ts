@@ -52,7 +52,7 @@ export const AuthService = {
         return { user: null, error: 'Google Sign-In is not enabled on this platform. Please contact the administrator.' };
       }
 
-      const redirectUrl = `${window.location.origin}/challenges`
+      const redirectUrl = `${window.location.origin}/auth/callback`
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
@@ -280,24 +280,47 @@ export const AuthService = {
       let userData = data && data.length > 0 ? data[0] : null
 
       if (!userData) {
-        const username =
+        const rawUsername =
           user.user_metadata?.username ||
-          (user.email ? user.email.split("@")[0] : "user_" + user.id.substring(0, 8))
+          user.user_metadata?.name ||
+          (user.email ? user.email.split('@')[0] : 'user_' + user.id.substring(0, 8))
+
+        // Sanitize: hapus karakter yang tidak diizinkan create_profile ('^[a-zA-Z0-9_. -]+$')
+        // Ganti karakter invalid dengan underscore, lalu trim dan pastikan tidak kosong
+        const username = (rawUsername as string)
+          .replace(/[^a-zA-Z0-9_. -]/g, '_')
+          .replace(/^[^a-zA-Z0-9]+/, '') // hapus non-alphanumeric di awal
+          .slice(0, 28)
+          || 'user_' + user.id.substring(0, 8)
 
         const { error: rpcError } = await supabase.rpc('create_profile', {
           p_id: user.id,
           p_username: username
         })
-        if (rpcError) return null
+        if (rpcError) {
+          console.error('[getCurrentUser] create_profile RPC error:', rpcError.message, rpcError)
+          throw new Error(`DB_CREATE_PROFILE_ERROR: ${rpcError.message}`)
+        }
 
         const { data: newData, error: newError } = await supabase.rpc('get_user_profile', { p_id: user.id })
+        if (newError) {
+          console.error('[getCurrentUser] get_user_profile RPC error after creation:', newError.message, newError)
+          throw new Error(`DB_GET_PROFILE_ERROR: ${newError.message}`)
+        }
         userData = newData && newData.length > 0 ? newData[0] : null
-        if (newError || !userData) return null
+        if (!userData) {
+          console.error('[getCurrentUser] get_user_profile returned empty data after creation')
+          throw new Error('DB_PROFILE_EMPTY_AFTER_CREATION')
+        }
       }
 
       const merged = mergeProfilePicture(userData as any, user, userData)
       return merged
-    } catch (error) {
+    } catch (error: any) {
+      if (error && error.message && (error.message.startsWith('DB_') || error.message.startsWith('DB_CREATE_PROFILE_ERROR'))) {
+        throw error
+      }
+      console.error('[getCurrentUser] Unexpected error:', error)
       return null
     }
   },

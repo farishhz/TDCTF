@@ -1,5 +1,4 @@
-import React from 'react'
-import { X, Megaphone, Server, Flag, Skull } from 'lucide-react'
+import { X, Megaphone, Server, Flag, Skull, Lightbulb } from 'lucide-react'
 import { cn } from '@/shared/lib/utils'
 import ImageWithFallback from '@/shared/components/ImageWithFallback'
 
@@ -11,6 +10,8 @@ function getToastIcon(level: string) {
       return { Icon: Server, bg: 'bg-indigo-500/10', ring: 'ring-indigo-500/20', text: 'text-indigo-400', progressColor: 'bg-indigo-500' }
     case 'info':
       return { Icon: Megaphone, bg: 'bg-orange-500/10', ring: 'ring-orange-500/20', text: 'text-orange-400', progressColor: 'bg-orange-500' }
+    case 'hint':
+      return { Icon: Lightbulb, bg: 'bg-amber-500/10', ring: 'ring-amber-500/20', text: 'text-amber-400', progressColor: 'bg-amber-500' }
     default:
       return { Icon: Flag, bg: 'bg-blue-500/10', ring: 'ring-blue-500/20', text: 'text-blue-400', progressColor: 'bg-blue-500' }
   }

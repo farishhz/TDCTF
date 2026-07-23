@@ -11,12 +11,23 @@ type AuthContextType = {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
+// Jika getCurrentUser tidak selesai dalam 10 detik, paksa loading = false
+// Ini mencegah "LOADING ARENA" stuck saat Supabase lambat/paused
+const AUTH_TIMEOUT_MS = 10000
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
 
+  // ── Initial load: cek session yang sudah ada ─────────────────────────────
   useEffect(() => {
     let active = true
+
+    // Hard timeout: paksa loading = false setelah 10 detik
+    // Mencegah stuck saat Supabase database paused/lambat
+    const timeout = setTimeout(() => {
+      if (active) setLoading(false)
+    }, AUTH_TIMEOUT_MS)
 
     import('@/features/auth/services/auth.service')
       .then(({ AuthService }) => AuthService.getCurrentUser())
@@ -30,19 +41,46 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           }
         }
       })
+      .catch(() => {})
       .finally(() => {
-        if (active) setLoading(false)
+        if (active) {
+          clearTimeout(timeout)
+          setLoading(false)
+        }
       })
 
     return () => {
       active = false
+      clearTimeout(timeout)
     }
   }, [])
 
+  // ── Hanya listen SIGNED_OUT untuk clear user saat logout ─────────────────
+  // TIDAK memanggil getCurrentUser() di sini untuk menghindari double-call
+  // yang menyebabkan loading lambat. Google OAuth callback langsung
+  // memanggil setUser() dari /auth/callback/page.tsx
+  useEffect(() => {
+    let subscription: { unsubscribe: () => void } | null = null
+
+    import('@/lib/supabase/client').then(({ supabase }) => {
+      const { data } = supabase.auth.onAuthStateChange((event) => {
+        if (event === 'SIGNED_OUT') {
+          setUser(null)
+        }
+      })
+      subscription = data.subscription
+    }).catch(() => {})
+
+    return () => {
+      subscription?.unsubscribe()
+    }
+  }, [])
+
+  // ── Cek session aktif secara berkala ─────────────────────────────────────
   useEffect(() => {
     if (!user) return
 
-    let timer: any
+    let timer: ReturnType<typeof setInterval>
 
     const checkSession = async () => {
       try {
@@ -62,13 +100,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     }
 
-    // Check periodically every 20 seconds
     timer = setInterval(checkSession, 20000)
 
-    // Check when window gets focused
-    const handleFocus = () => {
-      void checkSession()
-    }
+    const handleFocus = () => { void checkSession() }
     window.addEventListener('focus', handleFocus)
 
     return () => {

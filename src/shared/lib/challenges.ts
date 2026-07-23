@@ -1090,7 +1090,7 @@ export async function getNotifications(limit = 50, offset = 0) {
   return data || [];
 }
 
-export async function createNotification(title: string, message: string, level: 'info' | 'info_platform' | 'info_challenges' = 'info') {
+export async function createNotification(title: string, message: string, level: 'info' | 'info_platform' | 'info_challenges' | 'hint' = 'info') {
   const { data, error } = await callChallengeRpc('create_notification', {
     p_title: title,
     p_message: message,

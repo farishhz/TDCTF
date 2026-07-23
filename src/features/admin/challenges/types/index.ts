@@ -29,6 +29,7 @@ export type ChallengeFormData = {
   max_points: number | ''
   flag: string
   hint: string[]
+  hintNotifs?: boolean[]
   difficulty: string
   attachments: Attachment[]
   is_dynamic: boolean

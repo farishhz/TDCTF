@@ -66,10 +66,8 @@ END $$;
 -- <<< END: schema/_reset_function.sql
 
 -- >>> BEGIN: queries/users.sql
--- ==============================================
--- Queries: users
--- Source: sql/chema.sql
--- ==============================================
+-- Migrations / Schema updates:
+ALTER TABLE public.users ADD COLUMN IF NOT EXISTS last_login_at TIMESTAMP WITH TIME ZONE DEFAULT now();
 -- SELECT
 CREATE OR REPLACE FUNCTION public.resolve_profile_picture(
   p_profile_picture_url TEXT,
@@ -176,7 +174,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql
 SECURITY DEFINER SET search_path = public, auth, extensions;
-GRANT EXECUTE ON FUNCTION get_user_profile(UUID) TO authenticated;
+GRANT EXECUTE ON FUNCTION get_user_profile(UUID) TO authenticated, anon;
 CREATE OR REPLACE FUNCTION detail_user(p_id UUID, p_event_id UUID DEFAULT NULL, p_event_mode TEXT DEFAULT 'any')
 RETURNS JSON
 AS $$
@@ -418,64 +416,68 @@ BEGIN
     v_username := substring(p_username from 1 for 28) || '_' || v_suffix;
     v_suffix := v_suffix + 1;
   END LOOP;
-  INSERT INTO public.users (id, username)
-  VALUES (p_id, v_username)
-  ON CONFLICT (id) DO NOTHING;
-  WITH base AS (
-    SELECT
-      au.id,
-      SUBSTRING(COALESCE(
-        au.raw_user_meta_data->>'username',
-        au.raw_user_meta_data->>'display_name',
-        split_part(au.email, '@', 1)
-      ) FROM 1 FOR 28) AS base_username
-    FROM auth.users au
-    LEFT JOIN public.users pu ON pu.id = au.id
-    WHERE pu.id IS NULL
-  ),
-  stats AS (
-    SELECT
-      b.base_username,
-      EXISTS (
-        SELECT 1 FROM public.users u WHERE u.username = b.base_username
-      ) AS base_exists,
-      COALESCE(
-        MAX((regexp_match(u.username, '^' || b.base_username || '_(\\d+)$'))[1]::int),
-        0
-      ) AS max_suffix
-    FROM base b
-    LEFT JOIN public.users u
-      ON u.username = b.base_username
-      OR u.username ~ ('^' || b.base_username || '_(\\d+)$')
-    GROUP BY b.base_username
-  ),
-  numbered AS (
-    SELECT
-      b.id,
-      b.base_username,
-      ROW_NUMBER() OVER (PARTITION BY b.base_username ORDER BY b.id) AS rn
-    FROM base b
-  ),
-  resolved AS (
-    SELECT
-      n.id,
-      CASE
-        WHEN n.rn = 1 AND s.base_exists = false THEN n.base_username
-        ELSE n.base_username || '_' || (
-          s.max_suffix + n.rn - (CASE WHEN s.base_exists THEN 0 ELSE 1 END)
-        )
-      END AS username
-    FROM numbered n
-    JOIN stats s ON s.base_username = n.base_username
-  )
-  INSERT INTO public.users (id, username)
-  SELECT id, username
-  FROM resolved
-  ON CONFLICT (id) DO NOTHING;
+  INSERT INTO public.users (id, username, last_login_at)
+  VALUES (p_id, v_username, now())
+  ON CONFLICT (id) DO UPDATE SET last_login_at = now(), updated_at = now();
+  BEGIN
+    WITH base AS (
+      SELECT
+        au.id,
+        SUBSTRING(COALESCE(
+          au.raw_user_meta_data->>'username',
+          au.raw_user_meta_data->>'display_name',
+          split_part(au.email, '@', 1)
+        ) FROM 1 FOR 28) AS base_username
+      FROM auth.users au
+      LEFT JOIN public.users pu ON pu.id = au.id
+      WHERE pu.id IS NULL
+    ),
+    stats AS (
+      SELECT
+        b.base_username,
+        EXISTS (
+          SELECT 1 FROM public.users u WHERE u.username = b.base_username
+        ) AS base_exists,
+        COALESCE(
+          MAX((regexp_match(u.username, '^' || b.base_username || '_(\\d+)$'))[1]::int),
+          0
+        ) AS max_suffix
+      FROM base b
+      LEFT JOIN public.users u
+        ON u.username = b.base_username
+        OR u.username ~ ('^' || b.base_username || '_(\\d+)$')
+      GROUP BY b.base_username
+    ),
+    numbered AS (
+      SELECT
+        b.id,
+        b.base_username,
+        ROW_NUMBER() OVER (PARTITION BY b.base_username ORDER BY b.id) AS rn
+      FROM base b
+    ),
+    resolved AS (
+      SELECT
+        n.id,
+        CASE
+          WHEN n.rn = 1 AND s.base_exists = false THEN n.base_username
+          ELSE n.base_username || '_' || (
+            s.max_suffix + n.rn - (CASE WHEN s.base_exists THEN 0 ELSE 1 END)
+          )
+        END AS username
+      FROM numbered n
+      JOIN stats s ON s.base_username = n.base_username
+    )
+    INSERT INTO public.users (id, username)
+    SELECT id, username
+    FROM resolved
+    ON CONFLICT (id) DO NOTHING;
+  EXCEPTION WHEN OTHERS THEN
+    -- Ignore bulk sync errors to prevent rolling back current user's registration
+  END;
 END;
 $$ LANGUAGE plpgsql
 SECURITY DEFINER SET search_path = public, auth, extensions;
-GRANT EXECUTE ON FUNCTION create_profile(UUID, TEXT) TO authenticated;
+GRANT EXECUTE ON FUNCTION create_profile(UUID, TEXT) TO authenticated, anon;
 CREATE OR REPLACE FUNCTION check_username_exists(p_username TEXT)
 RETURNS BOOLEAN
 LANGUAGE plpgsql
@@ -604,6 +606,22 @@ END;
 $$ LANGUAGE plpgsql
 SECURITY DEFINER;
 GRANT EXECUTE ON FUNCTION cleanup_orphaned_users_and_solves() TO authenticated;
+CREATE OR REPLACE FUNCTION public.touch_user_activity()
+RETURNS void AS $$
+BEGIN
+  IF auth.uid() IS NOT NULL THEN
+    UPDATE public.users
+    SET last_login_at = now(),
+        updated_at = now()
+    WHERE id = auth.uid();
+  END IF;
+END;
+$$ LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public, auth;
+GRANT EXECUTE ON FUNCTION public.touch_user_activity() TO authenticated;
+GRANT EXECUTE ON FUNCTION public.touch_user_activity() TO anon;
+DROP FUNCTION IF EXISTS public.get_admin_users_paginated(text, text, text, int, int, text);
 CREATE OR REPLACE FUNCTION public.get_admin_users_paginated(
   p_search text default null,
   p_role text default 'all',

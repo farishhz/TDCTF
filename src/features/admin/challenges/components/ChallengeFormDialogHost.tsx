@@ -76,6 +76,7 @@ const ChallengeFormDialogHost: React.FC<ChallengeFormDialogHostProps> = ({
       onAddHint={hintOps.add}
       onUpdateHint={hintOps.update}
       onRemoveHint={hintOps.remove}
+      onToggleHintNotif={hintOps.toggleNotif}
       onAddAttachment={attachmentOps.add}
       onUpdateAttachment={attachmentOps.update}
       onRemoveAttachment={attachmentOps.remove}

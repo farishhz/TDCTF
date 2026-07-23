@@ -12,6 +12,7 @@ CREATE TABLE public.users (
   tags TEXT[] DEFAULT '{}'::TEXT[] NOT NULL,
   banned_until TIMESTAMP WITH TIME ZONE DEFAULT NULL,
   ban_reason VARCHAR(255) DEFAULT NULL,
+  last_login_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
   created_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT now()
 );

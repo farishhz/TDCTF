@@ -1,7 +1,7 @@
 'use client'
 
 import React from 'react'
-import { Megaphone, Server, Flag, Trash2 } from 'lucide-react'
+import { Megaphone, Server, Flag, Trash2, Lightbulb } from 'lucide-react'
 import { cn, formatRelativeDate } from '@/shared/lib/utils'
 
 function formatNotificationText(content: string) {
@@ -43,6 +43,8 @@ function getIconAndLabel(level: string) {
       return { Icon: Flag, label: 'Challenges', colorClass: 'text-blue-500 bg-blue-500/10 ring-blue-500/20 dark:text-blue-400' }
     case 'info_platform':
       return { Icon: Server, label: 'System', colorClass: 'text-indigo-500 bg-indigo-500/10 ring-indigo-500/20 dark:text-indigo-400' }
+    case 'hint':
+      return { Icon: Lightbulb, label: 'Hint', colorClass: 'text-amber-500 bg-amber-500/10 ring-amber-500/20 dark:text-amber-400' }
     case 'info':
     default:
       return { Icon: Megaphone, label: 'Broadcast', colorClass: 'text-orange-500 bg-orange-500/10 ring-orange-500/20 dark:text-orange-400' }

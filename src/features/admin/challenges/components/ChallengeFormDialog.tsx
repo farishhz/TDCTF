@@ -30,6 +30,7 @@ interface ChallengeFormDialogProps {
   onAddHint: () => void
   onUpdateHint: (i: number, v: string) => void
   onRemoveHint: (i: number) => void
+  onToggleHintNotif: (i: number) => void
   onAddAttachment: () => void
   onUpdateAttachment: (i: number, field: keyof Attachment, v: string) => void
   onRemoveAttachment: (i: number) => void
@@ -65,6 +66,7 @@ const ChallengeFormDialog: React.FC<ChallengeFormDialogProps> = (props) => {
     onAddHint,
     onUpdateHint,
     onRemoveHint,
+    onToggleHintNotif,
     onAddAttachment,
     onUpdateAttachment,
     onRemoveAttachment,
@@ -192,6 +194,7 @@ const ChallengeFormDialog: React.FC<ChallengeFormDialogProps> = (props) => {
                   onAddHint={onAddHint}
                   onUpdateHint={onUpdateHint}
                   onRemoveHint={onRemoveHint}
+                  onToggleHintNotif={onToggleHintNotif}
                   onAddAttachment={onAddAttachment}
                   onUpdateAttachment={onUpdateAttachment}
                   onRemoveAttachment={onRemoveAttachment}

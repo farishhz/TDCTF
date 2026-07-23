@@ -15,6 +15,7 @@ import {
 import APP from '@/config'
 import toast from 'react-hot-toast'
 import { normalizeTDCTLServiceValues } from '@/features/challenges/lib/tdctl-services'
+import { createNotification } from '@/shared/lib/challenges'
 
 export const EMPTY_CHALLENGE_FORM: ChallengeFormData = {
   title: '',
@@ -25,6 +26,7 @@ export const EMPTY_CHALLENGE_FORM: ChallengeFormData = {
   max_points: 100,
   flag: '',
   hint: [],
+  hintNotifs: [],
   difficulty: '',
   attachments: [],
   is_dynamic: false,
@@ -119,6 +121,7 @@ export function useChallengeForm() {
       max_points: full.max_points != null ? Math.max(0, full.max_points) : (full.points != null ? Math.max(0, full.points) : 100),
       flag: full.flag || '',
       hint: parsedHint,
+      hintNotifs: parsedHint.map(() => false),
       difficulty: full.difficulty || 'Easy',
       attachments: full.attachments || [],
       is_dynamic: full.is_dynamic ?? false,
@@ -214,6 +217,15 @@ export function useChallengeForm() {
       if (typeof formData.decay_per_solve !== 'undefined') payload.decay_per_solve = Number(formData.decay_per_solve) || 0
       if (formData.is_dynamic) payload.max_points = Number(formData.max_points) || Number(formData.points) || 0
 
+      // Determine which hints should send a notification based on user selection toggles
+      const hintsToNotify: string[] = []
+      formData.hint.forEach((hintText, idx) => {
+        const text = hintText.trim()
+        if (text && formData.hintNotifs?.[idx]) {
+          hintsToNotify.push(text)
+        }
+      })
+
       if (editing) {
         await updateChallenge(editing.id, payload)
         await syncSubChallenges(editing.id)
@@ -224,6 +236,24 @@ export function useChallengeForm() {
         }
         const createdId = await addChallenge(payload)
         if (createdId) await syncSubChallenges(createdId)
+      }
+
+      // Auto-release hint announcement if challenge is active and not in maintenance mode
+      const isActive = editing
+        ? (typeof formData.is_active !== 'undefined' ? !!formData.is_active : !!editing.is_active)
+        : (typeof formData.is_active !== 'undefined' ? !!formData.is_active : true)
+      const isMaintenance = !!formData.is_maintenance
+
+      if (isActive && !isMaintenance && hintsToNotify.length > 0) {
+        for (const hintText of hintsToNotify) {
+          const title = `Hint Released: ${payload.title}`
+          const message = `A new hint has been released for challenge **${payload.title}**:\n\n*${hintText}*`
+          try {
+            await createNotification(title, message, 'hint')
+          } catch (notifErr) {
+            console.error('Failed to create hint notification:', notifErr)
+          }
+        }
       }
 
       toast.success('Challenge saved successfully')
@@ -253,9 +283,24 @@ export function useChallengeForm() {
   }
 
   const hintOps = {
-    add: () => setFormData(p => ({ ...p, hint: [...(p.hint || []), ''] })),
-    update: (i: number, v: string) => setFormData(p => ({ ...p, hint: p.hint.map((h, idx) => idx === i ? v : h) })),
-    remove: (i: number) => setFormData(p => ({ ...p, hint: p.hint.filter((_, idx) => idx !== i) }))
+    add: () => setFormData(p => ({
+      ...p,
+      hint: [...(p.hint || []), ''],
+      hintNotifs: [...(p.hintNotifs || []), true]
+    })),
+    update: (i: number, v: string) => setFormData(p => ({
+      ...p,
+      hint: p.hint.map((h, idx) => idx === i ? v : h)
+    })),
+    toggleNotif: (i: number) => setFormData(p => ({
+      ...p,
+      hintNotifs: (p.hintNotifs || p.hint.map(() => false)).map((n, idx) => idx === i ? !n : n)
+    })),
+    remove: (i: number) => setFormData(p => ({
+      ...p,
+      hint: p.hint.filter((_, idx) => idx !== i),
+      hintNotifs: (p.hintNotifs || []).filter((_, idx) => idx !== i)
+    }))
   }
 
   const attachmentOps = {
