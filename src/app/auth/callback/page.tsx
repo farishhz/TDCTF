@@ -8,17 +8,17 @@ import { AuthService } from '@/features/auth/services/auth.service'
 import Loader from '@/shared/components/Loader'
 
 /**
- * OAuth Callback Handler
+ * OAuth Callback Handler — PKCE + Implicit Flow Support
  *
- * Supabase meredirect user ke sini setelah OAuth (Google) berhasil.
- * URL akan mengandung hash fragment (#access_token=...&refresh_token=...)
- * yang perlu diproses oleh Supabase JS client di sisi client (tidak bisa di server).
+ * Supabase v2 menggunakan PKCE flow secara default:
+ *   → Redirect URL: /auth/callback?code=XXXX
+ *   → Perlu panggil exchangeCodeForSession(code) untuk tukar code → session
  *
- * Flow:
- * 1. Supabase Google OAuth redirect → /auth/callback#access_token=...
- * 2. Page ini memproses hash → supabase.auth.getSession() membuat session
- * 3. Jika user baru, create_profile dipanggil otomatis via getCurrentUser()
- * 4. Redirect ke /challenges (atau next param)
+ * Implicit flow (lama) menggunakan hash:
+ *   → Redirect URL: /auth/callback#access_token=...
+ *   → getSession() akan otomatis membaca hash
+ *
+ * Page ini menangani KEDUANYA.
  */
 export default function AuthCallbackPage() {
   const router = useRouter()
@@ -32,18 +32,31 @@ export default function AuthCallbackPage() {
 
     async function handleCallback() {
       try {
-        // Supabase JS client secara otomatis memproses hash fragment (#access_token=...)
-        // dari URL dan membuat session ketika getSession() dipanggil
-        const { data: { session }, error } = await supabase.auth.getSession()
+        // ── PKCE Flow: ada ?code= di URL ─────────────────────────────────
+        const code = searchParams.get('code')
 
-        if (error || !session) {
-          // Session gagal dibuat — kemungkinan token expired atau invalid
-          console.error('[auth/callback] Failed to get session:', error?.message)
-          router.replace('/login?error=oauth_failed')
-          return
+        if (code) {
+          const { data, error } = await supabase.auth.exchangeCodeForSession(code)
+
+          if (error || !data.session) {
+            console.error('[auth/callback] PKCE exchange failed:', error?.message)
+            router.replace('/login?error=oauth_failed')
+            return
+          }
+        } else {
+          // ── Implicit/Hash Flow (fallback) ────────────────────────────────
+          // getSession() otomatis membaca hash fragment jika ada
+          const { data: { session }, error } = await supabase.auth.getSession()
+
+          if (error || !session) {
+            console.error('[auth/callback] No code & no session found:', error?.message)
+            router.replace('/login?error=oauth_failed')
+            return
+          }
         }
 
-        // Session berhasil — ambil/buat profil user (handles new Google user profile creation)
+        // ── Session sudah terbentuk — buat profil user jika belum ada ─────
+        // getCurrentUser() memanggil create_profile RPC jika user belum punya profil
         const currentUser = await AuthService.getCurrentUser()
 
         if (currentUser) {

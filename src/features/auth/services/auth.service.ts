@@ -280,9 +280,18 @@ export const AuthService = {
       let userData = data && data.length > 0 ? data[0] : null
 
       if (!userData) {
-        const username =
+        const rawUsername =
           user.user_metadata?.username ||
-          (user.email ? user.email.split("@")[0] : "user_" + user.id.substring(0, 8))
+          user.user_metadata?.name ||
+          (user.email ? user.email.split('@')[0] : 'user_' + user.id.substring(0, 8))
+
+        // Sanitize: hapus karakter yang tidak diizinkan create_profile ('^[a-zA-Z0-9_. -]+$')
+        // Ganti karakter invalid dengan underscore, lalu trim dan pastikan tidak kosong
+        const username = (rawUsername as string)
+          .replace(/[^a-zA-Z0-9_. -]/g, '_')
+          .replace(/^[^a-zA-Z0-9]+/, '') // hapus non-alphanumeric di awal
+          .slice(0, 28)
+          || 'user_' + user.id.substring(0, 8)
 
         const { error: rpcError } = await supabase.rpc('create_profile', {
           p_id: user.id,
