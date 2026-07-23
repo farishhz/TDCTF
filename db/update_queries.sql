@@ -66,10 +66,8 @@ END $$;
 -- <<< END: schema/_reset_function.sql
 
 -- >>> BEGIN: queries/users.sql
--- ==============================================
--- Queries: users
--- Source: sql/chema.sql
--- ==============================================
+-- Migrations / Schema updates:
+ALTER TABLE public.users ADD COLUMN IF NOT EXISTS last_login_at TIMESTAMP WITH TIME ZONE DEFAULT now();
 -- SELECT
 CREATE OR REPLACE FUNCTION public.resolve_profile_picture(
   p_profile_picture_url TEXT,

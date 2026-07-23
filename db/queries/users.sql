@@ -1,7 +1,5 @@
--- ==============================================
--- Queries: users
--- Source: sql/chema.sql
--- ==============================================
+-- Migrations / Schema updates:
+ALTER TABLE public.users ADD COLUMN IF NOT EXISTS last_login_at TIMESTAMP WITH TIME ZONE DEFAULT now();
 
 -- SELECT
 CREATE OR REPLACE FUNCTION public.resolve_profile_picture(
