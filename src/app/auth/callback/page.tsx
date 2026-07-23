@@ -38,12 +38,17 @@ export default function AuthCallbackPage() {
 
       try {
         const currentUser = await AuthService.getCurrentUser()
-        if (currentUser) setUser(currentUser)
-      } catch {
-        // profile creation error — tetap redirect, user bisa login ulang
+        if (currentUser) {
+          setUser(currentUser)
+          router.replace(redirectTo)
+        } else {
+          console.error('[auth/callback] getCurrentUser returned null')
+          router.replace('/login?error=profile_creation_failed')
+        }
+      } catch (err) {
+        console.error('[auth/callback] Error during succeed getCurrentUser:', err)
+        router.replace('/login?error=profile_creation_failed')
       }
-
-      router.replace(redirectTo)
     }
 
     const fail = () => {

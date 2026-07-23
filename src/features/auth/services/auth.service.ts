@@ -297,11 +297,21 @@ export const AuthService = {
           p_id: user.id,
           p_username: username
         })
-        if (rpcError) return null
+        if (rpcError) {
+          console.error('[getCurrentUser] create_profile RPC error:', rpcError.message, rpcError)
+          return null
+        }
 
         const { data: newData, error: newError } = await supabase.rpc('get_user_profile', { p_id: user.id })
+        if (newError) {
+          console.error('[getCurrentUser] get_user_profile RPC error after creation:', newError.message, newError)
+          return null
+        }
         userData = newData && newData.length > 0 ? newData[0] : null
-        if (newError || !userData) return null
+        if (!userData) {
+          console.error('[getCurrentUser] get_user_profile returned empty data after creation')
+          return null
+        }
       }
 
       const merged = mergeProfilePicture(userData as any, user, userData)
