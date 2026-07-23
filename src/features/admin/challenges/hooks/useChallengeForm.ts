@@ -26,6 +26,7 @@ export const EMPTY_CHALLENGE_FORM: ChallengeFormData = {
   max_points: 100,
   flag: '',
   hint: [],
+  hintNotifs: [],
   difficulty: '',
   attachments: [],
   is_dynamic: false,
@@ -120,6 +121,7 @@ export function useChallengeForm() {
       max_points: full.max_points != null ? Math.max(0, full.max_points) : (full.points != null ? Math.max(0, full.points) : 100),
       flag: full.flag || '',
       hint: parsedHint,
+      hintNotifs: parsedHint.map(() => false),
       difficulty: full.difficulty || 'Easy',
       attachments: full.attachments || [],
       is_dynamic: full.is_dynamic ?? false,
@@ -215,33 +217,14 @@ export function useChallengeForm() {
       if (typeof formData.decay_per_solve !== 'undefined') payload.decay_per_solve = Number(formData.decay_per_solve) || 0
       if (formData.is_dynamic) payload.max_points = Number(formData.max_points) || Number(formData.points) || 0
 
-      // Detect newly added hints
-      let newlyAddedHints: string[] = []
-      const currentHints = (formData.hint && formData.hint.length > 0)
-        ? formData.hint.filter(h => h.trim() !== '')
-        : []
-
-      if (currentHints.length > 0) {
-        if (editing) {
-          let oldHints: string[] = []
-          if (Array.isArray(editing.hint)) {
-            oldHints = editing.hint.filter((h): h is string => typeof h === 'string')
-          } else if (typeof editing.hint === 'string' && (editing.hint as string).trim() !== '') {
-            try {
-              const arr = JSON.parse(editing.hint as string)
-              if (Array.isArray(arr)) {
-                oldHints = arr.filter((h: any) => typeof h === 'string')
-              }
-            } catch {
-              oldHints = [editing.hint as string]
-            }
-          }
-          const oldHintsTrimmed = oldHints.map(h => h.trim())
-          newlyAddedHints = currentHints.filter(h => !oldHintsTrimmed.includes(h.trim()))
-        } else {
-          newlyAddedHints = currentHints
+      // Determine which hints should send a notification based on user selection toggles
+      const hintsToNotify: string[] = []
+      formData.hint.forEach((hintText, idx) => {
+        const text = hintText.trim()
+        if (text && formData.hintNotifs?.[idx]) {
+          hintsToNotify.push(text)
         }
-      }
+      })
 
       if (editing) {
         await updateChallenge(editing.id, payload)
@@ -261,8 +244,8 @@ export function useChallengeForm() {
         : (typeof formData.is_active !== 'undefined' ? !!formData.is_active : true)
       const isMaintenance = !!formData.is_maintenance
 
-      if (isActive && !isMaintenance && newlyAddedHints.length > 0) {
-        for (const hintText of newlyAddedHints) {
+      if (isActive && !isMaintenance && hintsToNotify.length > 0) {
+        for (const hintText of hintsToNotify) {
           const title = `Hint Released: ${payload.title}`
           const message = `A new hint has been released for challenge **${payload.title}**:\n\n*${hintText}*`
           try {
@@ -300,9 +283,24 @@ export function useChallengeForm() {
   }
 
   const hintOps = {
-    add: () => setFormData(p => ({ ...p, hint: [...(p.hint || []), ''] })),
-    update: (i: number, v: string) => setFormData(p => ({ ...p, hint: p.hint.map((h, idx) => idx === i ? v : h) })),
-    remove: (i: number) => setFormData(p => ({ ...p, hint: p.hint.filter((_, idx) => idx !== i) }))
+    add: () => setFormData(p => ({
+      ...p,
+      hint: [...(p.hint || []), ''],
+      hintNotifs: [...(p.hintNotifs || []), true]
+    })),
+    update: (i: number, v: string) => setFormData(p => ({
+      ...p,
+      hint: p.hint.map((h, idx) => idx === i ? v : h)
+    })),
+    toggleNotif: (i: number) => setFormData(p => ({
+      ...p,
+      hintNotifs: (p.hintNotifs || p.hint.map(() => false)).map((n, idx) => idx === i ? !n : n)
+    })),
+    remove: (i: number) => setFormData(p => ({
+      ...p,
+      hint: p.hint.filter((_, idx) => idx !== i),
+      hintNotifs: (p.hintNotifs || []).filter((_, idx) => idx !== i)
+    }))
   }
 
   const attachmentOps = {

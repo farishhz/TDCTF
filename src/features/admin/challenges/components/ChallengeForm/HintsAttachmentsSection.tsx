@@ -8,6 +8,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
+  Switch,
 } from '@/shared/ui'
 import {
   ADMIN_FORM_FIELD_CLASS,
@@ -22,6 +23,7 @@ interface HintsAttachmentsSectionProps {
   onAddHint: () => void
   onUpdateHint: (i: number, v: string) => void
   onRemoveHint: (i: number) => void
+  onToggleHintNotif?: (i: number) => void
   onAddAttachment: () => void
   onUpdateAttachment: (i: number, f: keyof Attachment, v: string) => void
   onRemoveAttachment: (i: number) => void
@@ -35,6 +37,7 @@ export const HintsAttachmentsSection: React.FC<
   onAddHint,
   onUpdateHint,
   onRemoveHint,
+  onToggleHintNotif,
   onAddAttachment,
   onUpdateAttachment,
   onRemoveAttachment,
@@ -57,22 +60,41 @@ export const HintsAttachmentsSection: React.FC<
             <p className={ADMIN_FORM_HELPER_CLASS}>No hints added</p>
           ) : null}
           <div className="mt-2 space-y-2">
-            {formData.hint.map((hint, index) => (
-              <div key={index} className="flex items-center gap-2">
-                <Input
-                  value={hint}
-                  onChange={(event) => onUpdateHint(index, event.target.value)}
-                  className={ADMIN_MUTED_INPUT_CLASS}
-                />
-                <Button
-                  type="button"
-                  variant="ghost"
-                  onClick={() => onRemoveHint(index)}
-                >
-                  &times;
-                </Button>
-              </div>
-            ))}
+            {formData.hint.map((hint, index) => {
+              const isNotifying = formData.hintNotifs?.[index] ?? false
+              return (
+                <div key={index} className="flex items-center gap-3">
+                  <div className="flex-1">
+                    <Input
+                      value={hint}
+                      onChange={(event) => onUpdateHint(index, event.target.value)}
+                      className={ADMIN_MUTED_INPUT_CLASS}
+                    />
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <Switch
+                      checked={isNotifying}
+                      onCheckedChange={() => onToggleHintNotif?.(index)}
+                      id={`hint-notif-${index}`}
+                    />
+                    <Label
+                      htmlFor={`hint-notif-${index}`}
+                      className="text-xs text-gray-500 cursor-pointer select-none"
+                    >
+                      Notify
+                    </Label>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    onClick={() => onRemoveHint(index)}
+                    className="shrink-0"
+                  >
+                    &times;
+                  </Button>
+                </div>
+              )
+            })}
           </div>
         </div>
       )}
