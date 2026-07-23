@@ -223,7 +223,19 @@ export function useChallengeForm() {
 
       if (currentHints.length > 0) {
         if (editing) {
-          const oldHints = Array.isArray(editing.hint) ? editing.hint : []
+          let oldHints: string[] = []
+          if (Array.isArray(editing.hint)) {
+            oldHints = editing.hint.filter((h): h is string => typeof h === 'string')
+          } else if (typeof editing.hint === 'string' && (editing.hint as string).trim() !== '') {
+            try {
+              const arr = JSON.parse(editing.hint as string)
+              if (Array.isArray(arr)) {
+                oldHints = arr.filter((h: any) => typeof h === 'string')
+              }
+            } catch {
+              oldHints = [editing.hint as string]
+            }
+          }
           const oldHintsTrimmed = oldHints.map(h => h.trim())
           newlyAddedHints = currentHints.filter(h => !oldHintsTrimmed.includes(h.trim()))
         } else {
