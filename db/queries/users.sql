@@ -1,7 +1,7 @@
--- Migrations / Schema updates:
-ALTER TABLE public.users ADD COLUMN IF NOT EXISTS role VARCHAR(20) DEFAULT 'user' NOT NULL;
-ALTER TABLE public.users DROP CONSTRAINT IF EXISTS users_role_check;
-ALTER TABLE public.users ADD CONSTRAINT users_role_check CHECK (role IN ('user', 'moderator', 'admin'));
+-- ==============================================
+-- Queries: users
+-- Source: sql/chema.sql
+-- ==============================================
 
 -- SELECT
 CREATE OR REPLACE FUNCTION public.resolve_profile_picture(
