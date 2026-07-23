@@ -15,6 +15,7 @@ import {
 import APP from '@/config'
 import toast from 'react-hot-toast'
 import { normalizeTDCTLServiceValues } from '@/features/challenges/lib/tdctl-services'
+import { createNotification } from '@/shared/lib/challenges'
 
 export const EMPTY_CHALLENGE_FORM: ChallengeFormData = {
   title: '',
@@ -214,6 +215,22 @@ export function useChallengeForm() {
       if (typeof formData.decay_per_solve !== 'undefined') payload.decay_per_solve = Number(formData.decay_per_solve) || 0
       if (formData.is_dynamic) payload.max_points = Number(formData.max_points) || Number(formData.points) || 0
 
+      // Detect newly added hints
+      let newlyAddedHints: string[] = []
+      const currentHints = (formData.hint && formData.hint.length > 0)
+        ? formData.hint.filter(h => h.trim() !== '')
+        : []
+
+      if (currentHints.length > 0) {
+        if (editing) {
+          const oldHints = Array.isArray(editing.hint) ? editing.hint : []
+          const oldHintsTrimmed = oldHints.map(h => h.trim())
+          newlyAddedHints = currentHints.filter(h => !oldHintsTrimmed.includes(h.trim()))
+        } else {
+          newlyAddedHints = currentHints
+        }
+      }
+
       if (editing) {
         await updateChallenge(editing.id, payload)
         await syncSubChallenges(editing.id)
@@ -224,6 +241,24 @@ export function useChallengeForm() {
         }
         const createdId = await addChallenge(payload)
         if (createdId) await syncSubChallenges(createdId)
+      }
+
+      // Auto-release hint announcement if challenge is active and not in maintenance mode
+      const isActive = editing
+        ? (typeof formData.is_active !== 'undefined' ? !!formData.is_active : !!editing.is_active)
+        : (typeof formData.is_active !== 'undefined' ? !!formData.is_active : true)
+      const isMaintenance = !!formData.is_maintenance
+
+      if (isActive && !isMaintenance && newlyAddedHints.length > 0) {
+        for (const hintText of newlyAddedHints) {
+          const title = `Hint Released: ${payload.title}`
+          const message = `A new hint has been released for challenge **${payload.title}**:\n\n*${hintText}*`
+          try {
+            await createNotification(title, message, 'hint')
+          } catch (notifErr) {
+            console.error('Failed to create hint notification:', notifErr)
+          }
+        }
       }
 
       toast.success('Challenge saved successfully')
