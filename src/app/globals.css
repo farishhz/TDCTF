@@ -506,3 +506,157 @@ textarea::-webkit-resizer {
 .js-plotly-plot .legend .scrollhandle {
   display: none !important;
 }
+
+/* ============================================================
+   NAVBAR CAPSULE LIQUID GLASS — Home-only morphing navbar
+   ============================================================ */
+
+/* --- Capsule (home page) mode --- */
+.navbar-capsule {
+  top: 16px !important;
+  left: 50% !important;
+  right: auto !important;
+  /* Use max-content so nav wraps tightly around ALL content */
+  width: max-content !important;
+  /* Hard cap: never wider than viewport minus 24px margin on each side */
+  max-width: calc(100vw - 48px) !important;
+  min-width: 0 !important;
+  transform: translateX(-50%) !important;
+  border-radius: 9999px !important;
+  border: 1px solid rgba(255, 255, 255, 0.18) !important;
+  background: rgba(255, 255, 255, 0.08) !important;
+  backdrop-filter: blur(24px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(24px) saturate(180%) !important;
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.12),
+    0 2px 8px rgba(0, 0, 0, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.25),
+    0 0 0 0.5px rgba(255, 255, 255, 0.10) !important;
+  overflow: visible !important;
+  /* Override Tailwind border-b from SURFACE_NAVBAR_CLASS */
+  border-bottom: 1px solid rgba(255, 255, 255, 0.18) !important;
+}
+
+.dark .navbar-capsule {
+  background: rgba(11, 15, 25, 0.35) !important;
+  border-color: rgba(255, 255, 255, 0.10) !important;
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.40),
+    0 2px 8px rgba(0, 0, 0, 0.30),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    0 0 60px rgba(59, 130, 246, 0.06) !important;
+}
+
+/* --- Bar (non-home) mode resets --- */
+.navbar-bar {
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  transform: none !important;
+  border-radius: 0 !important;
+}
+
+/* ─── Slide-in animations: both capsule and bar drop in from above ─── */
+
+/*
+ * Capsule enters home: slides down from above viewport.
+ * navbar-capsule CSS already handles position (top:16px, left:50%, translateX(-50%))
+ * This animation only adds the vertical slide via translateY.
+ */
+@keyframes slide-in-capsule {
+  from {
+    transform: translateX(-50%) translateY(calc(-100% - 32px));
+    opacity: 0;
+  }
+  to {
+    transform: translateX(-50%) translateY(0);
+    opacity: 1;
+  }
+}
+
+/*
+ * Bar enters non-home pages: slides down from above viewport.
+ * navbar-bar CSS already handles position (top:0, left:0, width:100%)
+ * This animation only adds the vertical slide via translateY.
+ */
+@keyframes slide-in-bar {
+  from {
+    transform: translateY(-100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* Capsule animation: smooth ease-out deceleration */
+.navbar-animating-to-capsule {
+  animation: slide-in-capsule 420ms cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
+}
+
+/* Bar animation: slightly faster, same smooth ease-out */
+.navbar-animating-to-bar {
+  animation: slide-in-bar 350ms cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
+}
+
+/* Inner container in capsule: max-content so flex items never wrap or clip */
+.navbar-capsule .navbar-inner {
+  width: max-content !important;
+  max-width: none !important;
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+  padding-left: 1.25rem !important;
+  padding-right: 1.25rem !important;
+}
+
+/* Capsule shimmer effect — liquid glass highlight */
+@keyframes capsule-shimmer {
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 1; }
+}
+
+.navbar-capsule::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 9999px;
+  background: linear-gradient(
+    105deg,
+    rgba(255,255,255,0.15) 0%,
+    rgba(255,255,255,0.04) 40%,
+    rgba(255,255,255,0.10) 100%
+  );
+  pointer-events: none;
+  animation: capsule-shimmer 4s ease-in-out infinite;
+}
+
+/* Responsive: on mobile, never capsule (always bar) */
+@media (max-width: 767px) {
+  .navbar-capsule,
+  .navbar-animating-to-capsule {
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    transform: none !important;
+    border-radius: 0 !important;
+    border: none !important;
+    background: rgba(255, 255, 255, 0.85) !important;
+    backdrop-filter: blur(20px) !important;
+    -webkit-backdrop-filter: blur(20px) !important;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08) !important;
+    animation: none !important;
+  }
+  .dark .navbar-capsule,
+  .dark .navbar-animating-to-capsule {
+    background: rgba(11, 15, 25, 0.90) !important;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.20) !important;
+  }
+  .navbar-animating-to-bar {
+    animation: none !important;
+  }
+}
