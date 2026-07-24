@@ -42,9 +42,7 @@ export default function LoginPage() {
 
   return (
     <AuthPageShell>
-      <div className="w-full max-w-md">
-        <LoginForm />
-      </div>
+      <LoginForm />
     </AuthPageShell>
   )
 }

@@ -42,9 +42,7 @@ export default function RegisterPage() {
 
   return (
     <AuthPageShell>
-      <div className="w-full max-w-lg">
-        <RegisterForm />
-      </div>
+      <RegisterForm />
     </AuthPageShell>
   )
 }

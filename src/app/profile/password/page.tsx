@@ -7,11 +7,6 @@ import { AuthCard } from '@/features/auth/components/ui/AuthCard'
 import { AuthHeader } from '@/features/auth/components/ui/AuthHeader'
 import { AuthPageShell } from '@/features/auth/components/ui/AuthPageShell'
 import ResetPasswordForm from '@/features/auth/components/ResetPasswordForm'
-import {
-  THEME_PRIMARY_BG_CLASS,
-  THEME_PRIMARY_BG_HOVER_CLASS,
-  THEME_PRIMARY_SHADOW_CLASS,
-} from '@/shared/styles'
 
 export default function ChangePasswordPage() {
   const { user, loading: authLoading } = useAuth()
@@ -27,28 +22,26 @@ export default function ChangePasswordPage() {
   if (!user) {
     return (
       <AuthPageShell>
-        <div className="w-full max-w-md">
-          <AuthCard>
-            <AuthHeader
-              title="Login required"
-            />
-            <Link
-              href="/login"
-              className={`relative flex w-full items-center justify-center overflow-hidden rounded-xl px-4 py-3 text-sm font-semibold text-white shadow-lg transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] ${THEME_PRIMARY_BG_CLASS} ${THEME_PRIMARY_BG_HOVER_CLASS} ${THEME_PRIMARY_SHADOW_CLASS}`}
-            >
-              Login
-            </Link>
-          </AuthCard>
-        </div>
+        <AuthCard>
+          <AuthHeader
+            badge="Access Required"
+            title="Login required"
+            subtitle="You must be logged in to change your password"
+          />
+          <Link
+            href="/login"
+            className="flex h-11 w-full items-center justify-center rounded-xl bg-blue-600 text-sm font-semibold text-white shadow-lg shadow-blue-600/25 transition-all duration-200 hover:bg-blue-500 active:scale-[0.98]"
+          >
+            Go to Login
+          </Link>
+        </AuthCard>
       </AuthPageShell>
     )
   }
 
   return (
     <AuthPageShell>
-      <div className="w-full max-w-md">
-        <ResetPasswordForm />
-      </div>
+      <ResetPasswordForm />
     </AuthPageShell>
   )
 }

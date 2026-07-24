@@ -16,8 +16,8 @@ export function AuthStatusMessage({ children, tone, title }: AuthStatusMessagePr
       className={cn(
         'flex gap-3 rounded-xl border p-3 text-sm',
         tone === 'success'
-          ? 'border-emerald-500/20 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300'
-          : 'border-red-500/20 bg-red-500/10 text-red-700 dark:text-red-300'
+          ? 'border-emerald-500/20 bg-emerald-500/10 text-emerald-400'
+          : 'border-red-500/20 bg-red-500/10 text-red-400'
       )}
     >
       <Icon className="mt-0.5 h-4 w-4 flex-none" />

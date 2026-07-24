@@ -3,7 +3,6 @@
 import React, { useState } from 'react'
 import { Eye, EyeOff, Lock } from 'lucide-react'
 import { useResetPassword } from '../hooks'
-import { THEME_PRIMARY_RING_CLASS } from '@/shared/styles'
 import {
   AuthButton,
   AuthCard,
@@ -30,10 +29,12 @@ export default function ResetPasswordForm() {
   return (
     <AuthCard>
       <AuthHeader
+        badge="Account Security"
         title="Change Password"
+        subtitle="Set a new secure password for your account"
       />
 
-      <form className="space-y-5" onSubmit={handleResetPassword}>
+      <form className="space-y-4" onSubmit={handleResetPassword}>
         <AuthInput
           type={showNewPassword ? 'text' : 'password'}
           name="newPassword"
@@ -43,8 +44,8 @@ export default function ResetPasswordForm() {
           rightElement={
             <button
               type="button"
-              onClick={() => setShowNewPassword((value) => !value)}
-              className={`rounded-lg p-1 text-gray-400 transition-colors hover:text-blue-500 focus:outline-none ${THEME_PRIMARY_RING_CLASS}`}
+              onClick={() => setShowNewPassword((v) => !v)}
+              className="rounded-lg p-1 text-gray-500 transition-colors hover:text-blue-400 focus:outline-none"
               aria-label={showNewPassword ? 'Hide password' : 'Show password'}
             >
               {showNewPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
@@ -63,8 +64,8 @@ export default function ResetPasswordForm() {
           rightElement={
             <button
               type="button"
-              onClick={() => setShowConfirmPassword((value) => !value)}
-              className={`rounded-lg p-1 text-gray-400 transition-colors hover:text-blue-500 focus:outline-none ${THEME_PRIMARY_RING_CLASS}`}
+              onClick={() => setShowConfirmPassword((v) => !v)}
+              className="rounded-lg p-1 text-gray-500 transition-colors hover:text-blue-400 focus:outline-none"
               aria-label={showConfirmPassword ? 'Hide password' : 'Show password'}
             >
               {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}

@@ -5,7 +5,6 @@ import { Eye, EyeOff, Lock, Mail, User } from 'lucide-react'
 import APP from '@/config'
 import { useRegister } from '../hooks'
 import { isValidUsername } from '../lib/auth-utils'
-import { THEME_PRIMARY_RING_CLASS } from '@/shared/styles'
 import GoogleLoginButton from './GoogleLoginButton'
 import {
   AuthButton,
@@ -46,9 +45,9 @@ export default function RegisterForm() {
   if (checkingSettings) {
     return (
       <AuthCard>
-        <div className="flex flex-col items-center justify-center py-12 space-y-4">
-          <div className="h-8 w-8 animate-spin rounded-full border-2 border-blue-500 border-t-transparent" />
-          <p className="text-sm text-gray-400">Checking registration status...</p>
+        <div className="flex flex-col items-center justify-center py-16 space-y-4">
+          <div className="h-7 w-7 animate-spin rounded-full border-2 border-blue-500 border-t-transparent" />
+          <p className="text-sm text-gray-500">Checking registration status...</p>
         </div>
       </AuthCard>
     )
@@ -62,12 +61,12 @@ export default function RegisterForm() {
     <AuthCard>
       <AuthHeader
         badge="Create Account"
-        title={`Join ${APP.fullName}`}
+        title={`Join ${APP.shortName}`}
         subtitle="Start solving challenges today"
       />
 
-      <form className="space-y-5" onSubmit={handleRegister}>
-        <div className="space-y-4">
+      <form className="space-y-4" onSubmit={handleRegister}>
+        <div className="space-y-3">
           <AuthInput
             id="username"
             name="username"
@@ -103,8 +102,8 @@ export default function RegisterForm() {
             rightElement={
               <button
                 type="button"
-                onClick={() => setShowPassword((value) => !value)}
-                className={`rounded-lg p-1 text-gray-400 transition-colors hover:text-blue-500 focus:outline-none ${THEME_PRIMARY_RING_CLASS}`}
+                onClick={() => setShowPassword((v) => !v)}
+                className="rounded-lg p-1 text-gray-500 transition-colors hover:text-blue-400 focus:outline-none"
                 aria-label={showPassword ? 'Hide password' : 'Show password'}
               >
                 {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
@@ -113,8 +112,6 @@ export default function RegisterForm() {
             value={formData.password}
             onChange={handleChange}
           />
-
-          {/* <PasswordStrength password={formData.password} /> */}
 
           <AuthInput
             id="confirmPassword"
@@ -127,8 +124,8 @@ export default function RegisterForm() {
             rightElement={
               <button
                 type="button"
-                onClick={() => setShowConfirmPassword((value) => !value)}
-                className={`rounded-lg p-1 text-gray-400 transition-colors hover:text-blue-500 focus:outline-none ${THEME_PRIMARY_RING_CLASS}`}
+                onClick={() => setShowConfirmPassword((v) => !v)}
+                className="rounded-lg p-1 text-gray-500 transition-colors hover:text-blue-400 focus:outline-none"
                 aria-label={showConfirmPassword ? 'Hide password' : 'Show password'}
               >
                 {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
@@ -164,7 +161,7 @@ export default function RegisterForm() {
         )}
 
         <AuthButton type="submit" loading={loading}>
-          Register
+          Create Account
         </AuthButton>
 
         <AuthDivider />
