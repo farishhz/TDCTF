@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { useAuth } from '@/shared/contexts/AuthContext'
 import Loader from '@/shared/components/Loader'
 import { AuthPageShell } from '@/features/auth/components/ui/AuthPageShell'
-import RegisterForm from '@/features/auth/components/RegisterForm'
+import AuthFormTabs from '@/features/auth/components/AuthFormTabs'
 
 export default function RegisterPage() {
   const router = useRouter()
@@ -19,7 +19,6 @@ export default function RegisterPage() {
     }
   }, [user, authLoading, router, searchParams])
 
-  // Tampilkan toast jika kembali dari OAuth gagal
   useEffect(() => {
     const error = searchParams.get('error')
     if (!error) return
@@ -42,7 +41,7 @@ export default function RegisterPage() {
 
   return (
     <AuthPageShell>
-      <RegisterForm />
+      <AuthFormTabs defaultTab="register" />
     </AuthPageShell>
   )
 }

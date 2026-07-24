@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { useAuth } from '@/shared/contexts/AuthContext'
 import Loader from '@/shared/components/Loader'
 import { AuthPageShell } from '@/features/auth/components/ui/AuthPageShell'
-import LoginForm from '@/features/auth/components/LoginForm'
+import AuthFormTabs from '@/features/auth/components/AuthFormTabs'
 
 export default function LoginPage() {
   const router = useRouter()
@@ -19,7 +19,6 @@ export default function LoginPage() {
     }
   }, [user, authLoading, router, searchParams])
 
-  // Tampilkan toast jika kembali dari OAuth dengan error
   useEffect(() => {
     const error = searchParams.get('error')
     if (!error) return
@@ -42,7 +41,7 @@ export default function LoginPage() {
 
   return (
     <AuthPageShell>
-      <LoginForm />
+      <AuthFormTabs defaultTab="login" />
     </AuthPageShell>
   )
 }

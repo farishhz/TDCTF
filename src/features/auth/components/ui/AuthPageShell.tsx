@@ -21,7 +21,7 @@ const FEATURE_ITEMS = [
 ]
 
 export function AuthPageShell({ children, className, contentClassName }: AuthPageShellProps) {
-  const logoUrl = TDCTF.tdctf_logo || APP.image_logo
+  const logoUrl = '/logo-no-bg.png'
 
   return (
     <div
@@ -47,26 +47,27 @@ export function AuthPageShell({ children, className, contentClassName }: AuthPag
           }}
         />
 
-        {/* Glowing orb top */}
+        {/* Glowing orbs */}
         <div className="absolute -top-32 -left-32 h-96 w-96 rounded-full bg-blue-600/20 blur-[120px] pointer-events-none" />
-        {/* Glowing orb bottom */}
         <div className="absolute -bottom-32 -right-16 h-80 w-80 rounded-full bg-indigo-600/15 blur-[100px] pointer-events-none" />
 
         {/* Content */}
         <div className="relative z-10 flex flex-1 flex-col justify-between p-10 xl:p-14">
-          {/* Logo */}
-          <div className="flex items-center gap-3">
-            {logoUrl && (
-              <img
-                src={logoUrl}
-                alt={APP.shortName}
-                className="h-9 w-auto object-contain select-none"
-              />
-            )}
-            <span className="text-lg font-bold tracking-tight text-white/90">
-              {APP.shortName}
-            </span>
-          </div>
+
+          {/* ─── LOGO — big, fills the top area ─── */}
+          <motion.div
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, ease: 'easeOut' }}
+            className="mb-2"
+          >
+            <img
+              src={logoUrl}
+              alt={APP.shortName}
+              className="h-auto w-full max-w-[340px] xl:max-w-[380px] object-contain select-none"
+              style={{ filter: 'brightness(0) invert(1)' }}
+            />
+          </motion.div>
 
           {/* Hero text */}
           <div className="space-y-6">
@@ -74,7 +75,7 @@ export function AuthPageShell({ children, className, contentClassName }: AuthPag
               <motion.div
                 initial={{ opacity: 0, y: 16 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, ease: 'easeOut' }}
+                transition={{ duration: 0.5, delay: 0.1, ease: 'easeOut' }}
               >
                 <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-blue-500/30 bg-blue-500/10 px-3 py-1 text-xs font-semibold uppercase tracking-widest text-blue-400">
                   <Lock className="h-3 w-3" />
@@ -95,7 +96,7 @@ export function AuthPageShell({ children, className, contentClassName }: AuthPag
             <motion.ul
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              transition={{ duration: 0.5, delay: 0.15, ease: 'easeOut' }}
+              transition={{ duration: 0.5, delay: 0.2, ease: 'easeOut' }}
               className="space-y-3"
             >
               {FEATURE_ITEMS.map(({ icon: Icon, text }, i) => (
@@ -115,7 +116,7 @@ export function AuthPageShell({ children, className, contentClassName }: AuthPag
           </p>
         </div>
 
-        {/* Right edge fade */}
+        {/* Right edge divider */}
         <div className="absolute right-0 inset-y-0 w-px bg-gradient-to-b from-transparent via-blue-500/20 to-transparent" />
       </div>
 
@@ -127,21 +128,19 @@ export function AuthPageShell({ children, className, contentClassName }: AuthPag
           contentClassName
         )}
       >
-        {/* Subtle bg for mobile */}
+        {/* Subtle bg glow for mobile */}
         <div className="absolute inset-0 lg:hidden">
           <div className="absolute -top-24 left-1/2 -translate-x-1/2 h-80 w-80 rounded-full bg-blue-600/10 blur-[100px] pointer-events-none" />
         </div>
 
         {/* Mobile logo */}
-        <div className="relative z-10 mb-6 flex items-center gap-2 lg:hidden">
-          {logoUrl && (
-            <img
-              src={logoUrl}
-              alt={APP.shortName}
-              className="h-8 w-auto object-contain select-none"
-            />
-          )}
-          <span className="text-base font-bold text-white/90">{APP.shortName}</span>
+        <div className="relative z-10 mb-6 lg:hidden">
+          <img
+            src={logoUrl}
+            alt={APP.shortName}
+            className="h-10 w-auto object-contain select-none"
+            style={{ filter: 'brightness(0) invert(1)' }}
+          />
         </div>
 
         <motion.div
