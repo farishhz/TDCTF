@@ -2,9 +2,9 @@
 
 import { useMemo, useState } from 'react'
 import Link from 'next/link'
-import { Check, ChevronLeft, ChevronRight, Copy, ExternalLink, KeyRound, Ban, Unlock, Tag } from 'lucide-react'
+import { Check, ChevronLeft, ChevronRight, Copy, ExternalLink, KeyRound, Ban, Unlock, Tag, Trash2 } from 'lucide-react'
 import { ImageWithFallback } from '@/shared/components'
-import { usePresence } from '@/shared/contexts'
+import { usePresence, useAuth } from '@/shared/contexts'
 import {
   Button,
   Table,
@@ -38,7 +38,7 @@ import {
   ADMIN_FORM_FIELD_CLASS,
 } from '../../ui/form-field-styles'
 import type { AdminUserRow, UserSocialLinks } from '../types'
-import { adminChangePassword, adminBanUser, adminUnbanUser, adminAssignTagsBulk } from '../services/admin-users.service'
+import { adminChangePassword, adminBanUser, adminUnbanUser, adminAssignTagsBulk, adminDeleteUser } from '../services/admin-users.service'
 import toast from 'react-hot-toast'
 import ConfirmDialog from '@/shared/components/ConfirmDialog'
 
@@ -138,6 +138,7 @@ export default function UsersTableCard({
   const [copiedUserId, setCopiedUserId] = useState<string | null>(null)
 
   // Administrative Dialog & Form States
+  const { user: currentUser } = useAuth()
   const [changePasswordUser, setChangePasswordUser] = useState<AdminUserRow | null>(null)
   const [newPassword, setNewPassword] = useState('')
 
@@ -147,6 +148,7 @@ export default function UsersTableCard({
   const [banDuration, setBanDuration] = useState('5')
   const [banReason, setBanReason] = useState('')
   const [unbanUserObj, setUnbanUserObj] = useState<{ id: string; username: string } | null>(null)
+  const [deleteUserObj, setDeleteUserObj] = useState<{ id: string; username: string; is_admin: boolean } | null>(null)
 
   const [editTagsUser, setEditTagsUser] = useState<AdminUserRow | null>(null)
   const [editTagsInput, setEditTagsInput] = useState('')
@@ -502,6 +504,30 @@ export default function UsersTableCard({
                                     Ban
                                   </Button>
                                 )}
+
+                                {listedUser.is_admin || listedUser.id === currentUser?.id ? (
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="rounded-xl h-8 w-24 flex items-center justify-center px-3 text-gray-400 border-gray-200 dark:text-gray-600 dark:border-gray-800/80 cursor-not-allowed opacity-50"
+                                    disabled
+                                    title={listedUser.id === currentUser?.id ? 'Cannot delete your own account' : 'Cannot delete an admin account'}
+                                  >
+                                    <Trash2 className="h-3.5 w-3.5 mr-1" />
+                                    Delete
+                                  </Button>
+                                ) : (
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="rounded-xl h-8 w-24 flex items-center justify-center px-3 text-red-600 border-red-600/30 hover:bg-red-600/10 hover:text-red-700 dark:text-red-400 dark:border-red-500/30 dark:hover:bg-red-500/20"
+                                    onClick={() => setDeleteUserObj({ id: listedUser.id, username: listedUser.username, is_admin: listedUser.is_admin })}
+                                    disabled={isSubmitting}
+                                  >
+                                    <Trash2 className="h-3.5 w-3.5 mr-1" />
+                                    Delete
+                                  </Button>
+                                )}
                               </div>
                             )
                           })()}
@@ -704,6 +730,32 @@ export default function UsersTableCard({
             onRefresh?.()
           } else {
             toast.error(result.error || 'Failed to unsuspend user')
+          }
+        }}
+      />
+
+      {/* Confirm Delete User Dialog */}
+      <ConfirmDialog
+        open={deleteUserObj !== null}
+        onOpenChange={(open) => {
+          if (!open) setDeleteUserObj(null)
+        }}
+        title="Delete User Account"
+        variant="destructive"
+        description={`Are you sure you want to permanently delete user "${deleteUserObj?.username}"? All associated data (solves, team memberships, and profile) will be deleted. They can register again unless their account was banned.`}
+        confirmLabel="Delete Account"
+        cancelLabel="Cancel"
+        onConfirm={async () => {
+          if (!deleteUserObj) return
+          setIsSubmitting(true)
+          const result = await adminDeleteUser(deleteUserObj.id)
+          setIsSubmitting(false)
+          if (result.success) {
+            toast.success(`User ${deleteUserObj.username} deleted successfully!`)
+            setDeleteUserObj(null)
+            onRefresh?.()
+          } else {
+            toast.error(result.error || 'Failed to delete user account')
           }
         }}
       />

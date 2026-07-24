@@ -13,6 +13,7 @@ const orderedFiles = [
   "schema/categories.sql",
   "schema/sub_categories.sql",
   "schema/users.sql",
+  "schema/banned_identifiers.sql",
   "schema/system_settings.sql",
   "schema/admin_audit_logs.sql",
   "schema/events.sql",

@@ -428,10 +428,15 @@ export const AuthService = {
   async isCurrentSessionActive(): Promise<boolean> {
     try {
       const { data, error } = await supabase.rpc('is_current_session_active')
-      if (error) return false
-      return !!data
-    } catch {
-      return false
+      if (error) {
+        // Log warning but return true to prevent transient network errors from logging out users
+        console.warn('[isCurrentSessionActive] RPC warning:', error.message)
+        return true
+      }
+      return data === true
+    } catch (err) {
+      console.warn('[isCurrentSessionActive] Network exception caught:', err)
+      return true
     }
   }
 }

@@ -108,6 +108,20 @@ export async function adminUnbanUser(userId: string): Promise<{ success: boolean
   }
 }
 
+export async function adminDeleteUser(userId: string): Promise<{ success: boolean; error?: string }> {
+  try {
+    const { error } = await (supabase as any).rpc('admin_delete_user', {
+      p_user_id: userId
+    })
+    if (error) {
+      return { success: false, error: error.message }
+    }
+    return { success: true }
+  } catch (err: any) {
+    return { success: false, error: err.message || 'Network error' }
+  }
+}
+
 export async function adminBatchCreateUsers(users: any[], eventId: string | null): Promise<{
   success: boolean
   successCount: number

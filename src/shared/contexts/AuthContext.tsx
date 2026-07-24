@@ -87,20 +87,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const { AuthService } = await import('@/features/auth/services/auth.service')
         const active = await AuthService.isCurrentSessionActive()
         if (!active) {
-          await AuthService.signOut()
-          setUser(null)
-          const toast = (await import('react-hot-toast')).default
-          toast.error('Sesi Anda telah berakhir karena Anda masuk di perangkat lain.', {
-            id: 'session-expired-toast',
-            duration: 6000,
-          })
+          // Verify with a 2-second double check before declaring session expired to prevent false positives during token refresh
+          await new Promise((resolve) => setTimeout(resolve, 2000))
+          const doubleCheckActive = await AuthService.isCurrentSessionActive()
+          if (!doubleCheckActive) {
+            await AuthService.signOut()
+            setUser(null)
+            const toast = (await import('react-hot-toast')).default
+            toast.error('Sesi Anda telah berakhir karena Anda masuk di perangkat lain.', {
+              id: 'session-expired-toast',
+              duration: 6000,
+            })
+          }
         }
       } catch (err) {
         console.error('Session check failed:', err)
       }
     }
 
-    timer = setInterval(checkSession, 20000)
+    timer = setInterval(checkSession, 30000)
 
     const handleFocus = () => { void checkSession() }
     window.addEventListener('focus', handleFocus)

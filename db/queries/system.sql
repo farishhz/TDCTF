@@ -72,9 +72,11 @@ BEGIN
     RETURN NEW;
   END IF;
 
-  -- 3. If not an admin, delete all other sessions
+  -- 3. If not an admin, delete older sessions created over 5 seconds prior to avoid wiping same-browser multi-tab sessions on refresh
   DELETE FROM auth.sessions
-  WHERE user_id = NEW.user_id AND id <> NEW.id;
+  WHERE user_id = NEW.user_id
+    AND id <> NEW.id
+    AND created_at < (NEW.created_at - INTERVAL '5 seconds');
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = auth, public, extensions;
@@ -89,9 +91,26 @@ EXECUTE FUNCTION public.limit_user_sessions();
 -- RPC function to verify if caller's session is still active
 CREATE OR REPLACE FUNCTION public.is_current_session_active()
 RETURNS BOOLEAN AS $$
+DECLARE
+  v_user_id UUID := auth.uid()::uuid;
+  v_session_id_str TEXT;
 BEGIN
+  IF v_user_id IS NULL THEN
+    RETURN FALSE;
+  END IF;
+
+  v_session_id_str := auth.jwt() ->> 'session_id';
+
+  -- If session_id claim is present in JWT, check exact session ID first
+  IF v_session_id_str IS NOT NULL AND v_session_id_str <> '' THEN
+    IF EXISTS (SELECT 1 FROM auth.sessions WHERE id = v_session_id_str::uuid) THEN
+      RETURN TRUE;
+    END IF;
+  END IF;
+
+  -- Fallback: check if ANY active session exists for this user in auth.sessions
   RETURN EXISTS (
-    SELECT 1 FROM auth.sessions WHERE id = (auth.jwt() ->> 'session_id')::uuid
+    SELECT 1 FROM auth.sessions WHERE user_id = v_user_id
   );
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = auth, public, extensions;
