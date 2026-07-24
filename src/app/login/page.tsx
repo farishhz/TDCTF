@@ -15,7 +15,13 @@ export default function LoginPage() {
   useEffect(() => {
     if (!authLoading && user) {
       const redirectTo = searchParams.get('redirectTo') || '/challenges'
-      router.push(redirectTo)
+      router.replace(redirectTo)
+      const timer = setTimeout(() => {
+        if (typeof window !== 'undefined' && window.location.pathname.startsWith('/login')) {
+          window.location.href = redirectTo
+        }
+      }, 300)
+      return () => clearTimeout(timer)
     }
   }, [user, authLoading, router, searchParams])
 
@@ -35,7 +41,7 @@ export default function LoginPage() {
     })
   }, [searchParams])
 
-  if (authLoading) {
+  if (authLoading || user) {
     return <Loader fullscreen />
   }
 

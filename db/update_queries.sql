@@ -180,8 +180,9 @@ RETURNS JSON
 AS $$
 DECLARE
   v_user RECORD;
-  v_rank BIGINT;
-  v_score INT;
+  v_rank BIGINT := 1;
+  v_score INT := 0;
+  v_last_solve TIMESTAMPTZ;
   v_solves JSON;
   v_picture TEXT;
   v_last_login TIMESTAMPTZ;
@@ -207,26 +208,32 @@ BEGIN
   INTO v_picture, v_last_login
   FROM auth.users au
   WHERE au.id = v_user.id;
-  SELECT r.rank
-  INTO v_rank
-  FROM (
-    SELECT
-      u.id,
-      RANK() OVER (
-        ORDER BY COALESCE(SUM(CASE WHEN public.match_event_mode(p_event_mode, p_event_id, c.event_id) THEN c.points ELSE 0 END), 0) DESC,
-                 MAX(CASE WHEN public.match_event_mode(p_event_mode, p_event_id, c.event_id) THEN s.created_at ELSE NULL END) ASC
-      ) AS rank
-    FROM public.users u
-    LEFT JOIN public.solves s ON u.id = s.user_id
-    LEFT JOIN public.challenges c ON s.challenge_id = c.id
-    GROUP BY u.id
-  ) r
-  WHERE r.id = p_id;
-  SELECT COALESCE(SUM(CASE WHEN public.match_event_mode(p_event_mode, p_event_id, c.event_id) THEN c.points ELSE 0 END), 0)
-  INTO v_score
+  -- 1. Compute target user's score and last solve timestamp directly
+  SELECT
+    COALESCE(SUM(CASE WHEN public.match_event_mode(p_event_mode, p_event_id, c.event_id) THEN c.points ELSE 0 END), 0)::INT,
+    MAX(CASE WHEN public.match_event_mode(p_event_mode, p_event_id, c.event_id) THEN s.created_at ELSE NULL END)
+  INTO v_score, v_last_solve
   FROM public.solves s
   JOIN public.challenges c ON s.challenge_id = c.id
   WHERE s.user_id = p_id;
+  -- 2. Compute rank efficiently comparing only solvers
+  WITH active_solvers AS (
+    SELECT
+      s.user_id,
+      SUM(CASE WHEN public.match_event_mode(p_event_mode, p_event_id, c.event_id) THEN c.points ELSE 0 END)::INT AS score,
+      MAX(CASE WHEN public.match_event_mode(p_event_mode, p_event_id, c.event_id) THEN s.created_at ELSE NULL END) AS last_solve
+    FROM public.solves s
+    JOIN public.challenges c ON s.challenge_id = c.id
+    GROUP BY s.user_id
+  )
+  SELECT COUNT(*)::BIGINT + 1
+  INTO v_rank
+  FROM active_solvers us
+  WHERE us.user_id <> p_id
+    AND (
+      us.score > v_score
+      OR (us.score = v_score AND v_last_solve IS NOT NULL AND us.last_solve < v_last_solve)
+    );
   -- Count correct submissions (solves)
   SELECT COUNT(*)::INT INTO v_correct_flags
   FROM public.solves s
@@ -263,7 +270,7 @@ BEGIN
     'user', json_build_object(
       'id', v_user.id,
       'username', v_user.username,
-      'rank', COALESCE(v_rank, 0),
+      'rank', COALESCE(v_rank, 1),
       'score', COALESCE(v_score, 0),
       'picture', v_picture,
       'bio', COALESCE(v_user.bio, ''),
@@ -287,33 +294,41 @@ CREATE OR REPLACE FUNCTION detail_user_lite(p_id UUID, p_event_id UUID DEFAULT N
 RETURNS JSON
 AS $$
 DECLARE
-  v_rank BIGINT;
-  v_solved_count INT;
+  v_rank BIGINT := 1;
+  v_score INT := 0;
+  v_last_solve TIMESTAMPTZ;
+  v_solved_count INT := 0;
 BEGIN
-  SELECT r.rank
-  INTO v_rank
-  FROM (
-    SELECT
-      u.id,
-      RANK() OVER (
-        ORDER BY COALESCE(SUM(CASE WHEN public.match_event_mode(p_event_mode, p_event_id, c.event_id) THEN c.points ELSE 0 END), 0) DESC,
-                 MAX(CASE WHEN public.match_event_mode(p_event_mode, p_event_id, c.event_id) THEN s.created_at ELSE NULL END) ASC
-      ) AS rank
-    FROM public.users u
-    LEFT JOIN public.solves s ON u.id = s.user_id
-    LEFT JOIN public.challenges c ON s.challenge_id = c.id
-    GROUP BY u.id
-  ) r
-  WHERE r.id = p_id;
-  SELECT COUNT(*)::int
-  INTO v_solved_count
+  -- 1. Compute target user's score & solved count directly
+  SELECT
+    COALESCE(SUM(CASE WHEN public.match_event_mode(p_event_mode, p_event_id, c.event_id) THEN c.points ELSE 0 END), 0)::INT,
+    MAX(CASE WHEN public.match_event_mode(p_event_mode, p_event_id, c.event_id) THEN s.created_at ELSE NULL END),
+    COUNT(CASE WHEN public.match_event_mode(p_event_mode, p_event_id, c.event_id) THEN s.id ELSE NULL END)::INT
+  INTO v_score, v_last_solve, v_solved_count
   FROM public.solves s
   JOIN public.challenges c ON s.challenge_id = c.id
-  WHERE s.user_id = p_id
-    AND public.match_event_mode(p_event_mode, p_event_id, c.event_id);
+  WHERE s.user_id = p_id;
+  -- 2. Compute rank efficiently comparing only active solvers
+  WITH active_solvers AS (
+    SELECT
+      s.user_id,
+      SUM(CASE WHEN public.match_event_mode(p_event_mode, p_event_id, c.event_id) THEN c.points ELSE 0 END)::INT AS score,
+      MAX(CASE WHEN public.match_event_mode(p_event_mode, p_event_id, c.event_id) THEN s.created_at ELSE NULL END) AS last_solve
+    FROM public.solves s
+    JOIN public.challenges c ON s.challenge_id = c.id
+    GROUP BY s.user_id
+  )
+  SELECT COUNT(*)::BIGINT + 1
+  INTO v_rank
+  FROM active_solvers us
+  WHERE us.user_id <> p_id
+    AND (
+      us.score > v_score
+      OR (us.score = v_score AND v_last_solve IS NOT NULL AND us.last_solve < v_last_solve)
+    );
   RETURN json_build_object(
     'success', true,
-    'rank', COALESCE(v_rank, 0),
+    'rank', COALESCE(v_rank, 1),
     'solved_count', COALESCE(v_solved_count, 0)
   );
 END;
@@ -613,12 +628,9 @@ GRANT EXECUTE ON FUNCTION cleanup_orphaned_users_and_solves() TO authenticated;
 CREATE OR REPLACE FUNCTION public.touch_user_activity()
 RETURNS void AS $$
 BEGIN
-  IF auth.uid() IS NOT NULL THEN
-    UPDATE public.users
-    SET last_login_at = now(),
-        updated_at = now()
-    WHERE id = auth.uid();
-  END IF;
+  -- Intentionally lightweight / no-op to eliminate 12s DB write overhead.
+  -- Presence is managed via Supabase Realtime Presence WebSocket channels.
+  NULL;
 END;
 $$ LANGUAGE plpgsql
 SECURITY DEFINER
