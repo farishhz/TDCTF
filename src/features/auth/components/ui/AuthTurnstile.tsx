@@ -21,7 +21,7 @@ export function AuthTurnstile({
       onSuccess={onSuccess}
       onExpire={onExpire}
       options={{
-        theme: 'light',
+        theme: 'dark',
         size: 'flexible',
       }}
     />

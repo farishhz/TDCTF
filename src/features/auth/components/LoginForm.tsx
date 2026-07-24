@@ -5,7 +5,6 @@ import Link from 'next/link'
 import { Eye, EyeOff, Lock, Mail } from 'lucide-react'
 import APP from '@/config'
 import { useLogin } from '../hooks'
-import { THEME_PRIMARY_RING_CLASS, THEME_PRIMARY_TEXT_CLASS } from '@/shared/styles'
 import GoogleLoginButton from './GoogleLoginButton'
 import {
   AuthButton,
@@ -36,12 +35,12 @@ export default function LoginForm() {
     <AuthCard>
       <AuthHeader
         badge="Welcome Back"
-        title={`Sign in to ${APP.fullName}`}
+        title={`Sign in to ${APP.shortName}`}
         subtitle="Continue your CTF journey"
       />
 
-      <form className="space-y-5" onSubmit={handleLogin}>
-        <div className="space-y-4">
+      <form className="space-y-4" onSubmit={handleLogin}>
+        <div className="space-y-3">
           <AuthInput
             id="identifier"
             name="identifier"
@@ -64,8 +63,8 @@ export default function LoginForm() {
             rightElement={
               <button
                 type="button"
-                onClick={() => setShowPassword((value) => !value)}
-                className={`rounded-lg p-1 text-gray-400 transition-colors hover:text-blue-500 focus:outline-none ${THEME_PRIMARY_RING_CLASS}`}
+                onClick={() => setShowPassword((v) => !v)}
+                className="rounded-lg p-1 text-gray-500 transition-colors hover:text-blue-400 focus:outline-none"
                 aria-label={showPassword ? 'Hide password' : 'Show password'}
               >
                 {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
@@ -76,18 +75,18 @@ export default function LoginForm() {
           />
         </div>
 
-        {error && (
-          <AuthStatusMessage tone="error">{error}</AuthStatusMessage>
-        )}
-
         <div className="flex justify-end">
           <Link
             href="/forgot-password"
-            className={`text-xs font-semibold transition-colors hover:text-blue-500 dark:hover:text-blue-300 ${THEME_PRIMARY_TEXT_CLASS}`}
+            className="text-xs font-medium text-gray-500 transition-colors hover:text-blue-400"
           >
             Forgot password?
           </Link>
         </div>
+
+        {error && (
+          <AuthStatusMessage tone="error">{error}</AuthStatusMessage>
+        )}
 
         {captchaEnabled && (
           <AuthTurnstile

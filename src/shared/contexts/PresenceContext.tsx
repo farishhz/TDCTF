@@ -66,9 +66,6 @@ export function PresenceProvider({ children }: { children: React.ReactNode }) {
 
     console.log('[Presence] Initializing channel for user:', user.id, 'key:', channelKey)
 
-    // Touch activity in DB immediately on mount/reconnect
-    void (supabase as any).rpc('touch_user_activity')
-
     const channel = supabase.channel('online-users', {
       config: { presence: { key: user.id } },
     })
@@ -146,7 +143,6 @@ export function PresenceProvider({ children }: { children: React.ReactNode }) {
               currentActivity: getActivityFromPath(currentPath),
               lastActiveAt: new Date().toISOString(),
             })
-            void (supabase as any).rpc('touch_user_activity')
           }
         } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
           console.warn('[Presence] Channel error/timeout, marking unsubscribed:', status)
@@ -187,10 +183,6 @@ export function PresenceProvider({ children }: { children: React.ReactNode }) {
       }).catch((err: any) => {
         console.error('[Presence] track() failed:', err)
       })
-
-      if (!isHidden) {
-        void (supabase as any).rpc('touch_user_activity')
-      }
     }
 
     // Send presence immediately on path/session change

@@ -2,28 +2,25 @@
 
 import React from 'react'
 import APP from '@/config'
-import { AlertCircle } from 'lucide-react'
+import { ShieldOff } from 'lucide-react'
 import { AuthCard } from './AuthCard'
 import { AuthFooter } from './AuthFooter'
-import { AuthHeader } from './AuthHeader'
 
 export function SignupDisabled() {
   return (
     <AuthCard>
-      <AuthHeader
-        badge="Closed"
-        title="Registration Closed"
-        subtitle={`Join ${APP.fullName} event`}
-      />
+      <div className="mb-6 space-y-1">
+        <p className="text-xs font-semibold uppercase tracking-widest text-red-400">Closed</p>
+        <h2 className="text-2xl font-black tracking-tight text-white">Registration Closed</h2>
+        <p className="text-sm text-gray-500">Join {APP.fullName} event</p>
+      </div>
 
-      <div className="my-5 rounded-xl border border-red-500/20 bg-red-500/10 p-4 text-sm text-red-700 dark:text-red-300">
-        {/* Row 1: Icon and Title side-by-side */}
-        <div className="flex items-center gap-2 font-semibold">
-          <AlertCircle className="h-4.5 w-4.5 text-red-500" />
-          <span>Pendaftaran Dinonaktifkan</span>
+      <div className="rounded-xl border border-red-500/20 bg-red-500/8 p-4">
+        <div className="flex items-center gap-2.5">
+          <ShieldOff className="h-5 w-5 shrink-0 text-red-400" />
+          <span className="text-sm font-semibold text-red-400">Pendaftaran Dinonaktifkan</span>
         </div>
-        {/* Row 2: Description underneath */}
-        <p className="mt-2 text-xs opacity-90 leading-relaxed">
+        <p className="mt-2 text-xs leading-relaxed text-gray-500">
           Registrasi saat ini sedang ditutup oleh administrator. Silakan hubungi panitia jika Anda membutuhkan bantuan.
         </p>
       </div>

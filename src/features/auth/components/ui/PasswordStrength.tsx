@@ -14,29 +14,30 @@ function getStrength(password: string) {
 
 export function PasswordStrength({ password }: { password: string }) {
   const strength = getStrength(password)
-  const label = strength >= 3 ? 'Strong password' : strength >= 2 ? 'Good password' : 'Keep going'
+  const label = strength >= 3 ? 'Strong' : strength >= 2 ? 'Good' : 'Weak'
   const barClass = strength >= 3 ? 'bg-emerald-500' : strength >= 2 ? 'bg-orange-500' : 'bg-red-500'
 
   return (
-    <div className="space-y-3 rounded-xl border border-gray-200 bg-white/40 p-3 dark:border-white/10 dark:bg-white/5">
+    <div className="space-y-2.5 rounded-xl border border-white/8 bg-white/3 p-3">
       <div className="flex items-center justify-between text-xs">
-        <span className="font-semibold text-gray-700 dark:text-gray-300">
-          Password strength
-        </span>
-        <span className="text-gray-500 dark:text-gray-400">{label}</span>
+        <span className="font-medium text-gray-400">Password strength</span>
+        <span className={cn(
+          'font-semibold',
+          strength >= 3 ? 'text-emerald-400' : strength >= 2 ? 'text-orange-400' : 'text-red-400'
+        )}>{label}</span>
       </div>
-      <div className="grid grid-cols-3 gap-1">
+      <div className="grid grid-cols-3 gap-1.5">
         {[0, 1, 2].map((index) => (
           <div
             key={index}
             className={cn(
-              'h-1.5 rounded-full bg-gray-200 transition-colors dark:bg-gray-800',
+              'h-1 rounded-full bg-white/10 transition-colors duration-300',
               strength > index && barClass
             )}
           />
         ))}
       </div>
-      <div className="grid gap-2 text-xs text-gray-500 dark:text-gray-400">
+      <div className="grid gap-1.5 text-xs text-gray-600">
         {RULES.map((rule) => {
           const passed = rule.test(password)
           const Icon = passed ? CheckCircle2 : Circle
@@ -45,11 +46,11 @@ export function PasswordStrength({ password }: { password: string }) {
             <div
               key={rule.label}
               className={cn(
-                'flex items-center gap-2 transition-colors',
-                passed && 'text-emerald-600 dark:text-emerald-400'
+                'flex items-center gap-1.5 transition-colors',
+                passed && 'text-emerald-400'
               )}
             >
-              <Icon className="h-3.5 w-3.5" />
+              <Icon className="h-3 w-3" />
               <span>{rule.label}</span>
             </div>
           )
@@ -73,12 +74,12 @@ export function PasswordMatchIndicator({
   return (
     <div
       className={cn(
-        'flex items-center gap-2 text-xs font-medium',
-        matches ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'
+        'flex items-center gap-1.5 text-xs font-medium',
+        matches ? 'text-emerald-400' : 'text-red-400'
       )}
     >
       {matches ? <CheckCircle2 className="h-3.5 w-3.5" /> : <Circle className="h-3.5 w-3.5" />}
-      <span>{matches ? 'Passwords match' : 'Passwords do not match yet'}</span>
+      <span>{matches ? 'Passwords match' : 'Passwords do not match'}</span>
     </div>
   )
 }

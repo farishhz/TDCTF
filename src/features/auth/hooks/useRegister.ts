@@ -104,7 +104,12 @@ export function useRegister() {
         setUser(user)
         const params = new URLSearchParams(window.location.search)
         const redirectTo = params.get('redirectTo') || '/challenges'
-        router.push(redirectTo)
+        router.replace(redirectTo)
+        setTimeout(() => {
+          if (typeof window !== 'undefined' && (window.location.pathname.startsWith('/register') || window.location.pathname.startsWith('/login'))) {
+            window.location.href = redirectTo
+          }
+        }, 300)
       }
     } catch {
       setError('Registration failed')

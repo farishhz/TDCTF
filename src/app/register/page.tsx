@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { useAuth } from '@/shared/contexts/AuthContext'
 import Loader from '@/shared/components/Loader'
 import { AuthPageShell } from '@/features/auth/components/ui/AuthPageShell'
-import RegisterForm from '@/features/auth/components/RegisterForm'
+import AuthFormTabs from '@/features/auth/components/AuthFormTabs'
 
 export default function RegisterPage() {
   const router = useRouter()
@@ -15,11 +15,16 @@ export default function RegisterPage() {
   useEffect(() => {
     if (!authLoading && user) {
       const redirectTo = searchParams.get('redirectTo') || '/challenges'
-      router.push(redirectTo)
+      router.replace(redirectTo)
+      const timer = setTimeout(() => {
+        if (typeof window !== 'undefined' && window.location.pathname.startsWith('/register')) {
+          window.location.href = redirectTo
+        }
+      }, 300)
+      return () => clearTimeout(timer)
     }
   }, [user, authLoading, router, searchParams])
 
-  // Tampilkan toast jika kembali dari OAuth gagal
   useEffect(() => {
     const error = searchParams.get('error')
     if (!error) return
@@ -36,15 +41,13 @@ export default function RegisterPage() {
     })
   }, [searchParams])
 
-  if (authLoading) {
+  if (authLoading || user) {
     return <Loader fullscreen />
   }
 
   return (
     <AuthPageShell>
-      <div className="w-full max-w-lg">
-        <RegisterForm />
-      </div>
+      <AuthFormTabs defaultTab="register" />
     </AuthPageShell>
   )
 }

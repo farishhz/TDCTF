@@ -2,9 +2,8 @@
 
 import React from 'react'
 import Link from 'next/link'
-import { Mail } from 'lucide-react'
+import { Mail, ArrowLeft } from 'lucide-react'
 import { useForgotPassword } from '../hooks'
-import { THEME_PRIMARY_TEXT_CLASS } from '@/shared/styles'
 import {
   AuthButton,
   AuthCard,
@@ -33,10 +32,10 @@ export default function ForgotPasswordForm() {
       <AuthHeader
         badge="Password Recovery"
         title="Reset your password"
-        subtitle="We'll send you a reset link"
+        subtitle="We'll send a reset link to your email"
       />
 
-      <form className="space-y-5" onSubmit={handleSubmit}>
+      <form className="space-y-4" onSubmit={handleSubmit}>
         <AuthInput
           type="email"
           name="email"
@@ -46,7 +45,7 @@ export default function ForgotPasswordForm() {
           value={email}
           onChange={(e) => setEmail(e.target.value)}
         />
-        
+
         {captchaEnabled && (
           <AuthTurnstile
             turnstileKey={turnstileKey}
@@ -55,26 +54,28 @@ export default function ForgotPasswordForm() {
             onExpire={() => setCaptchaToken(null)}
           />
         )}
-        
+
         {error && (
           <AuthStatusMessage tone="error">{error}</AuthStatusMessage>
         )}
-        
+
         {success && (
-          <AuthStatusMessage tone="success" title="Check your email for reset instructions">
+          <AuthStatusMessage tone="success" title="Check your email">
             {success}
           </AuthStatusMessage>
         )}
-        
+
         <AuthButton type="submit" loading={loading}>
           Send Reset Email
         </AuthButton>
       </form>
-      <div className="mt-6 text-center">
+
+      <div className="mt-5 text-center">
         <Link
           href="/login"
-          className={`text-sm font-semibold transition-colors hover:text-blue-500 dark:hover:text-blue-300 ${THEME_PRIMARY_TEXT_CLASS}`}
+          className="inline-flex items-center gap-1.5 text-sm font-medium text-gray-500 transition-colors hover:text-blue-400"
         >
+          <ArrowLeft className="h-3.5 w-3.5" />
           Back to Login
         </Link>
       </div>

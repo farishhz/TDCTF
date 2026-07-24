@@ -127,8 +127,9 @@ RETURNS JSON
 AS $$
 DECLARE
   v_user RECORD;
-  v_rank BIGINT;
-  v_score INT;
+  v_rank BIGINT := 1;
+  v_score INT := 0;
+  v_last_solve TIMESTAMPTZ;
   v_solves JSON;
   v_picture TEXT;
   v_last_login TIMESTAMPTZ;
@@ -157,27 +158,33 @@ BEGIN
   FROM auth.users au
   WHERE au.id = v_user.id;
 
-  SELECT r.rank
-  INTO v_rank
-  FROM (
-    SELECT
-      u.id,
-      RANK() OVER (
-        ORDER BY COALESCE(SUM(CASE WHEN public.match_event_mode(p_event_mode, p_event_id, c.event_id) THEN c.points ELSE 0 END), 0) DESC,
-                 MAX(CASE WHEN public.match_event_mode(p_event_mode, p_event_id, c.event_id) THEN s.created_at ELSE NULL END) ASC
-      ) AS rank
-    FROM public.users u
-    LEFT JOIN public.solves s ON u.id = s.user_id
-    LEFT JOIN public.challenges c ON s.challenge_id = c.id
-    GROUP BY u.id
-  ) r
-  WHERE r.id = p_id;
-
-  SELECT COALESCE(SUM(CASE WHEN public.match_event_mode(p_event_mode, p_event_id, c.event_id) THEN c.points ELSE 0 END), 0)
-  INTO v_score
+  -- 1. Compute target user's score and last solve timestamp directly
+  SELECT
+    COALESCE(SUM(CASE WHEN public.match_event_mode(p_event_mode, p_event_id, c.event_id) THEN c.points ELSE 0 END), 0)::INT,
+    MAX(CASE WHEN public.match_event_mode(p_event_mode, p_event_id, c.event_id) THEN s.created_at ELSE NULL END)
+  INTO v_score, v_last_solve
   FROM public.solves s
   JOIN public.challenges c ON s.challenge_id = c.id
   WHERE s.user_id = p_id;
+
+  -- 2. Compute rank efficiently comparing only solvers
+  WITH active_solvers AS (
+    SELECT
+      s.user_id,
+      SUM(CASE WHEN public.match_event_mode(p_event_mode, p_event_id, c.event_id) THEN c.points ELSE 0 END)::INT AS score,
+      MAX(CASE WHEN public.match_event_mode(p_event_mode, p_event_id, c.event_id) THEN s.created_at ELSE NULL END) AS last_solve
+    FROM public.solves s
+    JOIN public.challenges c ON s.challenge_id = c.id
+    GROUP BY s.user_id
+  )
+  SELECT COUNT(*)::BIGINT + 1
+  INTO v_rank
+  FROM active_solvers us
+  WHERE us.user_id <> p_id
+    AND (
+      us.score > v_score
+      OR (us.score = v_score AND v_last_solve IS NOT NULL AND us.last_solve < v_last_solve)
+    );
 
   -- Count correct submissions (solves)
   SELECT COUNT(*)::INT INTO v_correct_flags
@@ -218,7 +225,7 @@ BEGIN
     'user', json_build_object(
       'id', v_user.id,
       'username', v_user.username,
-      'rank', COALESCE(v_rank, 0),
+      'rank', COALESCE(v_rank, 1),
       'score', COALESCE(v_score, 0),
       'picture', v_picture,
       'bio', COALESCE(v_user.bio, ''),
@@ -244,35 +251,43 @@ CREATE OR REPLACE FUNCTION detail_user_lite(p_id UUID, p_event_id UUID DEFAULT N
 RETURNS JSON
 AS $$
 DECLARE
-  v_rank BIGINT;
-  v_solved_count INT;
+  v_rank BIGINT := 1;
+  v_score INT := 0;
+  v_last_solve TIMESTAMPTZ;
+  v_solved_count INT := 0;
 BEGIN
-  SELECT r.rank
-  INTO v_rank
-  FROM (
-    SELECT
-      u.id,
-      RANK() OVER (
-        ORDER BY COALESCE(SUM(CASE WHEN public.match_event_mode(p_event_mode, p_event_id, c.event_id) THEN c.points ELSE 0 END), 0) DESC,
-                 MAX(CASE WHEN public.match_event_mode(p_event_mode, p_event_id, c.event_id) THEN s.created_at ELSE NULL END) ASC
-      ) AS rank
-    FROM public.users u
-    LEFT JOIN public.solves s ON u.id = s.user_id
-    LEFT JOIN public.challenges c ON s.challenge_id = c.id
-    GROUP BY u.id
-  ) r
-  WHERE r.id = p_id;
-
-  SELECT COUNT(*)::int
-  INTO v_solved_count
+  -- 1. Compute target user's score & solved count directly
+  SELECT
+    COALESCE(SUM(CASE WHEN public.match_event_mode(p_event_mode, p_event_id, c.event_id) THEN c.points ELSE 0 END), 0)::INT,
+    MAX(CASE WHEN public.match_event_mode(p_event_mode, p_event_id, c.event_id) THEN s.created_at ELSE NULL END),
+    COUNT(CASE WHEN public.match_event_mode(p_event_mode, p_event_id, c.event_id) THEN s.id ELSE NULL END)::INT
+  INTO v_score, v_last_solve, v_solved_count
   FROM public.solves s
   JOIN public.challenges c ON s.challenge_id = c.id
-  WHERE s.user_id = p_id
-    AND public.match_event_mode(p_event_mode, p_event_id, c.event_id);
+  WHERE s.user_id = p_id;
+
+  -- 2. Compute rank efficiently comparing only active solvers
+  WITH active_solvers AS (
+    SELECT
+      s.user_id,
+      SUM(CASE WHEN public.match_event_mode(p_event_mode, p_event_id, c.event_id) THEN c.points ELSE 0 END)::INT AS score,
+      MAX(CASE WHEN public.match_event_mode(p_event_mode, p_event_id, c.event_id) THEN s.created_at ELSE NULL END) AS last_solve
+    FROM public.solves s
+    JOIN public.challenges c ON s.challenge_id = c.id
+    GROUP BY s.user_id
+  )
+  SELECT COUNT(*)::BIGINT + 1
+  INTO v_rank
+  FROM active_solvers us
+  WHERE us.user_id <> p_id
+    AND (
+      us.score > v_score
+      OR (us.score = v_score AND v_last_solve IS NOT NULL AND us.last_solve < v_last_solve)
+    );
 
   RETURN json_build_object(
     'success', true,
-    'rank', COALESCE(v_rank, 0),
+    'rank', COALESCE(v_rank, 1),
     'solved_count', COALESCE(v_solved_count, 0)
   );
 END;
@@ -461,7 +476,9 @@ SET search_path = public
 AS $$
 BEGIN
   RETURN EXISTS (
-    SELECT 1 FROM public.users WHERE username = p_username
+    SELECT 1 FROM public.users WHERE LOWER(username) = LOWER(p_username)
+  ) OR EXISTS (
+    SELECT 1 FROM public.banned_identifiers WHERE LOWER(username) = LOWER(p_username) AND banned_until > now()
   );
 END;
 $$;
@@ -476,7 +493,9 @@ SET search_path = auth, public
 AS $$
 BEGIN
   RETURN EXISTS (
-    SELECT 1 FROM auth.users WHERE email = p_email
+    SELECT 1 FROM auth.users WHERE LOWER(email) = LOWER(p_email)
+  ) OR EXISTS (
+    SELECT 1 FROM public.banned_identifiers WHERE LOWER(email) = LOWER(p_email) AND banned_until > now()
   );
 END;
 $$;
@@ -612,12 +631,9 @@ GRANT EXECUTE ON FUNCTION cleanup_orphaned_users_and_solves() TO authenticated;
 CREATE OR REPLACE FUNCTION public.touch_user_activity()
 RETURNS void AS $$
 BEGIN
-  IF auth.uid() IS NOT NULL THEN
-    UPDATE public.users
-    SET last_login_at = now(),
-        updated_at = now()
-    WHERE id = auth.uid();
-  END IF;
+  -- Intentionally lightweight / no-op to eliminate 12s DB write overhead.
+  -- Presence is managed via Supabase Realtime Presence WebSocket channels.
+  NULL;
 END;
 $$ LANGUAGE plpgsql
 SECURITY DEFINER
@@ -776,12 +792,20 @@ CREATE OR REPLACE FUNCTION public.admin_unban_user(
   p_user_id UUID
 )
 RETURNS BOOLEAN AS $$
+DECLARE
+  v_username TEXT;
+  v_email TEXT;
 BEGIN
   IF NOT public.is_admin() THEN
     RAISE EXCEPTION 'Only global admins can unban users';
   END IF;
 
-  IF NOT EXISTS (SELECT 1 FROM public.users WHERE id = p_user_id) THEN
+  SELECT u.username, au.email INTO v_username, v_email
+  FROM public.users u
+  LEFT JOIN auth.users au ON au.id = u.id
+  WHERE u.id = p_user_id;
+
+  IF v_username IS NULL AND v_email IS NULL THEN
     RAISE EXCEPTION 'User not found';
   END IF;
 
@@ -791,11 +815,67 @@ BEGIN
       updated_at = now()
   WHERE id = p_user_id;
 
+  IF v_username IS NOT NULL OR v_email IS NOT NULL THEN
+    DELETE FROM public.banned_identifiers
+    WHERE (username IS NOT NULL AND LOWER(username) = LOWER(v_username))
+       OR (email IS NOT NULL AND LOWER(email) = LOWER(v_email));
+  END IF;
+
   RETURN TRUE;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, auth;
 
 GRANT EXECUTE ON FUNCTION public.admin_unban_user(UUID) TO authenticated;
+
+CREATE OR REPLACE FUNCTION public.admin_delete_user(
+  p_user_id UUID
+)
+RETURNS BOOLEAN AS $$
+DECLARE
+  v_username TEXT;
+  v_email TEXT;
+  v_banned_until TIMESTAMPTZ;
+  v_ban_reason TEXT;
+  v_is_admin BOOLEAN;
+BEGIN
+  IF NOT public.is_admin() THEN
+    RAISE EXCEPTION 'Only global admins can delete users';
+  END IF;
+
+  IF p_user_id = auth.uid()::uuid THEN
+    RAISE EXCEPTION 'Cannot delete your own account';
+  END IF;
+
+  SELECT u.username, au.email, u.banned_until, u.ban_reason, u.is_admin
+  INTO v_username, v_email, v_banned_until, v_ban_reason, v_is_admin
+  FROM public.users u
+  LEFT JOIN auth.users au ON au.id = u.id
+  WHERE u.id = p_user_id;
+
+  IF v_username IS NULL AND v_email IS NULL THEN
+    RAISE EXCEPTION 'User not found';
+  END IF;
+
+  IF v_is_admin THEN
+    RAISE EXCEPTION 'Cannot delete an admin account. Remove admin privileges first.';
+  END IF;
+
+  -- If user is currently banned, preserve ban status in banned_identifiers table
+  IF v_banned_until IS NOT NULL AND v_banned_until > now() THEN
+    INSERT INTO public.banned_identifiers (email, username, banned_until, ban_reason)
+    VALUES (v_email, v_username, v_banned_until, v_ban_reason);
+  END IF;
+
+  -- Delete from auth.users (cascades to public.users and related tables)
+  DELETE FROM auth.users WHERE id = p_user_id;
+  -- Fallback delete from public.users if auth.users row was missing or cascade didn't fire
+  DELETE FROM public.users WHERE id = p_user_id;
+
+  RETURN TRUE;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, auth;
+
+GRANT EXECUTE ON FUNCTION public.admin_delete_user(UUID) TO authenticated;
 
 CREATE OR REPLACE FUNCTION public.admin_change_password(
   p_user_id UUID,

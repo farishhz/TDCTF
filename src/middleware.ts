@@ -16,6 +16,10 @@ let maintenanceCache: {
 }
 
 const CACHE_TTL = 30000 // 30 detik
+const FETCH_TIMEOUT_MS = 5000 // 5 detik timeout per attempt
+const FETCH_RETRIES = 2 // jumlah percobaan
+const STARTUP_GRACE_MS = 15000 // abaikan fetch error dalam 15 detik pertama startup
+const START_TIME = Date.now()
 
 type SupabaseRestError = {
   code?: string
@@ -43,16 +47,42 @@ async function checkKeepAliveTable(): Promise<SupabaseRestError | null> {
   }
 
   const restUrl = `${SUPABASE_URL.replace(/\/$/, '')}/rest/v1/keep-alive?select=id&limit=1`
-  const response = await fetch(restUrl, {
-    cache: 'no-store',
-    headers: {
-      apikey: SUPABASE_ANON_KEY,
-      Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
-    },
-  })
 
-  if (response.ok) return null
-  return parseSupabaseRestError(response)
+  let lastError: SupabaseRestError | null = null
+
+  for (let attempt = 1; attempt <= FETCH_RETRIES; attempt++) {
+    const controller = new AbortController()
+    const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS)
+
+    try {
+      const response = await fetch(restUrl, {
+        cache: 'no-store',
+        signal: controller.signal,
+        headers: {
+          apikey: SUPABASE_ANON_KEY,
+          Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+        },
+      })
+      clearTimeout(timeout)
+
+      if (response.ok) return null // sukses
+      lastError = await parseSupabaseRestError(response)
+
+      // Jika error bukan network (mis. 401, 403), langsung return tanpa retry
+      if (response.status < 500) return lastError
+    } catch (e) {
+      clearTimeout(timeout)
+      const msg = e instanceof Error ? `${e.name}: ${e.message}` : 'fetch failed'
+      lastError = { message: msg }
+
+      if (attempt < FETCH_RETRIES) {
+        // Tunggu sebentar sebelum retry
+        await new Promise(r => setTimeout(r, 500 * attempt))
+      }
+    }
+  }
+
+  return lastError
 }
 
 async function checkMaintenance(): Promise<{ isActive: boolean; errorType: 'manual' | 'database' | null; errorMessage: string }> {
@@ -151,6 +181,12 @@ async function checkMaintenance(): Promise<{ isActive: boolean; errorType: 'manu
     const errorMessage = e instanceof Error
       ? `${e.name}: ${e.message}`
       : 'Failed to connect to database - Unknown exception'
+
+    // Dalam grace period startup, abaikan error dan anggap DB OK
+    if (Date.now() - START_TIME < STARTUP_GRACE_MS) {
+      console.log('Middleware: ignoring error during startup grace period')
+      return { isActive: false, errorType: null, errorMessage: '' }
+    }
 
     // Update cache dengan error
     maintenanceCache = {
