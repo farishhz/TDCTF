@@ -10,7 +10,6 @@ import Link from "next/link"
 
 // Shared Imports
 import APP from '@/config'
-import Loader from '@/shared/components/Loader'
 import BrandLogo from '@/shared/components/BrandLogo'
 import PageBackground from '@/shared/components/PageBackground'
 import Footer from "@/_layouts/Footer"
@@ -24,12 +23,11 @@ import { THEME_PRIMARY_SELECTION_CLASS } from '@/shared/styles'
 
 
 export default function Home() {
-  const { user, loading } = useAuth()
+  const { user } = useAuth()
   const { settings } = useSystemSettings()
 
-  if (loading) {
-    return <Loader fullscreen />
-  }
+  // Home page renders immediately — only CTA button depends on auth state
+  // No fullscreen loader needed here; content is public and doesn't require auth
 
   return (
     <PageBackground

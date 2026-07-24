@@ -5,7 +5,7 @@ import Link from 'next/link'
 import dynamic from 'next/dynamic'
 import { Compass, BookOpen, Flag, Trophy, Shield, Users, Gavel, User, ChevronDown, Loader2, Menu, X, LogOut } from 'lucide-react';
 import { useRouter, usePathname } from 'next/navigation'
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useLayoutEffect, useState, useRef, useCallback } from 'react'
 
 // Shared Imports
 import APP from '@/config'
@@ -51,6 +51,9 @@ function normalizeNavbarImageSrc(src?: string | null, fallback: string | null = 
   return publicPath ? `/${publicPath}` : fallback
 }
 
+// Nav mode type
+type NavMode = 'capsule' | 'bar' | 'morphing-to-capsule' | 'morphing-to-bar'
+
 export default function Navbar() {
   const router = useRouter()
   const { user, setUser, loading } = useAuth()
@@ -69,6 +72,22 @@ export default function Navbar() {
 
   const [profileOpen, setProfileOpen] = useState(false)
   const profileMenuRef = useRef<HTMLDivElement | null>(null)
+
+  // Capsule navbar state machine
+  const isHome = pathname === '/'
+  const [navMode, setNavMode] = useState<NavMode>(isHome ? 'capsule' : 'bar')
+  const prevPathnameRef = useRef<string>(pathname)
+
+  // Desktop detection: capsule is ONLY active on desktop (≥768px)
+  // Mobile always uses the normal bar — never gets capsule classes
+  const [isDesktop, setIsDesktop] = useState(false)
+  useLayoutEffect(() => {
+    const mq = window.matchMedia('(min-width: 768px)')
+    setIsDesktop(mq.matches)
+    const handler = (e: MediaQueryListEvent) => setIsDesktop(e.matches)
+    mq.addEventListener('change', handler)
+    return () => mq.removeEventListener('change', handler)
+  }, [])
 
   const { theme, toggleTheme } = useTheme()
   const authReady = !loading
@@ -106,6 +125,33 @@ export default function Navbar() {
       setGlobalAdminStatus(false)
     }
   }, [user])
+
+  // Navbar morph: watch pathname changes and trigger animation
+  useEffect(() => {
+    const prev = prevPathnameRef.current
+    const next = pathname
+    prevPathnameRef.current = next
+
+    const wasHome = prev === '/'
+    const nowHome = next === '/'
+
+    if (wasHome === nowHome) return // same page type, no morph needed
+
+    if (nowHome) {
+      // Going to home: bar → capsule
+      setNavMode('morphing-to-capsule')
+    } else {
+      // Leaving home: capsule → bar
+      setNavMode('morphing-to-bar')
+    }
+  }, [pathname])
+
+  const handleNavAnimationEnd = useCallback((e: React.AnimationEvent<HTMLElement>) => {
+    // Guard: ignore events bubbled from children — only process our own morph animations
+    if (e.target !== e.currentTarget) return
+    if (!e.animationName.startsWith('morph-to-')) return
+    setNavMode(isHome ? 'capsule' : 'bar')
+  }, [isHome])
 
   const handleLogout = async () => {
     setMobileMenuOpen(false)
@@ -179,13 +225,27 @@ export default function Navbar() {
     }
   }, [mobileMenuOpen])
 
+  const navClassName = [
+    SURFACE_NAVBAR_CLASS,
+    // Capsule is ONLY for desktop — mobile always stays as plain bar
+    isDesktop && (navMode === 'capsule' || navMode === 'morphing-to-capsule') ? 'navbar-capsule' : '',
+    isDesktop && (navMode === 'bar' || navMode === 'morphing-to-bar') ? 'navbar-bar' : '',
+    isDesktop && navMode === 'morphing-to-capsule' ? 'navbar-animating-to-capsule' : '',
+    isDesktop && navMode === 'morphing-to-bar' ? 'navbar-animating-to-bar' : '',
+  ].filter(Boolean).join(' ')
+
+  const isCapsuled = isDesktop && (navMode === 'capsule' || navMode === 'morphing-to-capsule')
+
   return (
     <>
-      <nav className={SURFACE_NAVBAR_CLASS}>
-        <div className="max-w-7xl mx-auto px-4 sm:px-0">
+      <nav
+        className={navClassName}
+        onAnimationEnd={handleNavAnimationEnd}
+      >
+        <div className="navbar-inner max-w-7xl mx-auto px-4 sm:px-6">
           <div className="flex justify-between h-14 items-center">
             {/* Logo */}
-            <div className="flex items-center space-x-8">
+            <div className={`flex items-center ${isCapsuled ? 'space-x-4' : 'space-x-8'}`}>
               <Link
                 href="/"
                 className="group flex items-center gap-2 caret-transparent rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/40 focus-visible:ring-offset-0"
@@ -336,7 +396,7 @@ export default function Navbar() {
             </div>
 
             {/* Right section */}
-            <div className="flex items-center space-x-5">
+            <div className={`flex items-center ${isCapsuled ? 'space-x-3' : 'space-x-5'}`}>
               {/* Live Status Counter */}
               {authReady && user && adminStatus && (
                 <div 
@@ -375,7 +435,7 @@ export default function Navbar() {
                     >
                       <ImageWithFallback src={avatarSrc} alt={user.username} size={36} className="rounded-full border border-gray-200/50 dark:border-gray-800/80" />
                       <span
-                        className={`text-[15px] font-semibold ${theme === 'dark' ? 'text-white' : 'text-gray-900'} transition-all duration-150 group-hover:text-blue-500 dark:group-hover:text-blue-400 truncate whitespace-nowrap max-w-[100px] md:max-w-[160px] block`}
+                        className={`text-[15px] font-semibold ${theme === 'dark' ? 'text-white' : 'text-gray-900'} transition-all duration-150 group-hover:text-blue-500 dark:group-hover:text-blue-400 truncate whitespace-nowrap ${isCapsuled ? 'max-w-[80px]' : 'max-w-[100px] md:max-w-[160px]'} block`}
                         title={user.username}
                       >
                         {user.username}
