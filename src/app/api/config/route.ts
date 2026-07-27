@@ -1,6 +1,8 @@
 import fs from 'fs/promises'
 import path from 'path'
 import { NextResponse } from 'next/server'
+import { createClient } from '@supabase/supabase-js'
+import { SUPABASE_URL, SUPABASE_ANON_KEY } from '@/_vars/const'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -8,6 +10,30 @@ export const dynamic = 'force-dynamic'
 const configFilePath = path.join(process.cwd(), 'src/config.ts')
 const envFilePath = path.join(process.cwd(), '.env.local')
 const isProduction = process.env.NODE_ENV === 'production'
+
+/**
+ * Verifikasi bahwa requester adalah global admin yang terautentikasi.
+ * Menggunakan Supabase JWT dari Authorization header (Bearer token).
+ */
+async function isAuthenticatedAdmin(request: Request): Promise<boolean> {
+  if (!SUPABASE_URL || !SUPABASE_ANON_KEY) return false
+
+  const authorization = request.headers.get('authorization') || ''
+  const [scheme, token] = authorization.split(' ')
+  if (scheme?.toLowerCase() !== 'bearer' || !token?.trim()) return false
+
+  try {
+    const client = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+      auth: { autoRefreshToken: false, persistSession: false },
+      global: { headers: { Authorization: `Bearer ${token.trim()}` } },
+    })
+    const { data, error } = await client.rpc('is_admin')
+    if (error || !data) return false
+    return !!data
+  } catch {
+    return false
+  }
+}
 
 type SetupConfig = {
   shortName: string
@@ -271,9 +297,13 @@ function hasAnyOwnProperty(source: Record<string, unknown>, keys: string[]) {
   return keys.some((key) => Object.prototype.hasOwnProperty.call(source, key))
 }
 
-export async function GET() {
+export async function GET(request: Request) {
   if (isProduction) {
     return NextResponse.json({ ok: false, error: 'Config editor is disabled in production.' }, { status: 404 })
+  }
+
+  if (!(await isAuthenticatedAdmin(request))) {
+    return NextResponse.json({ ok: false, error: 'Admin authentication required.' }, { status: 401 })
   }
 
   try {
@@ -296,6 +326,10 @@ export async function GET() {
 export async function PUT(request: Request) {
   if (isProduction) {
     return NextResponse.json({ ok: false, error: 'Config editor is disabled in production.' }, { status: 404 })
+  }
+
+  if (!(await isAuthenticatedAdmin(request))) {
+    return NextResponse.json({ ok: false, error: 'Admin authentication required.' }, { status: 401 })
   }
 
   try {
@@ -368,6 +402,10 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: false, error: 'Config editor is disabled in production.' }, { status: 404 })
   }
 
+  if (!(await isAuthenticatedAdmin(request))) {
+    return NextResponse.json({ ok: false, error: 'Admin authentication required.' }, { status: 401 })
+  }
+
   try {
     const formData = await request.formData()
     const file = formData.get('file') as File | null
@@ -375,6 +413,18 @@ export async function POST(request: Request) {
 
     if (!file || !type) {
       return NextResponse.json({ ok: false, error: 'Missing file or type' }, { status: 400 })
+    }
+
+    // Validasi MIME type — hanya izinkan gambar dan icon
+    const ALLOWED_MIME_TYPES = ['image/png', 'image/jpeg', 'image/webp', 'image/gif', 'image/x-icon', 'image/vnd.microsoft.icon']
+    if (!ALLOWED_MIME_TYPES.includes(file.type)) {
+      return NextResponse.json({ ok: false, error: `File type '${file.type}' not allowed. Use PNG, JPEG, WebP, GIF, or ICO.` }, { status: 400 })
+    }
+
+    // Validasi ukuran file — maksimum 5MB
+    const MAX_SIZE_BYTES = 5 * 1024 * 1024
+    if (file.size > MAX_SIZE_BYTES) {
+      return NextResponse.json({ ok: false, error: 'File too large. Maximum size is 5MB.' }, { status: 400 })
     }
 
     const buffer = Buffer.from(await file.arrayBuffer())

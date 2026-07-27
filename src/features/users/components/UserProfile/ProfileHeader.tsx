@@ -15,6 +15,23 @@ import { cn } from '@/shared/lib/utils'
 import { usePresence } from '@/shared/contexts'
 import { UserDetail, Badge } from '../../types'
 
+/**
+ * Sanitasi URL social media — hanya izinkan http/https ke domain publik.
+ * Blokir javascript:, data:, dan protocol berbahaya lainnya.
+ */
+function sanitizeSocialUrl(url: string): string {
+  if (!url?.trim()) return ''
+  try {
+    const parsed = new URL(url)
+    if (parsed.protocol === 'https:' || parsed.protocol === 'http:') {
+      return parsed.href
+    }
+    return ''
+  } catch {
+    return ''
+  }
+}
+
 type ProfileHeaderProps = {
   userDetail: UserDetail
   avatarSrc: string | null
@@ -148,9 +165,11 @@ export default function ProfileHeader({
                 {userDetail.sosmed.linkedin?.trim() && (
                   <SocialIcon
                     type="linkedin"
-                    href={userDetail.sosmed.linkedin.startsWith('http')
-                      ? userDetail.sosmed.linkedin
-                      : `https://linkedin.com/in/${userDetail.sosmed.linkedin}`}
+                    href={sanitizeSocialUrl(
+                      userDetail.sosmed.linkedin.startsWith('http')
+                        ? userDetail.sosmed.linkedin
+                        : `https://linkedin.com/in/${userDetail.sosmed.linkedin}`
+                    )}
                     label="LinkedIn"
                     hideLabelOnMobile
                   />
@@ -158,9 +177,11 @@ export default function ProfileHeader({
                 {userDetail.sosmed.instagram?.trim() && (
                   <SocialIcon
                     type="instagram"
-                    href={userDetail.sosmed.instagram.startsWith('http')
-                      ? userDetail.sosmed.instagram
-                      : `https://instagram.com/${userDetail.sosmed.instagram}`}
+                    href={sanitizeSocialUrl(
+                      userDetail.sosmed.instagram.startsWith('http')
+                        ? userDetail.sosmed.instagram
+                        : `https://instagram.com/${userDetail.sosmed.instagram}`
+                    )}
                     label="Instagram"
                     hideLabelOnMobile
                   />
@@ -168,9 +189,11 @@ export default function ProfileHeader({
                 {userDetail.sosmed.web?.trim() && (
                   <SocialIcon
                     type="web"
-                    href={userDetail.sosmed.web.startsWith('http')
-                      ? userDetail.sosmed.web
-                      : `https://${userDetail.sosmed.web}`}
+                    href={sanitizeSocialUrl(
+                      userDetail.sosmed.web.startsWith('http')
+                        ? userDetail.sosmed.web
+                        : `https://${userDetail.sosmed.web}`
+                    )}
                     label="Website"
                     hideLabelOnMobile
                   />

@@ -222,15 +222,23 @@ export async function middleware(request: NextRequest) {
     response.cookies.set('maintenance-type', errorType || 'unknown', {
       path: '/',
       maxAge: 60 * 5, // 5 menit
-      sameSite: 'lax'
+      sameSite: 'lax',
+      httpOnly: true,  // Tidak bisa diakses JavaScript
+      secure: process.env.NODE_ENV === 'production', // Hanya via HTTPS di production
     })
 
-    // Encode error message untuk cookie (max 4KB)
-    const encodedError = encodeURIComponent(errorMessage || 'Unknown error').substring(0, 4000)
+    // Sanitasi pesan error sebelum disimpan di cookie (jangan bocorkan detail internal DB)
+    const safeErrorMsg = (errorMessage || 'Unknown error')
+      .replace(/PGRST\d+/g, '[DB_ERR]')   // hapus kode error PostgREST
+      .replace(/password/gi, '[REDACTED]') // hapus kata password jika ada
+      .substring(0, 200)                   // batasi panjang
+    const encodedError = encodeURIComponent(safeErrorMsg).substring(0, 4000)
     response.cookies.set('maintenance-error', encodedError, {
       path: '/',
       maxAge: 60 * 5, // 5 menit
-      sameSite: 'lax'
+      sameSite: 'lax',
+      httpOnly: true,  // Tidak bisa diakses JavaScript
+      secure: process.env.NODE_ENV === 'production', // Hanya via HTTPS di production
     })
 
     console.log('Setting maintenance cookies:', { errorType, errorMessage: errorMessage.substring(0, 100) })

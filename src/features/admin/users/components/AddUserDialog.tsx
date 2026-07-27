@@ -125,8 +125,8 @@ export default function AddUserDialog({
       toast.error('Password required')
       return false
     }
-    if (password.length < 6) {
-      toast.error('Password must be at least 6 characters')
+    if (password.length < 8) {
+      toast.error('Password must be at least 8 characters')
       return false
     }
     return true
@@ -290,7 +290,7 @@ export default function AddUserDialog({
                   type={showPassword ? 'text' : 'password'}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Min. 6 characters"
+                  placeholder="Min. 8 characters"
                   className="h-9 text-xs rounded-xl bg-white/5 border-gray-200 dark:border-gray-800 pr-10 text-gray-900 dark:text-white placeholder:text-gray-500"
                   required
                 />
