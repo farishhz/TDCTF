@@ -261,8 +261,8 @@ export default function BatchImportDialog({
 
       if (!password) {
         rowErrors.push('Password required')
-      } else if (password.length < 6) {
-        rowErrors.push('Password < 6 chars')
+      } else if (password.length < 8) {
+        rowErrors.push('Password < 8 chars')
       }
 
       if (rowErrors.length > 0) {

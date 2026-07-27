@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { TDCTL_API_ADMIN_SECRET, TDCTL_API_TOKEN, TDCTL_API_URL } from '@/_vars/secret'
 import { SUPABASE_ANON_KEY, SUPABASE_URL } from '@/_vars/const'
+import { checkRateLimit, getClientIp } from '@/lib/rate-limit'
 
 const apiUrl = TDCTL_API_URL.replace(/\/$/, '')
 const CHALLENGE_KEY_HEADER = 'X-TDCTL-Challenge-Key'
@@ -224,6 +225,11 @@ function jsonError(message: string, status = 400) {
 }
 
 export async function GET(request: Request) {
+  const ip = getClientIp(request)
+  if (!checkRateLimit(`tdctl:${ip}`, 60, 60_000)) {
+    return jsonError('Too many requests. Please try again later.', 429)
+  }
+
   if (await isUserBanned(request)) {
     return jsonError('Your account is temporarily banned', 403)
   }
@@ -282,6 +288,11 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
+  const ip = getClientIp(request)
+  if (!checkRateLimit(`tdctl:${ip}`, 60, 60_000)) {
+    return jsonError('Too many requests. Please try again later.', 429)
+  }
+
   if (await isUserBanned(request)) {
     return jsonError('Your account is temporarily banned', 403)
   }

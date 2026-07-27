@@ -5,6 +5,7 @@ import { useAuth } from '@/shared/contexts/AuthContext'
 import { isValidUsername } from '../lib/auth-utils'
 import { CAPTCHA_ENABLED, CAPTCHA_SITE_KEY } from '@/_vars/const'
 import { supabase } from '@/lib/supabase/client'
+import { getSafeRedirectPath } from '@/lib/redirect-utils'
 
 export function useRegister() {
   const router = useRouter()
@@ -77,8 +78,8 @@ export function useRegister() {
       return
     }
 
-    if (formData.password.length < 6) {
-      setError('Password must be at least 6 characters')
+    if (formData.password.length < 8) {
+      setError('Password must be at least 8 characters')
       setLoading(false)
       return
     }
@@ -103,7 +104,7 @@ export function useRegister() {
       } else if (user) {
         setUser(user)
         const params = new URLSearchParams(window.location.search)
-        const redirectTo = params.get('redirectTo') || '/challenges'
+        const redirectTo = getSafeRedirectPath(params.get('redirectTo'), '/challenges')
         router.replace(redirectTo)
         setTimeout(() => {
           if (typeof window !== 'undefined' && (window.location.pathname.startsWith('/register') || window.location.pathname.startsWith('/login'))) {

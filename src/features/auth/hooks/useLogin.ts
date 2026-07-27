@@ -3,6 +3,7 @@ import { useRouter } from 'next/navigation'
 import { AuthService } from '../services/auth.service'
 import { useAuth } from '@/shared/contexts/AuthContext'
 import { CAPTCHA_ENABLED, CAPTCHA_SITE_KEY } from '@/_vars/const'
+import { getSafeRedirectPath } from '@/lib/redirect-utils'
 
 export function useLogin() {
   const router = useRouter()
@@ -38,7 +39,7 @@ export function useLogin() {
       } else if (user) {
         setUser(user)
         const params = new URLSearchParams(window.location.search)
-        const redirectTo = params.get('redirectTo') || '/challenges'
+        const redirectTo = getSafeRedirectPath(params.get('redirectTo'), '/challenges')
         router.replace(redirectTo)
         setTimeout(() => {
           if (typeof window !== 'undefined' && window.location.pathname.startsWith('/login')) {

@@ -48,7 +48,19 @@ const fetchOtherEndpoints = async (): Promise<string[]> => {
   return []
 }
 
-export async function GET() {
+export async function GET(request: Request) {
+  // Lindungi endpoint dari akses publik jika CRON_SECRET dikonfigurasi.
+  // Set CRON_SECRET di Vercel Dashboard → Settings → Environment Variables,
+  // dan tambahkan di vercel.json: "crons": [{ "path": "/api/keep-alive?secret=...", ... }]
+  // atau gunakan Authorization header: Bearer <CRON_SECRET>
+  const cronSecret = process.env.CRON_SECRET
+  if (cronSecret) {
+    const authHeader = request.headers.get('authorization')
+    if (authHeader !== `Bearer ${cronSecret}`) {
+      return new Response('Unauthorized', { status: 401 })
+    }
+  }
+
   let responseMessage: string = ''
   let successfulResponses: boolean = true
 

@@ -35,6 +35,33 @@ import {
   updateUsername,
 } from "@/features/users/services/user-profile.service"
 
+/**
+ * Validasi URL avatar: hanya izinkan HTTPS ke domain publik.
+ * Blokir javascript:, data:, private IP (SSRF), dan protocol selain https.
+ */
+function isValidAvatarUrl(url: string): boolean {
+  const trimmed = url.trim()
+  if (!trimmed) return true // kosong = valid (user ingin hapus foto)
+  try {
+    const parsed = new URL(trimmed)
+    if (parsed.protocol !== 'https:') return false
+    const host = parsed.hostname.toLowerCase()
+    // Blokir private/loopback ranges
+    if (
+      host === 'localhost' ||
+      /^127\./.test(host) ||
+      /^10\./.test(host) ||
+      /^192\.168\./.test(host) ||
+      /^172\.(1[6-9]|2[0-9]|3[01])\./.test(host) ||
+      host === '0.0.0.0' ||
+      host.endsWith('.local')
+    ) return false
+    return true
+  } catch {
+    return false
+  }
+}
+
 type SocialLinks = {
   linkedin?: string
   instagram?: string
@@ -191,6 +218,11 @@ export default function EditProfileModal({
     })
 
     if (profilePictureUrl.trim() !== (currentProfilePictureUrl || "").trim()) {
+      if (profilePictureUrl.trim() && !isValidAvatarUrl(profilePictureUrl)) {
+        toast.error('Avatar URL tidak valid. Gunakan URL HTTPS dari domain publik.', { id: toastId })
+        setLoading(false)
+        return
+      }
       const { error: errPicture } = await updateProfilePicture(userId, profilePictureUrl)
       if (errPicture) {
         toast.error(errPicture, { id: toastId })
