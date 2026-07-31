@@ -79,7 +79,10 @@ export async function GET(request: Request) {
       headers.set('Content-Length', contentLength)
     }
 
-    return new Response(fileResponse.body, {
+    const arrayBuffer = await fileResponse.arrayBuffer()
+    const buffer = Buffer.from(arrayBuffer)
+
+    return new Response(buffer, {
       status: 200,
       headers,
     })
