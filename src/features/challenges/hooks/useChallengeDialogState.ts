@@ -1,6 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { supabase } from '@/lib/supabase/client'
 import {
   getChallengeDetail,
   getSolversByChallenge,
@@ -171,7 +172,12 @@ export function useChallengeDialogState({
 
     try {
       if (attachment.type === 'file') {
-        const response = await fetch(attachment.url)
+        const { data: sessionData } = await supabase.auth.getSession()
+        const headers: Record<string, string> = {}
+        if (sessionData?.session?.access_token) {
+          headers['Authorization'] = `Bearer ${sessionData.session.access_token}`
+        }
+        const response = await fetch(attachment.url, { headers })
         if (!response.ok) throw new Error('Failed to fetch file')
         const blob = await response.blob()
         const url = window.URL.createObjectURL(blob)

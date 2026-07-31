@@ -97,7 +97,21 @@ export async function getChallenges(
     // 🔹 Cek solved user (optional)
     const solvedIds = new Set((solvesResult?.data || []).map((s: any) => s.challenge_id) || [])
 
-    return challenges.map((ch: any) => addComputedFields(ch, solvedIds))
+    return challenges.map((ch: any) => {
+      const computed = addComputedFields(ch, solvedIds) as any
+      if (computed && Array.isArray(computed.attachments)) {
+        computed.attachments = computed.attachments.map((att: any, idx: number) => {
+          if (att && att.type === 'file' && att.url) {
+            return {
+              ...att,
+              url: `/api/challenges/download?challengeId=${ch.id}&index=${idx}&filename=${encodeURIComponent(att.name || 'file')}`,
+            }
+          }
+          return att
+        })
+      }
+      return computed
+    })
   } catch (err) {
     console.error('Error fetching challenges:', err);
     return [];
@@ -218,9 +232,21 @@ export async function getChallengeDetail(challengeId: string): Promise<Challenge
     if (error) throw new Error(error.message)
     if (!data) return null
 
+    const rawAttachments = Array.isArray((data as any).attachments) ? (data as any).attachments : []
+    const maskedAttachments = rawAttachments.map((att: any, idx: number) => {
+      if (att && att.type === 'file' && att.url) {
+        return {
+          ...att,
+          url: `/api/challenges/download?challengeId=${data.id}&index=${idx}&filename=${encodeURIComponent(att.name || 'file')}`,
+        }
+      }
+      return att
+    })
+
     // Fill fields that might exist in the app-level `Challenge` type but are not present in `challenges` table.
     return {
       ...(data as any),
+      attachments: maskedAttachments,
       flag: '',
     } as any
   } catch (error) {
