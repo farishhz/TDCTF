@@ -52,11 +52,25 @@ export async function GET(request: Request) {
     }
 
     // Fetch the raw file from source (GitHub raw, etc.) server-side
-    const fileResponse = await fetch(attachment.url, {
-      headers: {
-        'User-Agent': 'TDCTF-Downloader/1.0',
-      },
-    })
+    // Use AbortController to prevent indefinite hangs on slow/unresponsive sources
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), 30_000) // 30-second timeout
+
+    let fileResponse: Response
+    try {
+      fileResponse = await fetch(attachment.url, {
+        headers: { 'User-Agent': 'TDCTF-Downloader/1.0' },
+        signal: controller.signal,
+      })
+    } catch (fetchErr: any) {
+      clearTimeout(timeoutId)
+      if (fetchErr?.name === 'AbortError') {
+        return NextResponse.json({ error: 'Upstream file fetch timed out' }, { status: 504 })
+      }
+      throw fetchErr
+    } finally {
+      clearTimeout(timeoutId)
+    }
 
     if (!fileResponse.ok) {
       return NextResponse.json(
@@ -65,24 +79,31 @@ export async function GET(request: Request) {
       )
     }
 
-    // Construct streaming headers
+    if (!fileResponse.body) {
+      return NextResponse.json({ error: 'No response body from source' }, { status: 502 })
+    }
+
+    // Build response headers
     const headers = new Headers()
-    const contentType = fileResponse.headers.get('content-type') || 'application/octet-stream'
-    headers.set('Content-Type', contentType)
+
+    // Always force octet-stream so the browser triggers a file download instead of
+    // trying to render the content inline (this fixes .txt files getting "stuck").
+    headers.set('Content-Type', 'application/octet-stream')
 
     const finalFilename = attachment.name || filename || 'download'
     const safeFilename = encodeURIComponent(finalFilename).replace(/['()]/g, escape)
     headers.set('Content-Disposition', `attachment; filename*=UTF-8''${safeFilename}`)
 
+    // Forward Content-Length when available so the browser can show a progress bar.
     const contentLength = fileResponse.headers.get('content-length')
     if (contentLength) {
       headers.set('Content-Length', contentLength)
     }
 
-    const arrayBuffer = await fileResponse.arrayBuffer()
-    const buffer = Buffer.from(arrayBuffer)
-
-    return new Response(buffer, {
+    // Stream directly from the upstream source to the client — no full-file buffering.
+    // This means the first bytes arrive at the client as soon as GitHub starts sending
+    // them, instead of waiting for the entire file to be buffered on the server first.
+    return new Response(fileResponse.body, {
       status: 200,
       headers,
     })

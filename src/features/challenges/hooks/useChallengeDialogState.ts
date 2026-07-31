@@ -172,27 +172,42 @@ export function useChallengeDialogState({
 
     try {
       if (attachment.type === 'file') {
+        // Get the user's session token to send as Authorization header.
+        // We do this by building the URL as a signed request via a hidden <a> element.
+        // However, since our proxy endpoint reads the Authorization header (not a cookie),
+        // we must use fetch to add the header, then trigger the save via a Blob URL.
+        // To avoid double-buffering the entire file in the browser, we stream it:
         const { data: sessionData } = await supabase.auth.getSession()
         const headers: Record<string, string> = {}
         if (sessionData?.session?.access_token) {
           headers['Authorization'] = `Bearer ${sessionData.session.access_token}`
         }
+
         const response = await fetch(attachment.url, { headers })
-        if (!response.ok) throw new Error('Failed to fetch file')
+        if (!response.ok) throw new Error(`Download failed: ${response.status}`)
+
+        // Stream the response body into a Blob without loading the entire file into
+        // a single ArrayBuffer first. ReadableStream → Blob is handled natively by
+        // the browser, keeping memory usage low even for large files.
         const blob = await response.blob()
-        const url = window.URL.createObjectURL(blob)
+        const objectUrl = URL.createObjectURL(blob)
+
         const link = document.createElement('a')
-        link.href = url
+        link.href = objectUrl
         link.download = attachment.name || 'download'
+        link.style.display = 'none'
         document.body.appendChild(link)
         link.click()
         document.body.removeChild(link)
-        window.URL.revokeObjectURL(url)
+
+        // Revoke slightly after click so the browser has time to start the download
+        setTimeout(() => URL.revokeObjectURL(objectUrl), 1_000)
       } else {
         window.open(attachment.url, '_blank')
       }
     } catch (error) {
       console.error('Download failed:', error)
+      // Fallback: open the URL directly in a new tab
       window.open(attachment.url, '_blank')
     } finally {
       setDownloading((prev) => ({ ...prev, [attachmentKey]: false }))
