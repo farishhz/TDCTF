@@ -153,7 +153,7 @@ export default function EventGuideCard() {
                 <div>
                   <p className="font-bold text-gray-900 dark:text-white text-xs">A. Aktivasi Fitur & Pemicu Kemunculan</p>
                   <p className="text-xs text-gray-400 leading-relaxed mt-0.5">
-                    Modul pengumpulan write-up di halaman kompetisi user **hanya akan muncul jika Admin mengisi kolom "Write-Up Deadline"** saat melakukan pembuatan/pengeditan event. Jika deadline dikosongkan (Null), maka fitur pengumpulan write-up dinonaktifkan (tidak tampil di layar user).
+                    Modul pengumpulan write-up di halaman kompetisi user {"hanya akan muncul jika Admin mengisi kolom \"Write-Up Deadline\""} saat melakukan pembuatan/pengeditan event. Jika deadline dikosongkan (Null), maka fitur pengumpulan write-up dinonaktifkan (tidak tampil di layar user).
                   </p>
                 </div>
               </div>
@@ -167,7 +167,7 @@ export default function EventGuideCard() {
                     Ketika box pengumpulan muncul di atas daftar tantangan pada halaman <strong>Challenges</strong>:
                   </p>
                   <ul className="list-disc pl-5 mt-1 space-y-1 text-xs text-gray-500">
-                    <li>Semua anggota tim dapat mengeklik tombol biru <strong className="text-blue-400">"Download Template-WU.docx"</strong> untuk mengunduh template laporan resmi.</li>
+                    <li>Semua anggota tim dapat mengeklik tombol biru <strong className="text-blue-400">{"\"Download Template-WU.docx\""}</strong> untuk mengunduh template laporan resmi.</li>
                     <li><strong className="text-gray-950 dark:text-gray-300">Hanya Kapten Tim</strong> yang berhak mengunggah berkas laporan. Tombol drag-and-drop unggah dinonaktifkan bagi anggota biasa.</li>
                     <li>File harus berformat <strong className="text-gray-950 dark:text-gray-300">.pdf</strong> atau <strong className="text-gray-950 dark:text-gray-300">.docx</strong> dengan ukuran berkas maksimal <strong className="text-gray-950 dark:text-gray-300">10 MB</strong>.</li>
                   </ul>

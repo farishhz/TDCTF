@@ -256,7 +256,7 @@ export default function EventWriteupsCard({
                   />
                 </div>
                 <p className="text-[10px] text-gray-400 font-medium">
-                  Points will adjust the team's total score on the scoreboard (+50 for bonus, -20 for penalties).
+                  Points will adjust the {"team's"} total score on the scoreboard (+50 for bonus, -20 for penalties).
                 </p>
               </div>
 
