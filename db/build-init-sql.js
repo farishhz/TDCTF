@@ -30,6 +30,9 @@ const orderedFiles = [
   "schema/scheduled_jobs.sql",
   "schema/teams.sql",
   "schema/team_members.sql",
+  "schema/event_teams.sql",
+  "schema/event_team_participants.sql",
+  "schema/event_writeups.sql",
   "schema/keep-alive.sql",
 
   // 3) Query/functions (core first)
@@ -49,6 +52,8 @@ const orderedFiles = [
   "queries/flag_submissions.sql",
   "queries/teams.sql",
   "queries/team_members.sql",
+  "queries/event_teams.sql",
+  "queries/event_writeups.sql",
   "queries/notifications.sql",
   "queries/scheduled_jobs.sql",
   "queries/keep-alive.sql",

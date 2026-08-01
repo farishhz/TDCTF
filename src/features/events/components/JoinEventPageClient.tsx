@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useAuth } from '@/shared/contexts/AuthContext'
-import { getMyEventMembership, joinEvent } from '@/features/events/services/event.service'
+import { getMyEventMembership, joinEvent, getMyTeamEventStatus, joinTeamEvent, type MyTeamEventStatus } from '@/features/events/services/event.service'
 import { setSelectedEventSetting } from '@/shared/lib/settings'
 import { Button, Input } from '@/shared/ui'
 import {
@@ -41,6 +41,7 @@ export default function JoinEventPageClient({ event }: JoinEventPageClientProps)
   const { user, loading: authLoading } = useAuth()
 
   const [membership, setMembership] = useState<EventMembershipStatus | null>(null)
+  const [teamStatus, setTeamStatus] = useState<MyTeamEventStatus | null>(null)
   const [membershipLoaded, setMembershipLoaded] = useState(false)
   const [loadingMembership, setLoadingMembership] = useState(false)
   const [joining, setJoining] = useState(false)
@@ -59,8 +60,13 @@ export default function JoinEventPageClient({ event }: JoinEventPageClientProps)
     if (!user) return
     setLoadingMembership(true)
     try {
-      const data = await getMyEventMembership(event.id)
-      setMembership(data)
+      if (event.is_team_event) {
+        const data = await getMyTeamEventStatus(event.id)
+        setTeamStatus(data)
+      } else {
+        const data = await getMyEventMembership(event.id)
+        setMembership(data)
+      }
     } catch (err) {
       console.error('Failed to load event membership:', err)
     } finally {
@@ -81,7 +87,17 @@ export default function JoinEventPageClient({ event }: JoinEventPageClientProps)
   useEffect(() => {
     if (!user || !membershipLoaded || joining) return
 
-    // 1. If already a member, save to local storage and redirect to challenges page
+    // 1. Team event logic
+    if (event.is_team_event) {
+      if (teamStatus?.registration_status === 'approved' && teamStatus.is_roster_member) {
+        setSelectedEventSetting(event.id)
+        toast.success(`Selamat datang kembali di ${event.name}!`)
+        router.push('/challenges?tab=challenges')
+      }
+      return
+    }
+
+    // 2. If already a member, save to local storage and redirect to challenges page
     if (membership?.is_member) {
       setSelectedEventSetting(event.id)
       toast.success(`Selamat datang kembali di ${event.name}!`)
@@ -89,20 +105,20 @@ export default function JoinEventPageClient({ event }: JoinEventPageClientProps)
       return
     }
 
-    // 2. If Open Mode: Join automatically
+    // 3. If Open Mode: Join automatically
     if (event.join_mode === 'open') {
       void handleJoinEvent(null, null)
       return
     }
 
-    // 3. If Key Mode: check if key is in query params
+    // 4. If Key Mode: check if key is in query params
     if (event.join_mode === 'key') {
       const queryKey = searchParams.get('key')
       if (queryKey && queryKey.trim()) {
         void handleJoinEvent(queryKey.trim(), null)
       }
     }
-  }, [user, membershipLoaded, membership])
+  }, [user, membershipLoaded, membership, teamStatus])
 
   const handleJoinEvent = async (key: string | null, note: string | null) => {
     setJoining(true)
@@ -132,18 +148,48 @@ export default function JoinEventPageClient({ event }: JoinEventPageClientProps)
     }
   };
 
+  const handleJoinTeamEvent = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setJoining(true)
+    setErrorMsg('')
+    try {
+      const token = event.join_mode === 'key' ? joinKey.trim() : null
+      const result = await joinTeamEvent(event.id, token)
+      if (result?.success) {
+        toast.success(result.message || 'Pendaftaran tim berhasil diajukan!')
+        await fetchMembership()
+      } else {
+        setErrorMsg(result?.message || 'Gagal mendaftarkan tim.')
+        toast.error(result?.message || 'Gagal mendaftarkan tim.')
+      }
+    } catch (err: any) {
+      setErrorMsg(err?.message || 'Terjadi kesalahan sistem saat mendaftarkan tim.')
+      toast.error(err?.message || 'Gagal mendaftarkan tim.')
+    } finally {
+      setJoining(false)
+    }
+  }
+
   const handleManualKeySubmit = (e: React.FormEvent) => {
     e.preventDefault()
     if (!joinKey.trim()) {
       toast.error('Masukkan join key terlebih dahulu!')
       return
     }
-    void handleJoinEvent(joinKey.trim(), null)
+    if (event.is_team_event) {
+      void handleJoinTeamEvent(e)
+    } else {
+      void handleJoinEvent(joinKey.trim(), null)
+    }
   }
 
   const handleManualRequestSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    void handleJoinEvent(null, joinNote.trim() || null)
+    if (event.is_team_event) {
+      void handleJoinTeamEvent(e)
+    } else {
+      void handleJoinEvent(null, joinNote.trim() || null)
+    }
   }
 
   const handleLoginRedirect = () => {
@@ -256,89 +302,181 @@ export default function JoinEventPageClient({ event }: JoinEventPageClientProps)
           ) : (
             // AUTHENTICATED STATE
             <>
-              {event.join_mode === 'key' && (
-                // KEY FORM
-                <form onSubmit={handleManualKeySubmit} className="space-y-4 pt-1">
-                  <div className="space-y-2">
-                    <label htmlFor="joinKey" className="text-xs font-bold uppercase tracking-wider text-gray-400">
-                      Masukkan Join Key (Passkey)
-                    </label>
-                    <div className="relative">
-                      <KeyRound className="absolute left-3.5 top-3.5 h-4 w-4 text-gray-500" />
-                      <Input
-                        id="joinKey"
-                        type="text"
-                        placeholder="Masukkan kode akses event di sini..."
-                        value={joinKey}
-                        onChange={(e) => setJoinKey(e.target.value)}
-                        className={`${SURFACE_GLASS_INPUT_CLASS} pl-10 border-gray-800 bg-gray-900/20`}
-                        disabled={joining}
-                      />
-                    </div>
-                  </div>
-                  {errorMsg && (
-                    <div className="flex items-center gap-2 rounded-lg border border-red-500/20 bg-red-500/5 p-3 text-xs font-medium text-red-400">
-                      <ShieldAlert className="h-4 w-4 shrink-0" />
-                      <span>{errorMsg}</span>
-                    </div>
-                  )}
-                  <Button
-                    type="submit"
-                    className="w-full flex items-center justify-center gap-2 py-5 rounded-xl font-bold bg-yellow-600 hover:bg-yellow-500 text-black shadow-lg shadow-yellow-900/10 transition-all hover:scale-[1.01]"
-                    disabled={joining}
-                  >
-                    <span>Buka Akses Event</span>
-                    <ArrowRight className="h-4 w-4 text-black" />
-                  </Button>
-                </form>
-              )}
-
-              {event.join_mode === 'request' && (
-                // REQUEST FORM / STATUS CHECK
+              {event.is_team_event ? (
                 <div className="space-y-4 pt-1">
-                  {membership?.request_status === 'pending' ? (
-                    <div className="flex flex-col items-center justify-center text-center p-6 rounded-xl border border-blue-500/20 bg-blue-500/[0.02]">
-                      <Loader2 className="h-10 w-10 text-blue-400 animate-spin mb-3" />
-                      <h4 className="text-sm font-bold text-white">Menunggu Persetujuan</h4>
-                      <p className="text-xs text-gray-400 mt-1 max-w-sm font-medium">
-                        Permintaan Anda untuk bergabung sedang dalam peninjauan oleh Admin. Anda akan mendapat akses begitu disetujui.
+                  {!teamStatus?.has_team ? (
+                    <div className="text-center p-6 rounded-xl border border-yellow-500/25 bg-yellow-500/[0.02]">
+                      <ShieldAlert className="h-10 w-10 text-yellow-400 mx-auto mb-3" />
+                      <h4 className="text-sm font-bold text-white">Butuh Tim untuk Join</h4>
+                      <p className="text-xs text-gray-400 mt-1 max-w-sm font-medium mx-auto">
+                        Event ini memerlukan partisipasi kelompok/tim. Silakan buat atau gabung Tim terlebih dahulu di menu Teams sebelum mendaftar.
+                      </p>
+                      <Button
+                        type="button"
+                        onClick={() => router.push('/teams')}
+                        className="mt-4 flex items-center justify-center gap-2 py-2 px-4 mx-auto rounded-xl font-bold bg-yellow-600 hover:bg-yellow-500 text-black transition-all"
+                      >
+                        <span>Ke Halaman Teams</span>
+                        <ArrowRight className="h-4 w-4 text-black" />
+                      </Button>
+                    </div>
+                  ) : teamStatus.registration_status === 'approved' && !teamStatus.is_roster_member ? (
+                    <div className="text-center p-6 rounded-xl border border-red-500/25 bg-red-500/[0.02]">
+                      <Lock className="h-10 w-10 text-red-400 mx-auto mb-3" />
+                      <h4 className="text-sm font-bold text-white">Roster Terkunci</h4>
+                      <p className="text-xs text-gray-400 mt-1 max-w-sm font-medium mx-auto">
+                        Tim Anda <strong>{teamStatus.team_name}</strong> sudah disetujui untuk event ini, namun Anda bergabung ke tim setelah pendaftaran disetujui (Roster Lock). Silakan hubungi kapten tim atau Admin untuk mendaftarkan Anda ke roster event.
                       </p>
                     </div>
-                  ) : membership?.request_status === 'rejected' ? (
+                  ) : teamStatus.registration_status === 'pending' ? (
+                    <div className="flex flex-col items-center justify-center text-center p-6 rounded-xl border border-blue-500/20 bg-blue-500/[0.02]">
+                      <Loader2 className="h-10 w-10 text-blue-400 animate-spin mb-3" />
+                      <h4 className="text-sm font-bold text-white">Menunggu Persetujuan Tim</h4>
+                      <p className="text-xs text-gray-400 mt-1 max-w-sm font-medium">
+                        Pendaftaran tim <strong>{teamStatus.team_name}</strong> sedang ditinjau oleh Admin. Anggota tim akan mendapat akses setelah pendaftaran disetujui.
+                      </p>
+                    </div>
+                  ) : teamStatus.registration_status === 'rejected' ? (
                     <div className="flex flex-col items-center justify-center text-center p-6 rounded-xl border border-red-500/20 bg-red-500/[0.02]">
                       <ShieldAlert className="h-10 w-10 text-red-400 mb-3" />
-                      <h4 className="text-sm font-bold text-white">Permintaan Ditolak</h4>
+                      <h4 className="text-sm font-bold text-white">Pendaftaran Tim Ditolak</h4>
                       <p className="text-xs text-gray-400 mt-1 max-w-sm font-medium">
-                        Maaf, admin menolak permintaan Anda untuk bergabung dengan event ini.
+                        Maaf, admin menolak permintaan pendaftaran tim <strong>{teamStatus.team_name}</strong> untuk event ini.
+                      </p>
+                    </div>
+                  ) : !teamStatus.is_captain ? (
+                    <div className="text-center p-6 rounded-xl border border-blue-500/20 bg-blue-500/[0.02]">
+                      <ShieldAlert className="h-10 w-10 text-blue-400 mx-auto mb-3" />
+                      <h4 className="text-sm font-bold text-white">Hanya untuk Kapten</h4>
+                      <p className="text-xs text-gray-400 mt-1 max-w-sm font-medium mx-auto">
+                        Tim Anda <strong>{teamStatus.team_name}</strong> belum terdaftar ke event ini. Hanya Kapten Tim yang dapat mengajukan pendaftaran tim.
                       </p>
                     </div>
                   ) : (
-                    <form onSubmit={handleManualRequestSubmit} className="space-y-4">
-                      <div className="space-y-2">
-                        <label htmlFor="joinNote" className="text-xs font-bold uppercase tracking-wider text-gray-400">
-                          Catatan Tambahan (Opsional)
-                        </label>
-                        <textarea
-                          id="joinNote"
-                          rows={3}
-                          placeholder="Tulis pesan pengantar untuk admin..."
-                          value={joinNote}
-                          onChange={(e) => setJoinNote(e.target.value)}
-                          className={`${SURFACE_GLASS_TEXTAREA_CLASS} border-gray-800 bg-gray-900/20`}
-                          disabled={joining}
-                        />
-                      </div>
+                    <form onSubmit={handleJoinTeamEvent} className="space-y-4">
+                      {event.join_mode === 'key' && (
+                        <div className="space-y-2">
+                          <label htmlFor="joinKey" className="text-xs font-bold uppercase tracking-wider text-gray-400">
+                            Masukkan Token Registrasi Tim
+                          </label>
+                          <div className="relative">
+                            <KeyRound className="absolute left-3.5 top-3.5 h-4 w-4 text-gray-500" />
+                            <Input
+                              id="joinKey"
+                              type="text"
+                              placeholder="Masukkan token registrasi dari panitia..."
+                              value={joinKey}
+                              onChange={(e) => setJoinKey(e.target.value)}
+                              className={`${SURFACE_GLASS_INPUT_CLASS} pl-10 border-gray-800 bg-gray-900/20`}
+                              disabled={joining}
+                            />
+                          </div>
+                        </div>
+                      )}
+                      {errorMsg && (
+                        <div className="flex items-center gap-2 rounded-lg border border-red-500/20 bg-red-500/5 p-3 text-xs font-medium text-red-400">
+                          <ShieldAlert className="h-4 w-4 shrink-0" />
+                          <span>{errorMsg}</span>
+                        </div>
+                      )}
                       <Button
                         type="submit"
                         className="w-full flex items-center justify-center gap-2 py-5 rounded-xl font-bold bg-blue-600 hover:bg-blue-500 text-white shadow-lg shadow-blue-900/20 transition-all hover:scale-[1.01]"
                         disabled={joining}
                       >
-                        <span>Ajukan Permintaan Gabung</span>
+                        <span>Daftarkan Tim {teamStatus.team_name}</span>
                         <ArrowRight className="h-4 w-4" />
                       </Button>
                     </form>
                   )}
                 </div>
+              ) : (
+                <>
+                  {event.join_mode === 'key' && (
+                    // KEY FORM
+                    <form onSubmit={handleManualKeySubmit} className="space-y-4 pt-1">
+                      <div className="space-y-2">
+                        <label htmlFor="joinKey" className="text-xs font-bold uppercase tracking-wider text-gray-400">
+                          Masukkan Join Key (Passkey)
+                        </label>
+                        <div className="relative">
+                          <KeyRound className="absolute left-3.5 top-3.5 h-4 w-4 text-gray-500" />
+                          <Input
+                            id="joinKey"
+                            type="text"
+                            placeholder="Masukkan kode akses event di sini..."
+                            value={joinKey}
+                            onChange={(e) => setJoinKey(e.target.value)}
+                            className={`${SURFACE_GLASS_INPUT_CLASS} pl-10 border-gray-800 bg-gray-900/20`}
+                            disabled={joining}
+                          />
+                        </div>
+                      </div>
+                      {errorMsg && (
+                        <div className="flex items-center gap-2 rounded-lg border border-red-500/20 bg-red-500/5 p-3 text-xs font-medium text-red-400">
+                          <ShieldAlert className="h-4 w-4 shrink-0" />
+                          <span>{errorMsg}</span>
+                        </div>
+                      )}
+                      <Button
+                        type="submit"
+                        className="w-full flex items-center justify-center gap-2 py-5 rounded-xl font-bold bg-yellow-600 hover:bg-yellow-500 text-black shadow-lg shadow-yellow-900/10 transition-all hover:scale-[1.01]"
+                        disabled={joining}
+                      >
+                        <span>Buka Akses Event</span>
+                        <ArrowRight className="h-4 w-4 text-black" />
+                      </Button>
+                    </form>
+                  )}
+
+                  {event.join_mode === 'request' && (
+                    // REQUEST FORM / STATUS CHECK
+                    <div className="space-y-4 pt-1">
+                      {membership?.request_status === 'pending' ? (
+                        <div className="flex flex-col items-center justify-center text-center p-6 rounded-xl border border-blue-500/20 bg-blue-500/[0.02]">
+                          <Loader2 className="h-10 w-10 text-blue-400 animate-spin mb-3" />
+                          <h4 className="text-sm font-bold text-white">Menunggu Persetujuan</h4>
+                          <p className="text-xs text-gray-400 mt-1 max-w-sm font-medium">
+                            Permintaan Anda untuk bergabung sedang dalam peninjauan oleh Admin. Anda akan mendapat akses begitu disetujui.
+                          </p>
+                        </div>
+                      ) : membership?.request_status === 'rejected' ? (
+                        <div className="flex flex-col items-center justify-center text-center p-6 rounded-xl border border-red-500/20 bg-red-500/[0.02]">
+                          <ShieldAlert className="h-10 w-10 text-red-400 mb-3" />
+                          <h4 className="text-sm font-bold text-white">Permintaan Ditolak</h4>
+                          <p className="text-xs text-gray-400 mt-1 max-w-sm font-medium">
+                            Maaf, admin menolak permintaan Anda untuk bergabung dengan event ini.
+                          </p>
+                        </div>
+                      ) : (
+                        <form onSubmit={handleManualRequestSubmit} className="space-y-4">
+                          <div className="space-y-2">
+                            <label htmlFor="joinNote" className="text-xs font-bold uppercase tracking-wider text-gray-400">
+                              Catatan Tambahan (Opsional)
+                            </label>
+                            <textarea
+                              id="joinNote"
+                              rows={3}
+                              placeholder="Tulis pesan pengantar untuk admin..."
+                              value={joinNote}
+                              onChange={(e) => setJoinNote(e.target.value)}
+                              className={`${SURFACE_GLASS_TEXTAREA_CLASS} border-gray-800 bg-gray-900/20`}
+                              disabled={joining}
+                            />
+                          </div>
+                          <Button
+                            type="submit"
+                            className="w-full flex items-center justify-center gap-2 py-5 rounded-xl font-bold bg-blue-600 hover:bg-blue-500 text-white shadow-lg shadow-blue-900/20 transition-all hover:scale-[1.01]"
+                            disabled={joining}
+                          >
+                            <span>Ajukan Permintaan Gabung</span>
+                            <ArrowRight className="h-4 w-4" />
+                          </Button>
+                        </form>
+                      )}
+                    </div>
+                  )}
+                </>
               )}
             </>
           )}

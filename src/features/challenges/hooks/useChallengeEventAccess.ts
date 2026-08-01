@@ -1,6 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import toast from 'react-hot-toast'
 import { AuthService } from '@/features/auth'
 import {
@@ -41,6 +42,8 @@ export function useChallengeEventAccess({
   setSelectedEvent,
 }: UseChallengeEventAccessOptions) {
   const [eventMembership, setEventMembership] = useState<EventMembershipStatus | null>(null)
+  const [teamStatus, setTeamStatus] = useState<any>(null)
+  const router = useRouter()
   const [eventMembershipLoading, setEventMembershipLoading] = useState(false)
   const [isGlobalAdminUser, setIsGlobalAdminUser] = useState(false)
   const [eventAdminIds, setEventAdminIds] = useState<string[]>([])
@@ -114,7 +117,32 @@ export function useChallengeEventAccess({
 
     const loadMembership = async () => {
       if (!user || typeof eventId !== 'string' || eventId === 'all') {
-        if (mounted) setEventMembership(null)
+        if (mounted) {
+          setEventMembership(null)
+          setTeamStatus(null)
+        }
+        return
+      }
+
+      if (selectedEventObj?.is_team_event) {
+        setEventMembershipLoading(true)
+        try {
+          const { getMyTeamEventStatus } = await import('@/features/events/services/event.service')
+          const data = await getMyTeamEventStatus(eventId)
+          if (!mounted) return
+          setTeamStatus(data)
+          setEventMembership({
+            success: true,
+            event_id: eventId,
+            is_member: data?.registration_status === 'approved' && data.is_roster_member,
+            request_status: data?.registration_status || null,
+            join_mode: selectedEventObj.join_mode || 'open'
+          })
+        } catch (error) {
+          console.error(error)
+        } finally {
+          if (mounted) setEventMembershipLoading(false)
+        }
         return
       }
 
@@ -179,6 +207,32 @@ export function useChallengeEventAccess({
     const joinMode = event.join_mode || 'open'
     const isSelectedEventAdmin = eventAdminIds.includes(id)
     const canBypass = isGlobalAdminUser || isSelectedEventAdmin
+
+    if (event.is_team_event) {
+      if (canBypass) {
+        setSelectedEvent(id)
+        closeEventsTabIfNeeded()
+        return
+      }
+
+      const toastId = toast.loading('Checking team access...')
+      try {
+        const { getMyTeamEventStatus } = await import('@/features/events/services/event.service')
+        const teamStatusObj = await getMyTeamEventStatus(id)
+        if (teamStatusObj?.registration_status === 'approved' && teamStatusObj.is_roster_member) {
+          setSelectedEvent(id)
+          closeEventsTabIfNeeded()
+        } else {
+          router.push(`/events/${id}/join`)
+        }
+      } catch (error) {
+        console.error(error)
+        router.push(`/events/${id}/join`)
+      } finally {
+        toast.dismiss(toastId)
+      }
+      return
+    }
 
     if (canBypass || joinMode === 'open') {
       setSelectedEvent(id)

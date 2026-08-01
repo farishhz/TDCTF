@@ -38,4 +38,7 @@ export type EventFormData = {
   end_time: string
   always_show_challenges: boolean
   image_url: string
+  is_team_event: boolean
+  writeup_deadline: string
+  max_team_members: number | string
 }

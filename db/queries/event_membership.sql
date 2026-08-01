@@ -194,22 +194,42 @@ RETURNS TABLE (
   joined_at TIMESTAMPTZ,
   joined_by UUID
 ) AS $$
+DECLARE
+  v_is_team_event BOOLEAN;
 BEGIN
   IF NOT can_manage_event(p_event_id) THEN
     RAISE EXCEPTION 'Only event admin/global admin can view members';
   END IF;
 
-  RETURN QUERY
-  SELECT
-    ep.event_id,
-    ep.user_id,
-    u.username::TEXT,
-    ep.joined_at,
-    ep.joined_by
-  FROM public.event_participants ep
-  JOIN public.users u ON u.id = ep.user_id
-  WHERE ep.event_id = p_event_id
-  ORDER BY ep.joined_at ASC;
+  SELECT COALESCE(is_team_event, false) INTO v_is_team_event
+  FROM public.events
+  WHERE id = p_event_id;
+
+  IF v_is_team_event THEN
+    RETURN QUERY
+    SELECT
+      etp.event_id,
+      etp.user_id,
+      u.username::TEXT,
+      etp.joined_at,
+      NULL::UUID AS joined_by
+    FROM public.event_team_participants etp
+    JOIN public.users u ON u.id = etp.user_id
+    WHERE etp.event_id = p_event_id
+    ORDER BY etp.joined_at ASC;
+  ELSE
+    RETURN QUERY
+    SELECT
+      ep.event_id,
+      ep.user_id,
+      u.username::TEXT,
+      ep.joined_at,
+      ep.joined_by
+    FROM public.event_participants ep
+    JOIN public.users u ON u.id = ep.user_id
+    WHERE ep.event_id = p_event_id
+    ORDER BY ep.joined_at ASC;
+  END IF;
 END;
 $$ LANGUAGE plpgsql
 SECURITY DEFINER

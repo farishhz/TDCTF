@@ -40,6 +40,7 @@ export default function ChallengeDialogs({ data }: ChallengeDialogsProps) {
         challenge={data.selectedChallenge}
         solvers={data.solvers}
         challengeTab={data.challengeTab}
+        eventEnded={data.selectedEventEnded}
         showQuestionTab={!!data.selectedSubChallengeState?.hasQuestions}
         setChallengeTab={(tab) => {
           if ((tab === 'solvers' || tab === 'question') && data.selectedChallenge) {

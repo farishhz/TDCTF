@@ -8,6 +8,7 @@ import ChallengeFilterBar from '../ChallengeFilterBar'
 import DesktopChallengeFilterSidebar from '../challenge-filter-bar/DesktopChallengeFilterSidebar'
 import ChallengeListContent from './ChallengeListContent'
 import ChallengePageTabs from './ChallengePageTabs'
+import WriteupSection from './WriteupSection'
 
 type ChallengesPageData = ReturnType<typeof useChallengesPageData>
 
@@ -60,6 +61,15 @@ export default function ChallengesTabPanel({
           onClear={() => data.setFilters({ status: 'all', category: 'all', difficulty: 'all', search: '', feature: 'N' })}
           hideSidebarFiltersOnDesktop
         />
+
+        {data.eventId && (data.selectedEventObj as any)?.writeup_deadline && !data.eventJoinBlocked && (
+          <div className="mb-4">
+            <WriteupSection
+              eventId={data.eventId}
+              writeupDeadline={(data.selectedEventObj as any).writeup_deadline}
+            />
+          </div>
+        )}
 
         <div data-tour="challenge-list" data-challenge-list-anchor className="min-w-0">
           <ChallengeListContent

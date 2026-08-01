@@ -1,6 +1,6 @@
 import React from 'react'
 import Image from 'next/image'
-import { CalendarDays } from 'lucide-react'
+import { CalendarDays, Info } from 'lucide-react'
 import {
   Button,
   Dialog,
@@ -156,7 +156,7 @@ const EventFormDialog: React.FC<EventFormDialogProps> = ({
                   </Select>
                 </div>
 
-                {formData.join_mode === 'key' && (
+                {formData.join_mode === 'key' && !formData.is_team_event && (
                   <div className="rounded-xl border border-gray-200/80 bg-gray-50/70 p-3 dark:border-gray-800 dark:bg-gray-900/40">
                     <div className="mb-2 flex items-center justify-between gap-3">
                       <div>
@@ -174,6 +174,41 @@ const EventFormDialog: React.FC<EventFormDialogProps> = ({
                       onChange={(e) => onChange({ ...formData, join_key: e.target.value })}
                       placeholder="Enter custom join key"
                       className={ADMIN_INPUT_CLASS}
+                    />
+                  </div>
+                )}
+
+                {formData.join_mode === 'key' && formData.is_team_event && (
+                  <div className="rounded-xl border border-blue-500/20 bg-blue-500/5 p-3.5 text-xs text-blue-600 dark:text-blue-400 max-w-md flex items-start gap-2">
+                    <Info className="h-4 w-4 shrink-0 mt-0.5" />
+                    <p className="leading-relaxed">
+                      Untuk event bertipe tim dengan <strong>Join Mode: Key</strong>, token registrasi unik untuk masing-masing tim di-generate di tab <strong>Members {"->"} Team Registrations</strong> setelah event dibuat.
+                    </p>
+                  </div>
+                )}
+
+                <div className="flex items-center justify-between gap-3 rounded-xl border border-gray-200/80 bg-gray-50/70 px-3 py-2 dark:border-gray-800 dark:bg-gray-900/40 max-w-md">
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">Event Per Team</p>
+                    <p className={ADMIN_FORM_HELPER_CLASS}>Enable if this event is restricted to team participation.</p>
+                  </div>
+                  <Switch
+                    checked={formData.is_team_event}
+                    onCheckedChange={(checked) => onChange({ ...formData, is_team_event: checked })}
+                  />
+                </div>
+
+                {formData.is_team_event && (
+                  <div className="rounded-xl border border-gray-200/80 bg-gray-50/70 p-3 dark:border-gray-800 dark:bg-gray-900/40 max-w-md">
+                    <Label htmlFor="max_team_members">Max Team Members</Label>
+                    <p className={ADMIN_FORM_HELPER_CLASS}>Batas jumlah anggota maksimal per-tim untuk event ini (kosongkan jika tanpa batas).</p>
+                    <Input
+                      id="max_team_members"
+                      type="number"
+                      value={formData.max_team_members}
+                      onChange={(e) => onChange({ ...formData, max_team_members: e.target.value })}
+                      placeholder="e.g. 5"
+                      className={`${ADMIN_INPUT_CLASS} mt-1.5`}
                     />
                   </div>
                 )}
@@ -217,6 +252,23 @@ const EventFormDialog: React.FC<EventFormDialogProps> = ({
                     type="datetime-local"
                     value={formData.end_time}
                     onChange={(e) => onChange({ ...formData, end_time: e.target.value })}
+                    className={`${ADMIN_INPUT_CLASS} h-9 px-2 text-sm`}
+                  />
+                </div>
+
+                <div className={ADMIN_FORM_FIELD_CLASS}>
+                  <div className="flex items-center justify-between">
+                    <Label>Write-Up Deadline</Label>
+                    {formData.writeup_deadline && (
+                      <button type="button" onClick={() => onChange({ ...formData, writeup_deadline: '' })} className="text-xs font-semibold text-blue-600 hover:underline dark:text-blue-300">
+                        Clear
+                      </button>
+                    )}
+                  </div>
+                  <Input
+                    type="datetime-local"
+                    value={formData.writeup_deadline}
+                    onChange={(e) => onChange({ ...formData, writeup_deadline: e.target.value })}
                     className={`${ADMIN_INPUT_CLASS} h-9 px-2 text-sm`}
                   />
                 </div>

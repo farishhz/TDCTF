@@ -1,25 +1,29 @@
 "use client"
 
 import { AnimatePresence } from 'framer-motion'
-import { CalendarDays, GitBranch, Users } from 'lucide-react'
+import { CalendarDays, GitBranch, Users, FileText, HelpCircle } from 'lucide-react'
 import { useState } from 'react'
 import ConfirmDialog from '@/shared/components/ConfirmDialog'
 import BulkAssignChallengesCard from './BulkAssignChallengesCard'
 import EventFormDialog from './EventFormDialog'
 import EventListCard from './EventListCard'
 import EventMembersCard from './EventMembersCard'
+import EventWriteupsCard from './EventWriteupsCard'
+import EventGuideCard from './EventGuideCard'
 import ShareEventDialog from './ShareEventDialog'
 import { Button } from '@/shared/ui'
 import type { Event } from '../types'
 import { useAdminEventData } from '../hooks/useAdminEventData'
 import { AdminContentLoading, AdminPageShell, AdminStickyToolbar, AdminTabs, useTabState } from '../../ui'
 
-type AdminEventTab = 'event-list' | 'bulk-event' | 'event-members' | 'join-requests'
+type AdminEventTab = 'event-list' | 'bulk-event' | 'event-members' | 'join-requests' | 'writeups' | 'guide'
 
 const EVENT_TABS = [
   { value: 'event-list' as const, label: 'Event List', icon: CalendarDays },
   { value: 'bulk-event' as const, label: 'Bulk Event', icon: GitBranch },
   { value: 'event-members' as const, label: 'Members', icon: Users },
+  { value: 'writeups' as const, label: 'Write-Ups', icon: FileText },
+  { value: 'guide' as const, label: 'Guide', icon: HelpCircle },
 ]
 
 export default function AdminEventPage() {
@@ -82,6 +86,11 @@ export default function AdminEventPage() {
     loadingJoinRequests,
     reviewingRequestId,
     handleReviewRequest,
+    eventTeams,
+    loadingEventTeams,
+    reviewingTeamId,
+    handleReviewTeam,
+    loadJoinRequests,
   } = useAdminEventData()
 
   if (authLoading || (isLoading && !isAdminUser)) return <AdminContentLoading variant="event" />
@@ -170,7 +179,24 @@ export default function AdminEventPage() {
               loadingJoinRequests={loadingJoinRequests}
               reviewingRequestId={reviewingRequestId}
               onReviewRequest={handleReviewRequest}
+              eventTeams={eventTeams}
+              loadingEventTeams={loadingEventTeams}
+              reviewingTeamId={reviewingTeamId}
+              onReviewTeam={handleReviewTeam}
+              onReloadTeams={loadJoinRequests}
             />
+          ) : null}
+
+          {activeTab === 'writeups' ? (
+            <EventWriteupsCard
+              events={sortedEvents}
+              manageEventId={manageEventId}
+              onManageEventChange={setManageEventId}
+            />
+          ) : null}
+
+          {activeTab === 'guide' ? (
+            <EventGuideCard />
           ) : null}
         </div>
       </AdminPageShell>

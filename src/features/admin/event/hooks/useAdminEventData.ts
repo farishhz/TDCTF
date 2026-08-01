@@ -25,7 +25,7 @@ export function useAdminEventData() {
   const { sortedEvents, loadEvents, ...eventCrud } = useAdminEventCrud({ onEventsLoaded: handleEventsLoaded })
   const { loadChallenges, ...bulkChallenges } = useAdminEventBulkChallenges()
   const { loadEventMembers, ...members } = useAdminEventMembers({ manageEventId })
-  const { loadJoinRequests, ...joinRequests } = useAdminEventJoinRequests({
+  const { loadJoinRequests, ...joinRequestsData } = useAdminEventJoinRequests({
     manageEventId,
     loadEventMembers,
   })
@@ -82,6 +82,7 @@ export function useAdminEventData() {
     ...eventCrud,
     ...members,
     ...bulkChallenges,
-    ...joinRequests,
+    ...joinRequestsData,
+    loadJoinRequests,
   }
 }

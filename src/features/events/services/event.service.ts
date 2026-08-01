@@ -37,6 +37,9 @@ export async function addEvent(payload: {
   end_time?: string | null
   always_show_challenges?: boolean | null
   image_url?: string | null
+  is_team_event?: boolean | null
+  writeup_deadline?: string | null
+  max_team_members?: number | null
 }) {
   const { data, error } = await supabase.rpc('add_event', {
     p_name: payload.name,
@@ -45,6 +48,9 @@ export async function addEvent(payload: {
     p_end_time: payload.end_time ?? null,
     p_always_show_challenges: payload.always_show_challenges ?? false,
     p_image_url: payload.image_url ?? null,
+    p_is_team_event: payload.is_team_event ?? false,
+    p_writeup_deadline: payload.writeup_deadline ?? null,
+    p_max_team_members: payload.max_team_members ?? null,
   } as any)
 
   if (error) {
@@ -62,6 +68,9 @@ export async function updateEvent(eventId: string, payload: {
   end_time?: string | null
   always_show_challenges?: boolean | null
   image_url?: string | null
+  is_team_event?: boolean | null
+  writeup_deadline?: string | null
+  max_team_members?: number | null
 }) {
   const { data, error } = await supabase.rpc('update_event', {
     p_event_id: eventId,
@@ -71,6 +80,9 @@ export async function updateEvent(eventId: string, payload: {
     p_end_time: payload.end_time ?? null,
     p_always_show_challenges: payload.always_show_challenges ?? null,
     p_image_url: payload.image_url ?? null,
+    p_is_team_event: payload.is_team_event ?? null,
+    p_writeup_deadline: payload.writeup_deadline ?? null,
+    p_max_team_members: payload.max_team_members ?? null,
   } as any)
 
   if (error) {
@@ -310,4 +322,198 @@ export async function adminRemoveEventMember(eventId: string, userId: string): P
   }
 
   return Boolean(data)
+}
+
+export async function joinTeamEvent(eventId: string, registrationToken?: string | null): Promise<{ success: boolean; message: string }> {
+  const { data, error } = await (supabase as any).rpc('join_team_event', {
+    p_event_id: eventId,
+    p_registration_token: registrationToken ?? null,
+  })
+
+  if (error) {
+    console.error('Error joining team event:', error)
+    throw error
+  }
+
+  return (data as any) || { success: false, message: 'Gagal mendaftarkan tim.' }
+}
+
+export async function reviewTeamEvent(eventId: string, teamId: string, approve: boolean): Promise<{ success: boolean; status?: string }> {
+  const { data, error } = await (supabase as any).rpc('review_team_event', {
+    p_event_id: eventId,
+    p_team_id: teamId,
+    p_approve: approve,
+  })
+
+  if (error) {
+    console.error('Error reviewing team event:', error)
+    throw error
+  }
+
+  return (data as any) || { success: false }
+}
+
+export interface EventTeamRow {
+  team_id: string
+  team_name: string
+  picture_url?: string | null
+  status: 'pending' | 'approved' | 'rejected'
+  requested_at: string
+  requested_by_username: string
+  reviewed_at?: string | null
+  member_count: number
+}
+
+export async function listEventTeams(eventId: string): Promise<EventTeamRow[]> {
+  const { data, error } = await (supabase as any).rpc('list_event_teams', {
+    p_event_id: eventId,
+  })
+
+  if (error) {
+    console.error('Error listing event teams:', error)
+    return []
+  }
+
+  return (data as unknown as EventTeamRow[]) || []
+}
+
+export interface MyTeamEventStatus {
+  success: boolean
+  has_team: boolean
+  team_id?: string | null
+  team_name?: string | null
+  is_captain: boolean
+  registration_status?: 'pending' | 'approved' | 'rejected' | null
+  is_roster_member: boolean
+  message?: string
+}
+
+export async function getMyTeamEventStatus(eventId: string): Promise<MyTeamEventStatus> {
+  const { data, error } = await (supabase as any).rpc('get_my_team_event_status', {
+    p_event_id: eventId,
+  })
+
+  if (error) {
+    console.error('Error fetching my team event status:', error)
+    return { success: false, has_team: false, is_captain: false, is_roster_member: false }
+  }
+
+  return (data as unknown as MyTeamEventStatus) || { success: false, has_team: false, is_captain: false, is_roster_member: false }
+}
+
+export async function submitEventWriteup(eventId: string, fileUrl: string, filename: string): Promise<{ success: boolean; message: string }> {
+  const { data, error } = await (supabase as any).rpc('submit_event_writeup', {
+    p_event_id: eventId,
+    p_file_url: fileUrl,
+    p_filename: filename,
+  })
+
+  if (error) {
+    console.error('Error submitting writeup:', error)
+    throw error
+  }
+
+  return (data as any) || { success: false, message: 'Gagal mengumpulkan writeup.' }
+}
+
+export async function reviewEventWriteup(writeupId: string, status: string, scoreAdjustment: number, adminNotes: string): Promise<{ success: boolean; message: string }> {
+  const { data, error } = await (supabase as any).rpc('review_event_writeup', {
+    p_writeup_id: writeupId,
+    p_status: status,
+    p_score_adjustment: scoreAdjustment,
+    p_admin_notes: adminNotes,
+  })
+
+  if (error) {
+    console.error('Error reviewing writeup:', error)
+    throw error
+  }
+
+  return (data as any) || { success: false, message: 'Gagal mereview writeup.' }
+}
+
+export interface EventWriteupRow {
+  writeup_id: string
+  team_id?: string | null
+  team_name?: string | null
+  user_id: string
+  username: string
+  file_url: string
+  filename: string
+  submitted_at: string
+  status: 'pending' | 'reviewed'
+  score_adjustment: number
+  admin_notes: string
+}
+
+export async function listEventWriteups(eventId: string): Promise<EventWriteupRow[]> {
+  const { data, error } = await (supabase as any).rpc('list_event_writeups', {
+    p_event_id: eventId,
+  })
+
+  if (error) {
+    console.error('Error listing event writeups:', error)
+    return []
+  }
+
+  return (data as unknown as EventWriteupRow[]) || []
+}
+
+export interface MyTeamWriteupStatus {
+  success: boolean
+  has_submitted: boolean
+  id?: string
+  file_url?: string
+  filename?: string
+  submitted_at?: string
+  status?: 'pending' | 'reviewed'
+  score_adjustment?: number
+  admin_notes?: string
+  message?: string
+}
+
+export async function getMyTeamWriteup(eventId: string): Promise<MyTeamWriteupStatus> {
+  const { data, error } = await (supabase as any).rpc('get_my_team_writeup', {
+    p_event_id: eventId,
+  })
+
+  if (error) {
+    console.error('Error fetching my team writeup:', error)
+    return { success: false, has_submitted: false }
+  }
+
+  return (data as unknown as MyTeamWriteupStatus) || { success: false, has_submitted: false }
+}
+
+export async function adminGenerateTeamToken(eventId: string, teamId: string): Promise<{ success: boolean; token?: string; message?: string }> {
+  const { data, error } = await (supabase as any).rpc('admin_generate_team_token', {
+    p_event_id: eventId,
+    p_team_id: teamId,
+  })
+
+  if (error) {
+    console.error('Error generating team token:', error)
+    return { success: false, message: error.message }
+  }
+
+  return { success: true, token: data as string }
+}
+
+export interface UnregisteredTeamRow {
+  id: string
+  name: string
+  captain_username?: string
+}
+
+export async function listUnregisteredTeams(eventId: string): Promise<UnregisteredTeamRow[]> {
+  const { data, error } = await (supabase as any).rpc('list_unregistered_teams', {
+    p_event_id: eventId,
+  })
+
+  if (error) {
+    console.error('Error listing unregistered teams:', error)
+    return []
+  }
+
+  return (data as unknown as UnregisteredTeamRow[]) || []
 }

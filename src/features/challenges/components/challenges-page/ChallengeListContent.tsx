@@ -64,6 +64,25 @@ export default function ChallengeListContent({
   }
 
   if (eventJoinBlocked) {
+    if ((selectedEventObj as any)?.is_team_event) {
+      return (
+        <EmptyState
+          icon={<Lock className="w-full h-full text-yellow-500" />}
+          title="Viewer Mode (Mode Penonton)"
+          description="Anda sedang dalam mode penonton untuk event ini. Anda hanya dapat melihat Live Scoreboard dan Solves Feed. Silakan daftarkan tim Anda atau hubungi Kapten/Admin untuk bergabung ke roster peserta."
+          containerHeight="py-16"
+          action={
+            <a
+              href={`/events/${eventId}/join`}
+              className="inline-flex items-center gap-2 px-6 py-2.5 text-white text-sm font-semibold rounded-xl bg-blue-600 hover:bg-blue-500 shadow-md transition-all duration-200"
+            >
+              Daftar / Cek Roster Tim
+            </a>
+          }
+        />
+      )
+    }
+
     return (
       <EmptyState
         icon={<Lock className="w-full h-full" />}

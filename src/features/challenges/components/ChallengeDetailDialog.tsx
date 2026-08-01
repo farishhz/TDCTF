@@ -100,6 +100,7 @@ interface ChallengeDetailDialogProps {
   geoCooldownSeconds?: number
   handleGeoSubmit?: (challengeId: string, coords: GeoCoordinates, prefix: string) => Promise<boolean>
   handleGeoGuessChange?: (challengeId: string, coords: GeoCoordinates | null) => void
+  eventEnded?: boolean
 }
 
 const ChallengeDetailDialog: React.FC<ChallengeDetailDialogProps> = ({
@@ -146,6 +147,7 @@ const ChallengeDetailDialog: React.FC<ChallengeDetailDialogProps> = ({
   geoCooldownSeconds = 0,
   handleGeoSubmit = async () => false,
   handleGeoGuessChange = () => { },
+  eventEnded = false,
 }) => {
   const [solvesSortOrder, setSolvesSortOrder] = useState<'newest' | 'oldest'>('oldest')
   const [copiedMarkdown, setCopiedMarkdown] = useState(false)
@@ -525,6 +527,7 @@ ${links || '- (No links)'}
             handleFlagSubmit={handleFlagSubmit}
             submissionsRemaining={submissionsRemaining}
             cooldownSeconds={cooldownSeconds}
+            eventEnded={eventEnded}
           />
         )}
 

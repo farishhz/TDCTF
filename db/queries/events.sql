@@ -1,6 +1,6 @@
 -- ==============================================
 -- Queries: events
--- Source: sql/chema.sql
+-- Source: sql/schema.sql
 -- ==============================================
 
 -- INSERT
@@ -10,7 +10,10 @@ CREATE OR REPLACE FUNCTION add_event(
   p_start_time TIMESTAMPTZ DEFAULT NULL,
   p_end_time TIMESTAMPTZ DEFAULT NULL,
   p_always_show_challenges BOOLEAN DEFAULT FALSE,
-  p_image_url TEXT DEFAULT NULL
+  p_image_url TEXT DEFAULT NULL,
+  p_is_team_event BOOLEAN DEFAULT FALSE,
+  p_writeup_deadline TIMESTAMPTZ DEFAULT NULL,
+  p_max_team_members INTEGER DEFAULT NULL
 )
 RETURNS UUID AS $$
 DECLARE
@@ -24,8 +27,8 @@ BEGIN
     RAISE EXCEPTION 'Event with this name already exists';
   END IF;
 
-  INSERT INTO public.events(name, description, start_time, end_time, always_show_challenges, image_url)
-  VALUES (p_name, COALESCE(p_description, ''), p_start_time, p_end_time, COALESCE(p_always_show_challenges, FALSE), p_image_url)
+  INSERT INTO public.events(name, description, start_time, end_time, always_show_challenges, image_url, is_team_event, writeup_deadline, max_team_members)
+  VALUES (p_name, COALESCE(p_description, ''), p_start_time, p_end_time, COALESCE(p_always_show_challenges, FALSE), p_image_url, COALESCE(p_is_team_event, FALSE), p_writeup_deadline, p_max_team_members)
   RETURNING id INTO v_event_id;
 
   PERFORM public.write_admin_audit_log(
@@ -39,7 +42,10 @@ BEGIN
       'start_time', p_start_time,
       'end_time', p_end_time,
       'always_show_challenges', COALESCE(p_always_show_challenges, FALSE),
-      'image_url', p_image_url
+      'image_url', p_image_url,
+      'is_team_event', COALESCE(p_is_team_event, FALSE),
+      'writeup_deadline', p_writeup_deadline,
+      'max_team_members', p_max_team_members
     ),
     '{}'::jsonb
   );
@@ -49,7 +55,7 @@ END;
 $$ LANGUAGE plpgsql
 SECURITY DEFINER SET search_path = public, auth, extensions;
 
-GRANT EXECUTE ON FUNCTION add_event(TEXT, TEXT, TIMESTAMPTZ, TIMESTAMPTZ, BOOLEAN, TEXT) TO authenticated;
+GRANT EXECUTE ON FUNCTION add_event(TEXT, TEXT, TIMESTAMPTZ, TIMESTAMPTZ, BOOLEAN, TEXT, BOOLEAN, TIMESTAMPTZ, INTEGER) TO authenticated;
 
 -- UPDATE
 CREATE OR REPLACE FUNCTION update_event(
@@ -59,7 +65,10 @@ CREATE OR REPLACE FUNCTION update_event(
   p_start_time TIMESTAMPTZ DEFAULT NULL,
   p_end_time TIMESTAMPTZ DEFAULT NULL,
   p_always_show_challenges BOOLEAN DEFAULT NULL,
-  p_image_url TEXT DEFAULT NULL
+  p_image_url TEXT DEFAULT NULL,
+  p_is_team_event BOOLEAN DEFAULT NULL,
+  p_writeup_deadline TIMESTAMPTZ DEFAULT NULL,
+  p_max_team_members INTEGER DEFAULT NULL
 )
 RETURNS BOOLEAN AS $$
 DECLARE
@@ -83,7 +92,10 @@ BEGIN
     'end_time', e.end_time,
     'always_show_challenges', e.always_show_challenges,
     'image_url', e.image_url,
-    'join_mode', e.join_mode
+    'join_mode', e.join_mode,
+    'is_team_event', e.is_team_event,
+    'writeup_deadline', e.writeup_deadline,
+    'max_team_members', e.max_team_members
   )
   INTO v_before
   FROM public.events e
@@ -97,6 +109,9 @@ BEGIN
       always_show_challenges = COALESCE(p_always_show_challenges, always_show_challenges),
       image_url = COALESCE(p_image_url, image_url),
       join_mode = COALESCE(join_mode, 'open'),
+      is_team_event = COALESCE(p_is_team_event, is_team_event),
+      writeup_deadline = COALESCE(p_writeup_deadline, writeup_deadline),
+      max_team_members = p_max_team_members,
       updated_at = now()
   WHERE id = p_event_id;
 
@@ -107,7 +122,10 @@ BEGIN
     'end_time', e.end_time,
     'always_show_challenges', e.always_show_challenges,
     'image_url', e.image_url,
-    'join_mode', e.join_mode
+    'join_mode', e.join_mode,
+    'is_team_event', e.is_team_event,
+    'writeup_deadline', e.writeup_deadline,
+    'max_team_members', e.max_team_members
   )
   INTO v_after
   FROM public.events e
@@ -127,7 +145,7 @@ END;
 $$ LANGUAGE plpgsql
 SECURITY DEFINER SET search_path = public, auth, extensions;
 
-GRANT EXECUTE ON FUNCTION update_event(UUID, TEXT, TEXT, TIMESTAMPTZ, TIMESTAMPTZ, BOOLEAN, TEXT) TO authenticated;
+GRANT EXECUTE ON FUNCTION update_event(UUID, TEXT, TEXT, TIMESTAMPTZ, TIMESTAMPTZ, BOOLEAN, TEXT, BOOLEAN, TIMESTAMPTZ, INTEGER) TO authenticated;
 
 -- DELETE
 CREATE OR REPLACE FUNCTION delete_event(

@@ -38,6 +38,7 @@ DECLARE
   v_event_exists BOOLEAN;
   v_event_join_mode TEXT;
   v_always_show_challenges BOOLEAN := FALSE;
+  v_is_team_event BOOLEAN := FALSE;
   v_is_event_member BOOLEAN := FALSE;
   v_is_admin_override BOOLEAN := FALSE;
 BEGIN
@@ -56,7 +57,8 @@ BEGIN
          e.end_time,
          (e.id IS NOT NULL),
          e.join_mode,
-         COALESCE(e.always_show_challenges, false)
+         COALESCE(e.always_show_challenges, false),
+         COALESCE(e.is_team_event, false)
   INTO v_is_active,
        v_is_maintenance,
        v_event_id,
@@ -64,7 +66,8 @@ BEGIN
        v_event_end,
        v_event_exists,
        v_event_join_mode,
-       v_always_show_challenges
+       v_always_show_challenges,
+       v_is_team_event
   FROM public.challenges c
   LEFT JOIN public.events e ON e.id = c.event_id
   WHERE c.id = p_challenge_id;
@@ -94,16 +97,29 @@ BEGIN
   END IF;
 
   IF NOT v_is_admin_override AND v_event_id IS NOT NULL THEN
-    IF COALESCE(v_event_join_mode, 'open') <> 'open' THEN
+    IF v_is_team_event THEN
       SELECT EXISTS (
         SELECT 1
-        FROM public.event_participants ep
-        WHERE ep.event_id = v_event_id
-          AND ep.user_id = p_user_id
+        FROM public.event_team_participants etp
+        WHERE etp.event_id = v_event_id
+          AND etp.user_id = p_user_id
       ) INTO v_is_event_member;
 
       IF NOT v_is_event_member THEN
-        RETURN json_build_object('success', false, 'message', 'Join this event first before accessing its challenges');
+        RETURN json_build_object('success', false, 'message', 'Viewer Mode: Hanya tim terdaftar yang disetujui yang dapat mengakses tantangan.');
+      END IF;
+    ELSE
+      IF COALESCE(v_event_join_mode, 'open') <> 'open' THEN
+        SELECT EXISTS (
+          SELECT 1
+          FROM public.event_participants ep
+          WHERE ep.event_id = v_event_id
+            AND ep.user_id = p_user_id
+        ) INTO v_is_event_member;
+
+        IF NOT v_is_event_member THEN
+          RETURN json_build_object('success', false, 'message', 'Join this event first before accessing its challenges');
+        END IF;
       END IF;
     END IF;
 
@@ -802,12 +818,26 @@ USING (
       FROM public.events e
       WHERE e.id = challenges.event_id
         AND (
-          COALESCE(e.join_mode, 'open') = 'open'
-          OR EXISTS (
-            SELECT 1
-            FROM public.event_participants ep
-            WHERE ep.event_id = e.id
-              AND ep.user_id = auth.uid()::uuid
+          (
+            COALESCE(e.is_team_event, false) = false
+            AND (
+              COALESCE(e.join_mode, 'open') = 'open'
+              OR EXISTS (
+                SELECT 1
+                FROM public.event_participants ep
+                WHERE ep.event_id = e.id
+                  AND ep.user_id = auth.uid()::uuid
+              )
+            )
+          )
+          OR (
+            COALESCE(e.is_team_event, false) = true
+            AND EXISTS (
+              SELECT 1
+              FROM public.event_team_participants etp
+              WHERE etp.event_id = e.id
+                AND etp.user_id = auth.uid()::uuid
+            )
           )
         )
         AND (
