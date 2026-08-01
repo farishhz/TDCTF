@@ -143,27 +143,52 @@ export default function EventGuideCard() {
           </div>
           <div className="pl-10 space-y-3 text-sm text-gray-600 dark:text-gray-300 leading-relaxed font-medium">
             <p>
-              Setelah kompetisi selesai, pengerjaan berkas write-up tim dikoordinasikan secara sistematis:
+              Sistem pengerjaan dan pengumpulan write-up dikoordinasikan secara otomatis oleh sistem:
             </p>
             
-            <div className="rounded-xl border border-gray-250 bg-gray-50/20 dark:border-gray-800 dark:bg-gray-950/40 p-4 space-y-3">
+            <div className="rounded-xl border border-gray-250 bg-gray-50/20 dark:border-gray-800 dark:bg-gray-950/40 p-4 space-y-4">
+              {/* Trigger */}
               <div className="flex items-start gap-2.5">
-                <CheckCircle2 className="h-4 w-4 text-emerald-400 shrink-0 mt-0.5" />
+                <Info className="h-4 w-4 text-blue-400 shrink-0 mt-0.5" />
                 <div>
-                  <p className="font-bold text-gray-900 dark:text-white text-xs">A. Sisi Kapten Tim (Pengumpulan)</p>
+                  <p className="font-bold text-gray-900 dark:text-white text-xs">A. Aktivasi Fitur & Pemicu Kemunculan</p>
                   <p className="text-xs text-gray-400 leading-relaxed mt-0.5">
-                    Masuk ke halaman kompetisi, unduh berkas template resmi **Template-WU.docx**. Tulis solusi dan unggah kembali berkas laporan dalam format **PDF atau DOCX** (Maksimal 10MB) sebelum tenggat waktu Write-Up berakhir.
+                    Modul pengumpulan write-up di halaman kompetisi user **hanya akan muncul jika Admin mengisi kolom "Write-Up Deadline"** saat melakukan pembuatan/pengeditan event. Jika deadline dikosongkan (Null), maka fitur pengumpulan write-up dinonaktifkan (tidak tampil di layar user).
                   </p>
                 </div>
               </div>
 
+              {/* User Side */}
               <div className="flex items-start gap-2.5">
-                <Award className="h-4 w-4 text-blue-400 shrink-0 mt-0.5" />
+                <CheckCircle2 className="h-4.5 w-4.5 text-emerald-400 shrink-0 mt-0.5" />
                 <div>
-                  <p className="font-bold text-gray-900 dark:text-white text-xs">B. Sisi Admin (Evaluasi & Bonus Poin)</p>
+                  <p className="font-bold text-gray-900 dark:text-white text-xs">B. Cara Unduh & Unggah (Sisi Tim Peserta)</p>
                   <p className="text-xs text-gray-400 leading-relaxed mt-0.5">
-                    Buka tab **Write-Ups** pada dashboard admin, pilih event, lalu unduh berkas write-up tim terkait. Klik **Evaluate** untuk memberikan ulasan feedback serta memasukkan nilai penyesuaian skor (**Score Adjustment**) baik berupa bonus (nilai positif) maupun penalti (nilai negatif). Scoreboard tim akan ter-update secara otomatis.
+                    Ketika box pengumpulan muncul di atas daftar tantangan pada halaman <strong>Challenges</strong>:
                   </p>
+                  <ul className="list-disc pl-5 mt-1 space-y-1 text-xs text-gray-500">
+                    <li>Semua anggota tim dapat mengeklik tombol biru <strong className="text-blue-400">"Download Template-WU.docx"</strong> untuk mengunduh template laporan resmi.</li>
+                    <li><strong className="text-gray-950 dark:text-gray-300">Hanya Kapten Tim</strong> yang berhak mengunggah berkas laporan. Tombol drag-and-drop unggah dinonaktifkan bagi anggota biasa.</li>
+                    <li>File harus berformat <strong className="text-gray-950 dark:text-gray-300">.pdf</strong> atau <strong className="text-gray-950 dark:text-gray-300">.docx</strong> dengan ukuran berkas maksimal <strong className="text-gray-950 dark:text-gray-300">10 MB</strong>.</li>
+                  </ul>
+                </div>
+              </div>
+
+              {/* Admin Side */}
+              <div className="flex items-start gap-2.5">
+                <Award className="h-4.5 w-4.5 text-blue-400 shrink-0 mt-0.5" />
+                <div>
+                  <p className="font-bold text-gray-900 dark:text-white text-xs">C. Evaluasi & Penilaian Bonus/Penalti (Sisi Admin)</p>
+                  <p className="text-xs text-gray-400 leading-relaxed mt-0.5">
+                    Setelah berkas diunggah oleh peserta, Admin melakukan penilaian dengan langkah berikut:
+                  </p>
+                  <ul className="list-disc pl-5 mt-1 space-y-1 text-xs text-gray-500">
+                    <li>Buka menu <strong className="text-gray-900 dark:text-white">Write-Ups</strong> pada bagian atas dashboard admin, pilih event dari dropdown select.</li>
+                    <li>Unduh berkas pengerjaan tim dengan mengeklik tautan nama berkas di tabel daftar masuk.</li>
+                    <li>Klik tombol <strong className="text-blue-500">Evaluate</strong> pada baris tim terkait.</li>
+                    <li>Masukkan <strong className="text-gray-950 dark:text-gray-300">Score Adjustment</strong> (masukkan angka positif seperti <code className="bg-emerald-500/10 text-emerald-500 px-1 py-0.5 rounded font-mono text-[10px]">+50</code> untuk bonus nilai, atau negatif seperti <code className="bg-red-500/10 text-red-500 px-1 py-0.5 rounded font-mono text-[10px]">-20</code> untuk pinalti).</li>
+                    <li>Tulis feedback/catatan penilai (opsional), lalu klik <strong className="text-gray-900 dark:text-white">Submit Evaluation</strong>. Scoreboard tim bersangkutan akan ter-update otomatis secara real-time.</li>
+                  </ul>
                 </div>
               </div>
             </div>
