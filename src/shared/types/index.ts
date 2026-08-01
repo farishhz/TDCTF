@@ -28,6 +28,9 @@ export interface Event {
   end_time?: string | null
   always_show_challenges?: boolean | null
   image_url?: string | null
+  is_team_event?: boolean | null
+  writeup_deadline?: string | null
+  max_team_members?: number | null
   created_at?: string
   updated_at?: string
 }

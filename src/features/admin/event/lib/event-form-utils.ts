@@ -9,6 +9,9 @@ export const EMPTY_EVENT_FORM: EventFormData = {
   end_time: '',
   always_show_challenges: false,
   image_url: '',
+  is_team_event: false,
+  writeup_deadline: '',
+  max_team_members: '',
 }
 
 export const DEFAULT_EVENT_FILTERS: FilterState = {

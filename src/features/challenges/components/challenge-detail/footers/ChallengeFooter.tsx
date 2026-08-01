@@ -14,6 +14,7 @@ interface ChallengeFooterProps {
   handleFlagSubmit: (challengeId: string) => void | Promise<unknown>
   submissionsRemaining?: number
   cooldownSeconds?: number
+  eventEnded?: boolean
 }
 
 export const ChallengeFooter: React.FC<ChallengeFooterProps> = ({
@@ -26,6 +27,7 @@ export const ChallengeFooter: React.FC<ChallengeFooterProps> = ({
   handleFlagSubmit,
   submissionsRemaining = 10,
   cooldownSeconds = 0,
+  eventEnded = false,
 }) => {
   return (
     <DialogFooterLayout>
@@ -39,6 +41,7 @@ export const ChallengeFooter: React.FC<ChallengeFooterProps> = ({
         handleFlagSubmit={handleFlagSubmit}
         submissionsRemaining={submissionsRemaining}
         cooldownSeconds={cooldownSeconds}
+        eventEnded={eventEnded}
       />
     </DialogFooterLayout>
   )

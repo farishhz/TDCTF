@@ -355,22 +355,33 @@ BEGIN
       GROUP BY solves_filtered.team_id, solves_filtered.challenge_id
     ) t
     GROUP BY t.team_id
+  ),
+  writeup_adjust AS (
+    SELECT w.team_id, SUM(w.score_adjustment)::BIGINT AS wu_adj
+    FROM public.event_writeups w
+    WHERE w.team_id IS NOT NULL
+      AND (
+        p_event_mode = 'any'
+        OR (p_event_mode = 'equals' AND w.event_id = p_event_id)
+      )
+    GROUP BY w.team_id
   )
   SELECT
     mc.team_id,
     mc.team_name::TEXT,
     mc.picture_url::TEXT,
-    COALESCE(us.unique_score, 0) AS unique_score,
-    COALESCE(a.total_score, 0) AS total_score,
+    (COALESCE(us.unique_score, 0) + COALESCE(wa.wu_adj, 0))::BIGINT AS unique_score,
+    (COALESCE(a.total_score, 0) + COALESCE(wa.wu_adj, 0))::BIGINT AS total_score,
     COALESCE(a.unique_challenges, 0) AS unique_challenges,
     COALESCE(a.total_solves, 0) AS total_solves,
     COALESCE(mc.member_count, 0) AS member_count,
     COALESCE(tmt.member_tags, '{}'::TEXT[]) AS member_tags,
-    RANK() OVER (ORDER BY COALESCE(us.unique_score, 0) DESC) AS rank
+    RANK() OVER (ORDER BY (COALESCE(us.unique_score, 0) + COALESCE(wa.wu_adj, 0)) DESC) AS rank
   FROM members_count mc
   LEFT JOIN agg a ON a.team_id = mc.team_id
   LEFT JOIN unique_score_calc us ON us.team_id = mc.team_id
   LEFT JOIN team_member_tags tmt ON tmt.team_id = mc.team_id
+  LEFT JOIN writeup_adjust wa ON wa.team_id = mc.team_id
   WHERE (p_tag IS NULL OR p_tag = '' OR p_tag = ANY(COALESCE(tmt.member_tags, '{}'::TEXT[])))
   ORDER BY COALESCE(us.unique_score, 0) DESC
   LIMIT limit_rows OFFSET offset_rows;

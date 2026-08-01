@@ -16,6 +16,7 @@ type ChallengeFlagFormProps = {
   handleFlagSubmit: (challengeId: string) => void | Promise<unknown>
   submissionsRemaining?: number
   cooldownSeconds?: number
+  eventEnded?: boolean
 }
 
 export default function ChallengeFlagForm({
@@ -28,16 +29,19 @@ export default function ChallengeFlagForm({
   handleFlagSubmit,
   submissionsRemaining = 10,
   cooldownSeconds = 0,
+  eventEnded = false,
 }: ChallengeFlagFormProps) {
   const overlayRef = React.useRef<HTMLDivElement>(null)
   const inputRef = React.useRef<HTMLInputElement>(null)
   const [isDeleting, setIsDeleting] = React.useState(false)
 
   React.useEffect(() => {
-    requestAnimationFrame(() => {
-      inputRef.current?.focus({ preventScroll: true })
-    })
-  }, [challenge.id])
+    if (!eventEnded) {
+      requestAnimationFrame(() => {
+        inputRef.current?.focus({ preventScroll: true })
+      })
+    }
+  }, [challenge.id, eventEnded])
 
   return (
     <div className="flex flex-col relative w-full">
@@ -53,11 +57,17 @@ export default function ChallengeFlagForm({
         </div>
       )}
 
+      {eventEnded && (
+        <div className="mb-2 text-center text-xs font-bold text-red-500 dark:text-red-400">
+          Waktu perlombaan telah habis. Anda tidak dapat melakukan submit flag lagi.
+        </div>
+      )}
+
       <form
         className="flex gap-2"
         onSubmit={(event) => {
           event.preventDefault()
-          if (cooldownSeconds > 0) return
+          if (cooldownSeconds > 0 || eventEnded) return
           handleFlagSubmit(challenge.id)
         }}
       >
@@ -78,9 +88,10 @@ export default function ChallengeFlagForm({
               if (overlayRef.current) overlayRef.current.scrollLeft = event.currentTarget.scrollLeft
             }}
             value={flagInputs[challenge.id] || ''}
+            disabled={eventEnded}
             onKeyDown={(event) => {
               if (event.key === 'Enter') {
-                if (cooldownSeconds > 0) {
+                if (cooldownSeconds > 0 || eventEnded) {
                   event.preventDefault()
                   return
                 }
@@ -102,7 +113,7 @@ export default function ChallengeFlagForm({
                 handleFlagInputChange(challenge.id, value)
               }
             }}
-            placeholder={challenge.flag_placeholder && placeholders[challenge.id] ? '' : 'Enter flag here...'}
+            placeholder={challenge.flag_placeholder && placeholders[challenge.id] ? '' : eventEnded ? 'Event has ended' : 'Enter flag here...'}
             className="w-full h-full pl-4 pr-16 bg-transparent text-gray-900 dark:text-white focus:outline-none relative z-10 font-mono text-sm disabled:opacity-50"
             spellCheck={false}
             autoComplete="off"
@@ -116,6 +127,7 @@ export default function ChallengeFlagForm({
           disabled={
             submitting[challenge.id] ||
             cooldownSeconds > 0 ||
+            eventEnded ||
             !flagInputs[challenge.id]?.trim() ||
             (challenge.flag_placeholder && placeholders[challenge.id] ? (flagInputs[challenge.id] || '').length !== placeholders[challenge.id].length : false)
           }
@@ -123,9 +135,11 @@ export default function ChallengeFlagForm({
             event.preventDefault()
           }}
           className={`flex h-[38px] w-24 shrink-0 select-none items-center justify-center rounded-xl text-[13px] font-black uppercase tracking-widest text-white shadow-lg transition-all active:scale-95 disabled:opacity-30
-            ${cooldownSeconds > 0
-              ? 'bg-red-600 hover:bg-red-600 cursor-not-allowed shadow-red-500/10'
-              : 'bg-blue-600 shadow-blue-500/20 hover:bg-blue-500 hover:shadow-blue-500/30'}
+            ${eventEnded
+              ? 'bg-gray-600 hover:bg-gray-600 cursor-not-allowed shadow-gray-500/10'
+              : cooldownSeconds > 0
+                ? 'bg-red-600 hover:bg-red-600 cursor-not-allowed shadow-red-500/10'
+                : 'bg-blue-600 shadow-blue-500/20 hover:bg-blue-500 hover:shadow-blue-500/30'}
           `}
         >
           {submitting[challenge.id] ? (
@@ -134,6 +148,8 @@ export default function ChallengeFlagForm({
               <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-white [animation-delay:-0.15s]"></span>
               <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-white"></span>
             </span>
+          ) : eventEnded ? (
+            'Ended'
           ) : cooldownSeconds > 0 ? (
             `${cooldownSeconds}s`
           ) : (

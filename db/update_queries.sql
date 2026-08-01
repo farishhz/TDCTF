@@ -2324,21 +2324,40 @@ RETURNS TABLE (
   joined_at TIMESTAMPTZ,
   joined_by UUID
 ) AS $$
+DECLARE
+  v_is_team_event BOOLEAN;
 BEGIN
   IF NOT can_manage_event(p_event_id) THEN
     RAISE EXCEPTION 'Only event admin/global admin can view members';
   END IF;
-  RETURN QUERY
-  SELECT
-    ep.event_id,
-    ep.user_id,
-    u.username::TEXT,
-    ep.joined_at,
-    ep.joined_by
-  FROM public.event_participants ep
-  JOIN public.users u ON u.id = ep.user_id
-  WHERE ep.event_id = p_event_id
-  ORDER BY ep.joined_at ASC;
+  SELECT COALESCE(is_team_event, false) INTO v_is_team_event
+  FROM public.events
+  WHERE id = p_event_id;
+  IF v_is_team_event THEN
+    RETURN QUERY
+    SELECT
+      etp.event_id,
+      etp.user_id,
+      u.username::TEXT,
+      etp.joined_at,
+      NULL::UUID AS joined_by
+    FROM public.event_team_participants etp
+    JOIN public.users u ON u.id = etp.user_id
+    WHERE etp.event_id = p_event_id
+    ORDER BY etp.joined_at ASC;
+  ELSE
+    RETURN QUERY
+    SELECT
+      ep.event_id,
+      ep.user_id,
+      u.username::TEXT,
+      ep.joined_at,
+      ep.joined_by
+    FROM public.event_participants ep
+    JOIN public.users u ON u.id = ep.user_id
+    WHERE ep.event_id = p_event_id
+    ORDER BY ep.joined_at ASC;
+  END IF;
 END;
 $$ LANGUAGE plpgsql
 SECURITY DEFINER
@@ -2813,7 +2832,7 @@ GRANT EXECUTE ON FUNCTION public.get_challenge_placeholder(UUID) TO authenticate
 -- >>> BEGIN: queries/events.sql
 -- ==============================================
 -- Queries: events
--- Source: sql/chema.sql
+-- Source: sql/schema.sql
 -- ==============================================
 -- INSERT
 CREATE OR REPLACE FUNCTION add_event(
@@ -2822,7 +2841,10 @@ CREATE OR REPLACE FUNCTION add_event(
   p_start_time TIMESTAMPTZ DEFAULT NULL,
   p_end_time TIMESTAMPTZ DEFAULT NULL,
   p_always_show_challenges BOOLEAN DEFAULT FALSE,
-  p_image_url TEXT DEFAULT NULL
+  p_image_url TEXT DEFAULT NULL,
+  p_is_team_event BOOLEAN DEFAULT FALSE,
+  p_writeup_deadline TIMESTAMPTZ DEFAULT NULL,
+  p_max_team_members INTEGER DEFAULT NULL
 )
 RETURNS UUID AS $$
 DECLARE
@@ -2834,8 +2856,8 @@ BEGIN
   IF EXISTS (SELECT 1 FROM public.events WHERE LOWER(name) = LOWER(p_name)) THEN
     RAISE EXCEPTION 'Event with this name already exists';
   END IF;
-  INSERT INTO public.events(name, description, start_time, end_time, always_show_challenges, image_url)
-  VALUES (p_name, COALESCE(p_description, ''), p_start_time, p_end_time, COALESCE(p_always_show_challenges, FALSE), p_image_url)
+  INSERT INTO public.events(name, description, start_time, end_time, always_show_challenges, image_url, is_team_event, writeup_deadline, max_team_members)
+  VALUES (p_name, COALESCE(p_description, ''), p_start_time, p_end_time, COALESCE(p_always_show_challenges, FALSE), p_image_url, COALESCE(p_is_team_event, FALSE), p_writeup_deadline, p_max_team_members)
   RETURNING id INTO v_event_id;
   PERFORM public.write_admin_audit_log(
     'CREATE',
@@ -2848,7 +2870,10 @@ BEGIN
       'start_time', p_start_time,
       'end_time', p_end_time,
       'always_show_challenges', COALESCE(p_always_show_challenges, FALSE),
-      'image_url', p_image_url
+      'image_url', p_image_url,
+      'is_team_event', COALESCE(p_is_team_event, FALSE),
+      'writeup_deadline', p_writeup_deadline,
+      'max_team_members', p_max_team_members
     ),
     '{}'::jsonb
   );
@@ -2856,7 +2881,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql
 SECURITY DEFINER SET search_path = public, auth, extensions;
-GRANT EXECUTE ON FUNCTION add_event(TEXT, TEXT, TIMESTAMPTZ, TIMESTAMPTZ, BOOLEAN, TEXT) TO authenticated;
+GRANT EXECUTE ON FUNCTION add_event(TEXT, TEXT, TIMESTAMPTZ, TIMESTAMPTZ, BOOLEAN, TEXT, BOOLEAN, TIMESTAMPTZ, INTEGER) TO authenticated;
 -- UPDATE
 CREATE OR REPLACE FUNCTION update_event(
   p_event_id UUID,
@@ -2865,7 +2890,10 @@ CREATE OR REPLACE FUNCTION update_event(
   p_start_time TIMESTAMPTZ DEFAULT NULL,
   p_end_time TIMESTAMPTZ DEFAULT NULL,
   p_always_show_challenges BOOLEAN DEFAULT NULL,
-  p_image_url TEXT DEFAULT NULL
+  p_image_url TEXT DEFAULT NULL,
+  p_is_team_event BOOLEAN DEFAULT NULL,
+  p_writeup_deadline TIMESTAMPTZ DEFAULT NULL,
+  p_max_team_members INTEGER DEFAULT NULL
 )
 RETURNS BOOLEAN AS $$
 DECLARE
@@ -2887,7 +2915,10 @@ BEGIN
     'end_time', e.end_time,
     'always_show_challenges', e.always_show_challenges,
     'image_url', e.image_url,
-    'join_mode', e.join_mode
+    'join_mode', e.join_mode,
+    'is_team_event', e.is_team_event,
+    'writeup_deadline', e.writeup_deadline,
+    'max_team_members', e.max_team_members
   )
   INTO v_before
   FROM public.events e
@@ -2900,6 +2931,9 @@ BEGIN
       always_show_challenges = COALESCE(p_always_show_challenges, always_show_challenges),
       image_url = COALESCE(p_image_url, image_url),
       join_mode = COALESCE(join_mode, 'open'),
+      is_team_event = COALESCE(p_is_team_event, is_team_event),
+      writeup_deadline = COALESCE(p_writeup_deadline, writeup_deadline),
+      max_team_members = p_max_team_members,
       updated_at = now()
   WHERE id = p_event_id;
   SELECT jsonb_build_object(
@@ -2909,7 +2943,10 @@ BEGIN
     'end_time', e.end_time,
     'always_show_challenges', e.always_show_challenges,
     'image_url', e.image_url,
-    'join_mode', e.join_mode
+    'join_mode', e.join_mode,
+    'is_team_event', e.is_team_event,
+    'writeup_deadline', e.writeup_deadline,
+    'max_team_members', e.max_team_members
   )
   INTO v_after
   FROM public.events e
@@ -2926,7 +2963,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql
 SECURITY DEFINER SET search_path = public, auth, extensions;
-GRANT EXECUTE ON FUNCTION update_event(UUID, TEXT, TEXT, TIMESTAMPTZ, TIMESTAMPTZ, BOOLEAN, TEXT) TO authenticated;
+GRANT EXECUTE ON FUNCTION update_event(UUID, TEXT, TEXT, TIMESTAMPTZ, TIMESTAMPTZ, BOOLEAN, TEXT, BOOLEAN, TIMESTAMPTZ, INTEGER) TO authenticated;
 -- DELETE
 CREATE OR REPLACE FUNCTION delete_event(
   p_event_id UUID
@@ -3012,6 +3049,7 @@ DECLARE
   v_event_exists BOOLEAN;
   v_event_join_mode TEXT;
   v_always_show_challenges BOOLEAN := FALSE;
+  v_is_team_event BOOLEAN := FALSE;
   v_is_event_member BOOLEAN := FALSE;
   v_is_admin_override BOOLEAN := FALSE;
 BEGIN
@@ -3028,7 +3066,8 @@ BEGIN
          e.end_time,
          (e.id IS NOT NULL),
          e.join_mode,
-         COALESCE(e.always_show_challenges, false)
+         COALESCE(e.always_show_challenges, false),
+         COALESCE(e.is_team_event, false)
   INTO v_is_active,
        v_is_maintenance,
        v_event_id,
@@ -3036,7 +3075,8 @@ BEGIN
        v_event_end,
        v_event_exists,
        v_event_join_mode,
-       v_always_show_challenges
+       v_always_show_challenges,
+       v_is_team_event
   FROM public.challenges c
   LEFT JOIN public.events e ON e.id = c.event_id
   WHERE c.id = p_challenge_id;
@@ -3059,15 +3099,27 @@ BEGIN
     RETURN json_build_object('success', false, 'message', 'Event not found');
   END IF;
   IF NOT v_is_admin_override AND v_event_id IS NOT NULL THEN
-    IF COALESCE(v_event_join_mode, 'open') <> 'open' THEN
+    IF v_is_team_event THEN
       SELECT EXISTS (
         SELECT 1
-        FROM public.event_participants ep
-        WHERE ep.event_id = v_event_id
-          AND ep.user_id = p_user_id
+        FROM public.event_team_participants etp
+        WHERE etp.event_id = v_event_id
+          AND etp.user_id = p_user_id
       ) INTO v_is_event_member;
       IF NOT v_is_event_member THEN
-        RETURN json_build_object('success', false, 'message', 'Join this event first before accessing its challenges');
+        RETURN json_build_object('success', false, 'message', 'Viewer Mode: Hanya tim terdaftar yang disetujui yang dapat mengakses tantangan.');
+      END IF;
+    ELSE
+      IF COALESCE(v_event_join_mode, 'open') <> 'open' THEN
+        SELECT EXISTS (
+          SELECT 1
+          FROM public.event_participants ep
+          WHERE ep.event_id = v_event_id
+            AND ep.user_id = p_user_id
+        ) INTO v_is_event_member;
+        IF NOT v_is_event_member THEN
+          RETURN json_build_object('success', false, 'message', 'Join this event first before accessing its challenges');
+        END IF;
       END IF;
     END IF;
     IF v_event_start IS NOT NULL AND now() < v_event_start THEN
@@ -3681,12 +3733,26 @@ USING (
       FROM public.events e
       WHERE e.id = challenges.event_id
         AND (
-          COALESCE(e.join_mode, 'open') = 'open'
-          OR EXISTS (
-            SELECT 1
-            FROM public.event_participants ep
-            WHERE ep.event_id = e.id
-              AND ep.user_id = auth.uid()::uuid
+          (
+            COALESCE(e.is_team_event, false) = false
+            AND (
+              COALESCE(e.join_mode, 'open') = 'open'
+              OR EXISTS (
+                SELECT 1
+                FROM public.event_participants ep
+                WHERE ep.event_id = e.id
+                  AND ep.user_id = auth.uid()::uuid
+              )
+            )
+          )
+          OR (
+            COALESCE(e.is_team_event, false) = true
+            AND EXISTS (
+              SELECT 1
+              FROM public.event_team_participants etp
+              WHERE etp.event_id = e.id
+                AND etp.user_id = auth.uid()::uuid
+            )
           )
         )
         AND (
@@ -5316,22 +5382,33 @@ BEGIN
       GROUP BY solves_filtered.team_id, solves_filtered.challenge_id
     ) t
     GROUP BY t.team_id
+  ),
+  writeup_adjust AS (
+    SELECT w.team_id, SUM(w.score_adjustment)::BIGINT AS wu_adj
+    FROM public.event_writeups w
+    WHERE w.team_id IS NOT NULL
+      AND (
+        p_event_mode = 'any'
+        OR (p_event_mode = 'equals' AND w.event_id = p_event_id)
+      )
+    GROUP BY w.team_id
   )
   SELECT
     mc.team_id,
     mc.team_name::TEXT,
     mc.picture_url::TEXT,
-    COALESCE(us.unique_score, 0) AS unique_score,
-    COALESCE(a.total_score, 0) AS total_score,
+    (COALESCE(us.unique_score, 0) + COALESCE(wa.wu_adj, 0))::BIGINT AS unique_score,
+    (COALESCE(a.total_score, 0) + COALESCE(wa.wu_adj, 0))::BIGINT AS total_score,
     COALESCE(a.unique_challenges, 0) AS unique_challenges,
     COALESCE(a.total_solves, 0) AS total_solves,
     COALESCE(mc.member_count, 0) AS member_count,
     COALESCE(tmt.member_tags, '{}'::TEXT[]) AS member_tags,
-    RANK() OVER (ORDER BY COALESCE(us.unique_score, 0) DESC) AS rank
+    RANK() OVER (ORDER BY (COALESCE(us.unique_score, 0) + COALESCE(wa.wu_adj, 0)) DESC) AS rank
   FROM members_count mc
   LEFT JOIN agg a ON a.team_id = mc.team_id
   LEFT JOIN unique_score_calc us ON us.team_id = mc.team_id
   LEFT JOIN team_member_tags tmt ON tmt.team_id = mc.team_id
+  LEFT JOIN writeup_adjust wa ON wa.team_id = mc.team_id
   WHERE (p_tag IS NULL OR p_tag = '' OR p_tag = ANY(COALESCE(tmt.member_tags, '{}'::TEXT[])))
   ORDER BY COALESCE(us.unique_score, 0) DESC
   LIMIT limit_rows OFFSET offset_rows;
@@ -6009,6 +6086,569 @@ CREATE POLICY "Team members admin only"
   WITH CHECK (is_admin());
 
 -- <<< END: queries/team_members.sql
+
+-- >>> BEGIN: queries/event_teams.sql
+-- ==============================================
+-- Queries: event_teams
+-- RPCs and helper functions for Team CTF Events
+-- ==============================================
+-- 1) kapten tim mendaftarkan tim ke event (dengan validasi token unik tim & batas anggota tim)
+CREATE OR REPLACE FUNCTION join_team_event(
+  p_event_id UUID,
+  p_registration_token TEXT DEFAULT NULL
+)
+RETURNS JSON AS $$
+DECLARE
+  v_user_id UUID := auth.uid()::uuid;
+  v_team_id UUID;
+  v_is_captain BOOLEAN;
+  v_is_team_event BOOLEAN;
+  v_join_mode TEXT;
+  v_max_members INTEGER;
+  v_current_members INTEGER;
+  v_token_match BOOLEAN;
+BEGIN
+  IF v_user_id IS NULL THEN
+    RAISE EXCEPTION 'Not authenticated';
+  END IF;
+  -- Get user's team
+  SELECT team_id INTO v_team_id
+  FROM public.team_members
+  WHERE user_id = v_user_id;
+  IF v_team_id IS NULL THEN
+    RETURN json_build_object('success', false, 'message', 'Anda harus bergabung atau membuat Tim terlebih dahulu.');
+  END IF;
+  -- Check if user is captain of the team
+  SELECT EXISTS (
+    SELECT 1 FROM public.teams
+    WHERE id = v_team_id AND captain_user_id = v_user_id
+  ) INTO v_is_captain;
+  IF NOT v_is_captain THEN
+    RETURN json_build_object('success', false, 'message', 'Hanya Kapten Tim yang dapat mendaftarkan tim ke event.');
+  END IF;
+  -- Get event details
+  SELECT is_team_event, join_mode, max_team_members
+  INTO v_is_team_event, v_join_mode, v_max_members
+  FROM public.events
+  WHERE id = p_event_id;
+  IF NOT FOUND THEN
+    RETURN json_build_object('success', false, 'message', 'Event tidak ditemukan.');
+  END IF;
+  IF NOT v_is_team_event THEN
+    RETURN json_build_object('success', false, 'message', 'Event ini bukan event bertipe Tim.');
+  END IF;
+  -- Get current member count of this team
+  SELECT COUNT(*) INTO v_current_members
+  FROM public.team_members
+  WHERE team_id = v_team_id;
+  -- Verify team size limit
+  IF v_max_members IS NOT NULL AND v_current_members > v_max_members THEN
+    RETURN json_build_object('success', false, 'message', 'Jumlah anggota tim Anda (' || v_current_members || ') melebihi batas maksimal event (' || v_max_members || ' anggota).');
+  END IF;
+  -- Verify token if join_mode is 'key'
+  IF v_join_mode = 'key' THEN
+    IF p_registration_token IS NULL OR trim(p_registration_token) = '' THEN
+      RETURN json_build_object('success', false, 'message', 'Token registrasi tim diperlukan.');
+    END IF;
+    -- Match against pre-generated token for this team in event_teams
+    SELECT (registration_token = p_registration_token) INTO v_token_match
+    FROM public.event_teams
+    WHERE event_id = p_event_id AND team_id = v_team_id;
+    IF v_token_match IS NULL OR NOT v_token_match THEN
+      RETURN json_build_object('success', false, 'message', 'Token registrasi tim tidak valid. Silakan hubungi Admin untuk mendapatkan token tim Anda.');
+    END IF;
+    -- Auto-approve because token is verified
+    UPDATE public.event_teams
+    SET status = 'approved',
+        requested_by = v_user_id,
+        requested_at = now(),
+        reviewed_at = now()
+    WHERE event_id = p_event_id AND team_id = v_team_id;
+    -- Snap roster
+    DELETE FROM public.event_team_participants
+    WHERE event_id = p_event_id AND team_id = v_team_id;
+    INSERT INTO public.event_team_participants (event_id, team_id, user_id, joined_at)
+    SELECT p_event_id, v_team_id, tm.user_id, now()
+    FROM public.team_members tm
+    WHERE tm.team_id = v_team_id;
+    RETURN json_build_object('success', true, 'message', 'Pendaftaran tim disetujui (Roster Terkunci!).');
+  END IF;
+  -- Handle 'open' join_mode
+  IF v_join_mode = 'open' THEN
+    -- Check if already registered
+    IF EXISTS (
+      SELECT 1 FROM public.event_teams
+      WHERE event_id = p_event_id AND team_id = v_team_id
+    ) THEN
+      RETURN json_build_object('success', false, 'message', 'Tim Anda sudah terdaftar untuk event ini.');
+    END IF;
+    INSERT INTO public.event_teams (event_id, team_id, status, requested_by, requested_at, reviewed_at)
+    VALUES (p_event_id, v_team_id, 'approved', v_user_id, now(), now());
+    DELETE FROM public.event_team_participants
+    WHERE event_id = p_event_id AND team_id = v_team_id;
+    INSERT INTO public.event_team_participants (event_id, team_id, user_id, joined_at)
+    SELECT p_event_id, v_team_id, tm.user_id, now()
+    FROM public.team_members tm
+    WHERE tm.team_id = v_team_id;
+    RETURN json_build_object('success', true, 'message', 'Pendaftaran tim disetujui (Roster Terkunci!).');
+  END IF;
+  -- Handle 'request' join_mode
+  IF v_join_mode = 'request' THEN
+    -- Check if already registered
+    IF EXISTS (
+      SELECT 1 FROM public.event_teams
+      WHERE event_id = p_event_id AND team_id = v_team_id
+    ) THEN
+      RETURN json_build_object('success', false, 'message', 'Tim Anda sudah terdaftar untuk event ini.');
+    END IF;
+    INSERT INTO public.event_teams (event_id, team_id, status, requested_by, requested_at)
+    VALUES (p_event_id, v_team_id, 'pending', v_user_id, now());
+    RETURN json_build_object('success', true, 'message', 'Pendaftaran tim berhasil diajukan. Menunggu persetujuan Admin.');
+  END IF;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, auth, extensions;
+GRANT EXECUTE ON FUNCTION join_team_event(UUID, TEXT) TO authenticated;
+-- 2) Admin mereview pendaftaran tim (Approve/Reject) + Roster Lock Snapshot (dengan pengecekan batas anggota)
+CREATE OR REPLACE FUNCTION review_team_event(
+  p_event_id UUID,
+  p_team_id UUID,
+  p_approve BOOLEAN
+)
+RETURNS JSON AS $$
+DECLARE
+  v_admin_id UUID := auth.uid()::uuid;
+  v_before_status VARCHAR(16);
+  v_max_members INTEGER;
+  v_current_members INTEGER;
+BEGIN
+  IF NOT is_admin() THEN
+    RAISE EXCEPTION 'Only admins can review team event registrations';
+  END IF;
+  SELECT status INTO v_before_status
+  FROM public.event_teams
+  WHERE event_id = p_event_id AND team_id = p_team_id;
+  IF v_before_status IS NULL THEN
+    RETURN json_build_object('success', false, 'message', 'Pendaftaran tim tidak ditemukan.');
+  END IF;
+  IF p_approve THEN
+    -- Get limit details
+    SELECT max_team_members INTO v_max_members
+    FROM public.events
+    WHERE id = p_event_id;
+    -- Get current count
+    SELECT COUNT(*) INTO v_current_members
+    FROM public.team_members
+    WHERE team_id = p_team_id;
+    IF v_max_members IS NOT NULL AND v_current_members > v_max_members THEN
+      RETURN json_build_object('success', false, 'message', 'Gagal menyetujui: Anggota tim (' || v_current_members || ') melebihi batas maksimal event (' || v_max_members || ' anggota).');
+    END IF;
+    UPDATE public.event_teams
+    SET status = 'approved',
+        reviewed_by = v_admin_id,
+        reviewed_at = now()
+    WHERE event_id = p_event_id AND team_id = p_team_id;
+    -- Roster Lock Snapshot
+    DELETE FROM public.event_team_participants
+    WHERE event_id = p_event_id AND team_id = p_team_id;
+    INSERT INTO public.event_team_participants (event_id, team_id, user_id, joined_at)
+    SELECT p_event_id, p_team_id, tm.user_id, now()
+    FROM public.team_members tm
+    WHERE tm.team_id = p_team_id;
+    PERFORM public.write_admin_audit_log(
+      'APPROVE_TEAM_EVENT',
+      'event_team',
+      p_team_id,
+      jsonb_build_object('event_id', p_event_id, 'status', v_before_status),
+      jsonb_build_object('event_id', p_event_id, 'status', 'approved', 'snapshot_count', (SELECT COUNT(*) FROM public.event_team_participants WHERE event_id = p_event_id AND team_id = p_team_id)),
+      '{}'::jsonb
+    );
+    RETURN json_build_object('success', true, 'status', 'approved');
+  ELSE
+    UPDATE public.event_teams
+    SET status = 'rejected',
+        reviewed_by = v_admin_id,
+        reviewed_at = now()
+    WHERE event_id = p_event_id AND team_id = p_team_id;
+    -- Hapus snapshot jika ada
+    DELETE FROM public.event_team_participants
+    WHERE event_id = p_event_id AND team_id = p_team_id;
+    PERFORM public.write_admin_audit_log(
+      'REJECT_TEAM_EVENT',
+      'event_team',
+      p_team_id,
+      jsonb_build_object('event_id', p_event_id, 'status', v_before_status),
+      jsonb_build_object('event_id', p_event_id, 'status', 'rejected'),
+      '{}'::jsonb
+    );
+    RETURN json_build_object('success', true, 'status', 'rejected');
+  END IF;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, auth, extensions;
+GRANT EXECUTE ON FUNCTION review_team_event(UUID, UUID, BOOLEAN) TO authenticated;
+-- 3) Admin list pendaftaran tim per event (dengan kolom token registrasi tim)
+DROP FUNCTION IF EXISTS list_event_teams(UUID);
+CREATE OR REPLACE FUNCTION list_event_teams(p_event_id UUID)
+RETURNS TABLE (
+  team_id UUID,
+  team_name TEXT,
+  picture_url TEXT,
+  status TEXT,
+  requested_at TIMESTAMPTZ,
+  requested_by_username TEXT,
+  reviewed_at TIMESTAMPTZ,
+  member_count BIGINT,
+  registration_token TEXT
+) AS $$
+BEGIN
+  IF NOT is_admin() THEN
+    RAISE EXCEPTION 'Unauthorized';
+  END IF;
+  RETURN QUERY
+  SELECT
+    et.team_id,
+    t.name::TEXT AS team_name,
+    t.picture_url::TEXT,
+    et.status::TEXT,
+    et.requested_at,
+    u.username::TEXT AS requested_by_username,
+    et.reviewed_at,
+    (SELECT COUNT(*) FROM public.team_members tm WHERE tm.team_id = et.team_id) AS member_count,
+    et.registration_token::TEXT
+  FROM public.event_teams et
+  JOIN public.teams t ON t.id = et.team_id
+  LEFT JOIN public.users u ON u.id = et.requested_by
+  WHERE et.event_id = p_event_id
+  ORDER BY et.requested_at DESC;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, auth, extensions;
+GRANT EXECUTE ON FUNCTION list_event_teams(UUID) TO authenticated;
+-- 4) Cek status pendaftaran tim pengguna saat ini
+CREATE OR REPLACE FUNCTION get_my_team_event_status(p_event_id UUID)
+RETURNS JSON AS $$
+DECLARE
+  v_user_id UUID := auth.uid()::uuid;
+  v_team_id UUID;
+  v_team_name TEXT;
+  v_status TEXT := NULL;
+  v_is_captain BOOLEAN := FALSE;
+  v_is_member BOOLEAN := FALSE;
+BEGIN
+  IF v_user_id IS NULL THEN
+    RETURN json_build_object('success', false, 'message', 'Not authenticated');
+  END IF;
+  -- Get user's team
+  SELECT tm.team_id, t.name, (t.captain_user_id = v_user_id)
+  INTO v_team_id, v_team_name, v_is_captain
+  FROM public.team_members tm
+  JOIN public.teams t ON t.id = tm.team_id
+  WHERE tm.user_id = v_user_id;
+  IF v_team_id IS NOT NULL THEN
+    SELECT status::TEXT INTO v_status
+    FROM public.event_teams
+    WHERE event_id = p_event_id AND team_id = v_team_id;
+    -- Check if user is in locked roster snapshot
+    SELECT EXISTS (
+      SELECT 1 FROM public.event_team_participants
+      WHERE event_id = p_event_id AND team_id = v_team_id AND user_id = v_user_id
+    ) INTO v_is_member;
+  END IF;
+  RETURN json_build_object(
+    'success', true,
+    'has_team', (v_team_id IS NOT NULL),
+    'team_id', v_team_id,
+    'team_name', v_team_name,
+    'is_captain', v_is_captain,
+    'registration_status', v_status,
+    'is_roster_member', v_is_member
+  );
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, auth, extensions;
+GRANT EXECUTE ON FUNCTION get_my_team_event_status(UUID) TO authenticated;
+-- 5) Admin generate unique team token
+CREATE OR REPLACE FUNCTION admin_generate_team_token(
+  p_event_id UUID,
+  p_team_id UUID
+)
+RETURNS TEXT AS $$
+DECLARE
+  v_admin_id UUID := auth.uid()::uuid;
+  v_token TEXT;
+END;
+$$;
+-- Wait! We'll write the full generate token function logic
+CREATE OR REPLACE FUNCTION admin_generate_team_token(
+  p_event_id UUID,
+  p_team_id UUID
+)
+RETURNS TEXT AS $$
+DECLARE
+  v_admin_id UUID := auth.uid()::uuid;
+  v_token TEXT;
+BEGIN
+  IF NOT is_admin() THEN
+    RAISE EXCEPTION 'Unauthorized';
+  END IF;
+  -- Generate random token: CTF-TEAM-XXXX-XXXX
+  v_token := 'CTF-TEAM-' || UPPER(substring(md5(random()::text) from 1 for 6)) || '-' || UPPER(substring(md5(random()::text) from 7 for 6));
+  -- Insert or update if row already exists
+  INSERT INTO public.event_teams (event_id, team_id, status, registration_token, requested_by, requested_at, reviewed_by, reviewed_at)
+  VALUES (p_event_id, p_team_id, 'pending', v_token, v_admin_id, now(), v_admin_id, now())
+  ON CONFLICT (event_id, team_id)
+  DO UPDATE SET registration_token = v_token, status = 'pending';
+  RETURN v_token;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, auth, extensions;
+GRANT EXECUTE ON FUNCTION admin_generate_team_token(UUID, UUID) TO authenticated;
+-- 6) List unregistered teams for token allocation
+CREATE OR REPLACE FUNCTION list_unregistered_teams(p_event_id UUID)
+RETURNS TABLE (
+  id UUID,
+  name TEXT,
+  captain_username TEXT
+) AS $$
+BEGIN
+  IF NOT is_admin() THEN
+    RAISE EXCEPTION 'Unauthorized';
+  END IF;
+  RETURN QUERY
+  SELECT
+    t.id,
+    t.name::TEXT,
+    u.username::TEXT AS captain_username
+  FROM public.teams t
+  LEFT JOIN public.users u ON u.id = t.captain_user_id
+  WHERE t.id NOT IN (
+    SELECT team_id FROM public.event_teams WHERE event_id = p_event_id
+  )
+  ORDER BY t.name ASC;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, auth, extensions;
+GRANT EXECUTE ON FUNCTION list_unregistered_teams(UUID) TO authenticated;
+
+-- <<< END: queries/event_teams.sql
+
+-- >>> BEGIN: queries/event_writeups.sql
+-- ==============================================
+-- Queries: event_writeups
+-- RPCs for Write-Up Submissions and Evaluations
+-- ==============================================
+-- 1) Peserta mengumpulkan Write-Up (Kapten atau anggota tim terdaftar)
+CREATE OR REPLACE FUNCTION submit_event_writeup(
+  p_event_id UUID,
+  p_file_url TEXT,
+  p_filename TEXT
+)
+RETURNS JSON AS $$
+DECLARE
+  v_user_id UUID := auth.uid()::uuid;
+  v_team_id UUID := NULL;
+  v_is_team_event BOOLEAN;
+  v_writeup_deadline TIMESTAMPTZ;
+  v_end_time TIMESTAMPTZ;
+  v_is_allowed BOOLEAN := FALSE;
+BEGIN
+  IF v_user_id IS NULL THEN
+    RAISE EXCEPTION 'Not authenticated';
+  END IF;
+  -- Dapatkan detail event
+  SELECT is_team_event, writeup_deadline, end_time
+  INTO v_is_team_event, v_writeup_deadline, v_end_time
+  FROM public.events
+  WHERE id = p_event_id;
+  IF NOT FOUND THEN
+    RETURN json_build_object('success', false, 'message', 'Event tidak ditemukan.');
+  END IF;
+  -- Validasi Deadline Pengumpulan
+  IF v_writeup_deadline IS NOT NULL AND now() > v_writeup_deadline THEN
+    RETURN json_build_object('success', false, 'message', 'Batas waktu pengumpulan Write-Up telah berakhir.');
+  END IF;
+  -- Jika tipe tim, harus terdaftar dan disetujui dalam event_team_participants
+  IF v_is_team_event THEN
+    SELECT team_id INTO v_team_id
+    FROM public.team_members
+    WHERE user_id = v_user_id;
+    IF v_team_id IS NULL THEN
+      RETURN json_build_object('success', false, 'message', 'Hanya peserta dengan tim yang dapat mengumpulkan Write-Up.');
+    END IF;
+    SELECT EXISTS (
+      SELECT 1 FROM public.event_team_participants
+      WHERE event_id = p_event_id AND team_id = v_team_id AND user_id = v_user_id
+    ) INTO v_is_allowed;
+    IF NOT v_is_allowed THEN
+      RETURN json_build_object('success', false, 'message', 'Anda tidak terdaftar sebagai peserta aktif di event ini.');
+    END IF;
+  ELSE
+    -- Jika solo event, check jika user terdaftar di event_participants
+    SELECT EXISTS (
+      SELECT 1 FROM public.event_participants
+      WHERE event_id = p_event_id AND user_id = v_user_id
+    ) INTO v_is_allowed;
+    IF NOT v_is_allowed THEN
+      RETURN json_build_object('success', false, 'message', 'Anda harus terdaftar di event ini terlebih dahulu.');
+    END IF;
+  END IF;
+  -- Simpan atau Perbarui Write-Up (satu tim/peserta hanya memiliki satu dokumen WU final)
+  IF v_is_team_event THEN
+    INSERT INTO public.event_writeups (event_id, team_id, user_id, file_url, filename, submitted_at, status)
+    VALUES (p_event_id, v_team_id, v_user_id, p_file_url, p_filename, now(), 'pending')
+    ON CONFLICT (event_id, team_id)
+    DO UPDATE SET
+      user_id = EXCLUDED.user_id,
+      file_url = EXCLUDED.file_url,
+      filename = EXCLUDED.filename,
+      submitted_at = now(),
+      status = 'pending';
+  ELSE
+    -- Untuk solo event, we check uniqueness by event_id and user_id.
+    -- (We add user_id filter dynamically)
+    INSERT INTO public.event_writeups (event_id, team_id, user_id, file_url, filename, submitted_at, status)
+    VALUES (p_event_id, NULL, v_user_id, p_file_url, p_filename, now(), 'pending')
+    ON CONFLICT (event_id, team_id) WHERE team_id IS NULL -- ini perlu handling khusus
+    DO UPDATE SET
+      file_url = EXCLUDED.file_url,
+      filename = EXCLUDED.filename,
+      submitted_at = now(),
+      status = 'pending';
+  END IF;
+  RETURN json_build_object('success', true, 'message', 'Write-Up berhasil dikumpulkan.');
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, auth, extensions;
+GRANT EXECUTE ON FUNCTION submit_event_writeup(UUID, TEXT, TEXT) TO authenticated;
+-- 2) Admin mereview dan memberikan poin tambahan/pengurang berkas WU
+CREATE OR REPLACE FUNCTION review_event_writeup(
+  p_writeup_id UUID,
+  p_status TEXT,
+  p_score_adjustment INTEGER,
+  p_admin_notes TEXT
+)
+RETURNS JSON AS $$
+DECLARE
+  v_admin_id UUID := auth.uid()::uuid;
+  v_before JSONB;
+  v_after JSONB;
+BEGIN
+  IF NOT is_admin() THEN
+    RAISE EXCEPTION 'Only admins can review writeups';
+  END IF;
+  SELECT jsonb_build_object(
+    'status', status,
+    'score_adjustment', score_adjustment,
+    'admin_notes', admin_notes
+  ) INTO v_before
+  FROM public.event_writeups
+  WHERE id = p_writeup_id;
+  IF v_before IS NULL THEN
+    RETURN json_build_object('success', false, 'message', 'Write-Up tidak ditemukan.');
+  END IF;
+  UPDATE public.event_writeups
+  SET status = p_status,
+      score_adjustment = p_score_adjustment,
+      admin_notes = COALESCE(p_admin_notes, ''),
+      submitted_at = submitted_at -- keep original submission time
+  WHERE id = p_writeup_id;
+  SELECT jsonb_build_object(
+    'status', status,
+    'score_adjustment', score_adjustment,
+    'admin_notes', admin_notes
+  ) INTO v_after
+  FROM public.event_writeups
+  WHERE id = p_writeup_id;
+  PERFORM public.write_admin_audit_log(
+    'REVIEW_WRITEUP',
+    'event_writeup',
+    p_writeup_id,
+    v_before,
+    v_after,
+    '{}'::jsonb
+  );
+  RETURN json_build_object('success', true, 'message', 'Evaluasi Write-Up berhasil disimpan.');
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, auth, extensions;
+GRANT EXECUTE ON FUNCTION review_event_writeup(UUID, TEXT, INTEGER, TEXT) TO authenticated;
+-- 3) Admin list writeups per event
+CREATE OR REPLACE FUNCTION list_event_writeups(p_event_id UUID)
+RETURNS TABLE (
+  writeup_id UUID,
+  team_id UUID,
+  team_name TEXT,
+  user_id UUID,
+  username TEXT,
+  file_url TEXT,
+  filename TEXT,
+  submitted_at TIMESTAMPTZ,
+  status TEXT,
+  score_adjustment INTEGER,
+  admin_notes TEXT
+) AS $$
+BEGIN
+  IF NOT is_admin() THEN
+    RAISE EXCEPTION 'Unauthorized';
+  END IF;
+  RETURN QUERY
+  SELECT
+    w.id AS writeup_id,
+    w.team_id,
+    t.name::TEXT AS team_name,
+    w.user_id,
+    u.username::TEXT,
+    w.file_url::TEXT,
+    w.filename::TEXT,
+    w.submitted_at,
+    w.status::TEXT,
+    w.score_adjustment,
+    w.admin_notes
+  FROM public.event_writeups w
+  LEFT JOIN public.teams t ON t.id = w.team_id
+  JOIN public.users u ON u.id = w.user_id
+  WHERE w.event_id = p_event_id
+  ORDER BY w.submitted_at DESC;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, auth, extensions;
+GRANT EXECUTE ON FUNCTION list_event_writeups(UUID) TO authenticated;
+-- 4) Mendapatkan berkas WU milik tim/user sendiri
+CREATE OR REPLACE FUNCTION get_my_team_writeup(p_event_id UUID)
+RETURNS JSON AS $$
+DECLARE
+  v_user_id UUID := auth.uid()::uuid;
+  v_team_id UUID;
+  v_writeup RECORD;
+BEGIN
+  IF v_user_id IS NULL THEN
+    RETURN json_build_object('success', false, 'message', 'Not authenticated');
+  END IF;
+  SELECT team_id INTO v_team_id
+  FROM public.team_members
+  WHERE user_id = v_user_id;
+  IF v_team_id IS NOT NULL THEN
+    SELECT id, file_url, filename, submitted_at, status, score_adjustment, admin_notes
+    INTO v_writeup
+    FROM public.event_writeups
+    WHERE event_id = p_event_id AND team_id = v_team_id;
+  ELSE
+    SELECT id, file_url, filename, submitted_at, status, score_adjustment, admin_notes
+    INTO v_writeup
+    FROM public.event_writeups
+    WHERE event_id = p_event_id AND user_id = v_user_id AND team_id IS NULL;
+  END IF;
+  IF NOT FOUND OR v_writeup.id IS NULL THEN
+    RETURN json_build_object('success', true, 'has_submitted', false);
+  END IF;
+  RETURN json_build_object(
+    'success', true,
+    'has_submitted', true,
+    'id', v_writeup.id,
+    'file_url', v_writeup.file_url,
+    'filename', v_writeup.filename,
+    'submitted_at', v_writeup.submitted_at,
+    'status', v_writeup.status,
+    'score_adjustment', v_writeup.score_adjustment,
+    'admin_notes', v_writeup.admin_notes
+  );
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, auth, extensions;
+GRANT EXECUTE ON FUNCTION get_my_team_writeup(UUID) TO authenticated;
+
+-- <<< END: queries/event_writeups.sql
 
 -- >>> BEGIN: queries/notifications.sql
 -- ==============================================

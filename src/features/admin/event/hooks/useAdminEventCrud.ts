@@ -68,6 +68,9 @@ export function useAdminEventCrud({ onEventsLoaded }: UseAdminEventCrudOptions =
       end_time: toEventInputValue(evt.end_time || null),
       always_show_challenges: Boolean(evt.always_show_challenges),
       image_url: evt.image_url || '',
+      is_team_event: Boolean(evt.is_team_event),
+      writeup_deadline: toEventInputValue(evt.writeup_deadline || null),
+      max_team_members: evt.max_team_members ?? '',
     })
     setOpenForm(true)
   }, [])
@@ -81,6 +84,10 @@ export function useAdminEventCrud({ onEventsLoaded }: UseAdminEventCrudOptions =
 
     setSubmitting(true)
     try {
+      const maxMembersVal = formData.max_team_members === '' || formData.max_team_members === null
+        ? null
+        : parseInt(String(formData.max_team_members))
+      
       const payload = {
         name: formData.name.trim(),
         description: formData.description?.trim() || '',
@@ -88,6 +95,9 @@ export function useAdminEventCrud({ onEventsLoaded }: UseAdminEventCrudOptions =
         end_time: fromEventInputValue(formData.end_time),
         always_show_challenges: formData.always_show_challenges,
         image_url: formData.image_url?.trim() || null,
+        is_team_event: formData.is_team_event,
+        writeup_deadline: fromEventInputValue(formData.writeup_deadline),
+        max_team_members: isNaN(maxMembersVal as number) ? null : maxMembersVal,
       }
 
       if (editing?.id) {

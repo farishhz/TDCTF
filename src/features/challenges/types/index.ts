@@ -22,7 +22,7 @@ export type ChallengeFilterState = {
 
 export type ChallengeEventFilterItem = Pick<
   Event,
-  'id' | 'name' | 'start_time' | 'end_time' | 'always_show_challenges' | 'join_mode'
+  'id' | 'name' | 'start_time' | 'end_time' | 'always_show_challenges' | 'join_mode' | 'is_team_event' | 'writeup_deadline'
 > & {
   isLocked?: boolean
 }
