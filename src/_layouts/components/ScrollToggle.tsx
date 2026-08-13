@@ -57,18 +57,15 @@ export default function ScrollToggle() {
     <button
       onClick={scroll}
       aria-label={atBottom ? "Scroll to top" : "Scroll to bottom"}
-      className={`fixed bottom-6 right-6 z-10 rounded-full border shadow-lg transition-all duration-200 p-3 group ${base}
-        hover:scale-105 hover:shadow-2xl
-        ${isDark ? 'hover:bg-blue-700 hover:border-blue-500' : 'hover:bg-blue-500 hover:text-white hover:border-blue-500'}`}
-      style={{ boxShadow: '0 4px 24px 0 rgba(0,0,0,0.10)' }}
+      className="fixed bottom-6 right-6 z-10 flex h-11 w-11 items-center justify-center rounded-full border border-white/20 dark:border-white/10 bg-gradient-to-b from-white/40 to-white/10 dark:from-white/10 dark:to-white/5 text-gray-800 dark:text-gray-200 shadow-[0_8px_32px_0_rgba(0,0,0,0.15),inset_0_1px_1px_rgba(255,255,255,0.6)] dark:shadow-[0_8px_32px_0_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.1)] backdrop-blur-xl transition-all duration-300 hover:from-white/60 hover:to-white/20 dark:hover:from-white/20 dark:hover:to-white/10 active:scale-[0.95] group"
     >
       <span className="flex items-center justify-center">
         {atBottom ? (
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className="transition-transform duration-200 group-hover:-translate-y-1">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className="transition-transform duration-200 group-hover:-translate-y-0.5">
             <path d="M18 15l-6-6-6 6" />
           </svg>
         ) : (
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className="transition-transform duration-200 group-hover:translate-y-1">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className="transition-transform duration-200 group-hover:translate-y-0.5">
             <path d="M6 9l6 6 6-6" />
           </svg>
         )}

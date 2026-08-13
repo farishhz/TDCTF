@@ -131,8 +131,8 @@ export default function DiscordInvitePopup() {
   const isPermanentlyHidden = userState?.status === "dismissed_permanently"
 
   return (
-    <div className="fixed bottom-5 right-5 z-50 flex flex-col items-end pointer-events-none select-none">
-      {/* MINIMAL FLOATING PILL (Shown when card is closed & not permanently hidden) */}
+    <div className="fixed bottom-20 right-6 z-50 flex flex-col items-end pointer-events-none select-none">
+      {/* MINIMAL FLOATING ICON BUTTON (Shown when card is closed & not permanently hidden) */}
       {!isOpen && !isPermanentlyHidden && (
         <motion.div
           initial={{ opacity: 0, y: 10 }}
@@ -142,11 +142,15 @@ export default function DiscordInvitePopup() {
         >
           <button
             onClick={() => setIsOpen(true)}
-            className="flex items-center gap-2 rounded-full border border-white/20 dark:border-white/10 bg-gradient-to-b from-white/40 to-white/10 dark:from-white/10 dark:to-white/5 px-4 py-2 text-xs font-semibold text-gray-800 dark:text-gray-200 shadow-[0_8px_32px_0_rgba(0,0,0,0.1),inset_0_1px_1px_rgba(255,255,255,0.6)] dark:shadow-[0_8px_32px_0_rgba(0,0,0,0.3),inset_0_1px_1px_rgba(255,255,255,0.1)] backdrop-blur-xl transition-all duration-300 hover:from-white/60 hover:to-white/20 dark:hover:from-white/20 dark:hover:to-white/10 active:scale-[0.95]"
+            className="relative flex h-11 w-11 items-center justify-center rounded-full border border-white/20 dark:border-white/10 bg-gradient-to-b from-white/40 to-white/10 dark:from-white/10 dark:to-white/5 shadow-[0_8px_32px_0_rgba(0,0,0,0.15),inset_0_1px_1px_rgba(255,255,255,0.6)] dark:shadow-[0_8px_32px_0_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.1)] backdrop-blur-xl transition-all duration-300 hover:from-white/60 hover:to-white/20 dark:hover:from-white/20 dark:hover:to-white/10 active:scale-[0.95]"
+            title="Join Discord Community"
+            aria-label="Discord Community"
           >
-            <DiscordLogo className="h-3.5 w-3.5 text-[#5865F2]" />
-            <span>Discord</span>
-            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+            <DiscordLogo className="h-5 w-5 text-[#5865F2]" />
+            <span className="absolute top-1 right-1 flex h-2.5 w-2.5">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500 border border-black/40" />
+            </span>
           </button>
         </motion.div>
       )}
