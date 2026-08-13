@@ -163,15 +163,15 @@ export default function DiscordInvitePopup() {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 16, scale: 0.96 }}
             transition={{ type: "spring", stiffness: 350, damping: 25 }}
-            className="pointer-events-auto w-[340px] overflow-hidden rounded-xl border border-neutral-800/80 bg-[#0c0e12]/95 p-4 text-neutral-200 shadow-2xl backdrop-blur-xl"
+            className="pointer-events-auto w-[340px] overflow-hidden rounded-2xl border border-white/15 bg-[#0b0f17]/85 p-4 text-gray-200 shadow-[0_20px_50px_rgba(0,0,0,0.5),inset_0_1px_0_rgba(255,255,255,0.12)] backdrop-blur-2xl"
           >
             {/* Header bar */}
-            <div className="flex items-center justify-between pb-3 border-b border-neutral-800/60">
+            <div className="flex items-center justify-between pb-3 border-b border-white/10">
               <div className="flex items-center gap-2">
-                <span className="flex items-center justify-center h-6 w-6 rounded-md bg-[#5865F2]/10 border border-[#5865F2]/20 text-[#5865F2]">
+                <span className="flex items-center justify-center h-6 w-6 rounded-lg bg-[#5865F2]/15 border border-[#5865F2]/30 text-[#5865F2]">
                   <DiscordLogo className="h-3.5 w-3.5" />
                 </span>
-                <span className="text-[11px] font-mono font-medium tracking-wide uppercase text-neutral-400">
+                <span className="text-[11px] font-mono font-medium tracking-wide uppercase text-gray-400">
                   TDCTF Community
                 </span>
               </div>
@@ -179,14 +179,14 @@ export default function DiscordInvitePopup() {
               <div className="flex items-center gap-1">
                 <button
                   onClick={handleResetForTesting}
-                  className="text-[10px] font-mono text-neutral-600 hover:text-neutral-400 px-1 transition-colors"
+                  className="text-[10px] font-mono text-gray-500 hover:text-gray-300 px-1 transition-colors"
                   title="Reset popup state for testing"
                 >
                   [dev]
                 </button>
                 <button
                   onClick={handleClose}
-                  className="rounded-md p-1 text-neutral-500 hover:bg-neutral-800 hover:text-neutral-300 transition-colors"
+                  className="rounded-lg p-1 text-gray-400 hover:bg-white/10 hover:text-white transition-colors"
                 >
                   <X className="h-3.5 w-3.5" />
                 </button>
@@ -198,22 +198,22 @@ export default function DiscordInvitePopup() {
               <h4 className="text-sm font-semibold text-white tracking-tight">
                 Diskusi & hint CTF di Discord
               </h4>
-              <p className="mt-1 text-xs text-neutral-400 leading-normal">
+              <p className="mt-1 text-xs text-gray-400 leading-normal">
                 Cari teman mabar, tanya hint tantangan, atau sharing writeup bareng anggota komunitas lainnya.
               </p>
 
               {/* Server stats badge */}
-              <div className="mt-3 inline-flex items-center gap-2 text-[11px] text-neutral-400 bg-neutral-900/80 border border-neutral-800/80 rounded-md px-2.5 py-1">
+              <div className="mt-3 inline-flex items-center gap-2 text-[11px] text-gray-400 bg-white/5 border border-white/10 rounded-lg px-2.5 py-1 backdrop-blur-md">
                 <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
                 <span>1,200+ Member</span>
-                <span className="text-neutral-600">•</span>
-                <span className="text-neutral-400">Aktif setiap hari</span>
+                <span className="text-gray-600">•</span>
+                <span className="text-gray-400">Aktif setiap hari</span>
               </div>
             </div>
 
             {/* Feedback alert (if snoozed) */}
             {feedbackMsg ? (
-              <div className="flex items-center gap-2 py-2 px-3 rounded-lg bg-emerald-950/40 border border-emerald-800/40 text-emerald-400 text-xs">
+              <div className="flex items-center gap-2 py-2 px-3 rounded-xl bg-emerald-950/40 border border-emerald-500/30 text-emerald-400 text-xs">
                 <Check className="h-3.5 w-3.5" />
                 <span>{feedbackMsg}</span>
               </div>
@@ -222,7 +222,7 @@ export default function DiscordInvitePopup() {
               <div className="space-y-2 pt-1">
                 <button
                   onClick={handleJoinDiscord}
-                  className="flex w-full items-center justify-center gap-2 rounded-lg bg-[#5865F2] px-3.5 py-2 text-xs font-semibold text-white transition-all hover:bg-[#4752C4] active:scale-[0.98]"
+                  className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#5865F2]/90 hover:bg-[#5865F2] border border-white/20 shadow-lg backdrop-blur-md px-3.5 py-2.5 text-xs font-semibold text-white transition-all active:scale-[0.98]"
                 >
                   <DiscordLogo className="h-3.5 w-3.5" />
                   <span>Join Server Discord</span>

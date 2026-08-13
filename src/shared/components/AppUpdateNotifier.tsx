@@ -2,7 +2,9 @@
 
 import React, { useEffect, useState, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { RefreshCw, Sparkles, X } from 'lucide-react'
+import { RefreshCw, X } from 'lucide-react'
+import BrandLogo from '@/shared/components/BrandLogo'
+import ImageWithFallback from '@/shared/components/ImageWithFallback'
 
 const POLL_INTERVAL_MS = 2 * 60 * 1000 // Check version every 2 minutes
 
@@ -70,21 +72,26 @@ export default function AppUpdateNotifier() {
         transition={{ type: 'spring', stiffness: 350, damping: 25 }}
         className="fixed bottom-5 left-5 z-[9999] pointer-events-auto max-w-sm"
       >
-        <div className="relative overflow-hidden rounded-2xl border border-blue-500/30 dark:border-white/20 bg-gradient-to-b from-blue-950/90 via-slate-900/95 to-blue-950/90 p-4 text-white shadow-[0_16px_40px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.3)] backdrop-blur-2xl">
+        <div className="relative overflow-hidden rounded-2xl border border-white/15 bg-[#0b0f17]/80 p-4 text-gray-200 shadow-[0_20px_50px_rgba(0,0,0,0.5),inset_0_1px_0_rgba(255,255,255,0.12)] backdrop-blur-2xl">
           {/* Header */}
-          <div className="flex items-center justify-between pb-2 border-b border-white/10">
+          <div className="flex items-center justify-between pb-2.5 border-b border-white/10">
             <div className="flex items-center gap-2">
-              <span className="flex h-6 w-6 items-center justify-center rounded-full bg-blue-500/20 text-blue-400 border border-blue-400/30 shadow-[inset_0_1px_1px_rgba(255,255,255,0.2)]">
-                <Sparkles className="h-3.5 w-3.5 animate-pulse" />
-              </span>
-              <span className="text-xs font-mono font-bold tracking-wider uppercase text-blue-300">
-                Update Terbaru
+              <ImageWithFallback
+                src="/logo.svg"
+                alt="TDCTF"
+                size={20}
+                className="h-5 w-5 rounded-full object-contain shrink-0"
+              />
+              <BrandLogo name="TDCTF" className="text-xs font-black tracking-tight" />
+              <span className="text-gray-600 dark:text-gray-500 text-xs select-none">•</span>
+              <span className="text-[10px] font-mono font-medium tracking-wide uppercase text-blue-400">
+                System Update
               </span>
             </div>
 
             <button
               onClick={() => setDismissed(true)}
-              className="rounded-full p-1 text-gray-400 hover:bg-white/10 hover:text-white transition-colors"
+              className="rounded-lg p-1 text-gray-400 hover:bg-white/10 hover:text-white transition-colors"
               title="Abaikan untuk sementara"
             >
               <X className="h-3.5 w-3.5" />
@@ -93,10 +100,10 @@ export default function AppUpdateNotifier() {
 
           {/* Content */}
           <div className="py-3">
-            <h4 className="text-sm font-bold text-white tracking-tight">
+            <h4 className="text-sm font-semibold text-white tracking-tight">
               Versi Baru Telah Dideploy!
             </h4>
-            <p className="mt-1 text-xs text-gray-300 leading-relaxed">
+            <p className="mt-1 text-xs text-gray-400 leading-normal">
               Perubahan terbaru telah tersedia. Muat ulang halaman untuk mendapatkan versi terkini.
             </p>
           </div>
@@ -105,9 +112,9 @@ export default function AppUpdateNotifier() {
           <div className="pt-1">
             <button
               onClick={handleReload}
-              className="group relative flex w-full items-center justify-center gap-2 rounded-full border border-white/30 bg-gradient-to-b from-blue-400/80 to-blue-600/80 px-4 py-2.5 text-xs font-bold text-white backdrop-blur-xl shadow-[0_8px_24px_rgba(37,99,235,0.4),inset_0_1px_1px_rgba(255,255,255,0.6)] transition-all duration-300 hover:from-blue-400/95 hover:to-blue-600/95 hover:shadow-[0_12px_32px_rgba(37,99,235,0.6),inset_0_1px_1px_rgba(255,255,255,0.8)] active:scale-[0.98]"
+              className="group relative flex w-full items-center justify-center gap-2 rounded-xl border border-white/15 bg-blue-600/80 hover:bg-blue-600 text-xs font-semibold text-white shadow-lg backdrop-blur-md transition-all duration-200 active:scale-[0.98] py-2.5"
             >
-              <RefreshCw className="h-3.5 w-3.5 transition-transform group-hover:rotate-180 duration-500" />
+              <RefreshCw className="h-3.5 w-3.5 transition-transform group-hover:rotate-180 duration-500 text-blue-200" />
               <span>Perbarui Sekarang</span>
             </button>
           </div>
