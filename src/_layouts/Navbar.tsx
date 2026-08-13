@@ -475,13 +475,13 @@ export default function Navbar() {
                   <div className="flex items-center space-x-3 animate-in fade-in duration-300">
                     <Link
                       href="/login"
-                      className={`px-4 py-2 rounded-lg text-[15px] font-medium shadow transition-all duration-150 ${theme === 'dark' ? 'bg-blue-500 hover:bg-blue-600 text-white' : 'bg-blue-600 hover:bg-blue-700 text-white'}`}
+                      className="relative flex px-5 py-2 items-center justify-center overflow-hidden rounded-full bg-gradient-to-b from-blue-400/70 to-blue-600/70 text-[15px] font-semibold text-white border border-white/20 backdrop-blur-xl shadow-[0_8px_32px_0_rgba(37,99,235,0.25),inset_0_1px_1px_rgba(255,255,255,0.5)] transition-all duration-300 hover:from-blue-400/90 hover:to-blue-600/90 hover:shadow-[0_8px_32px_0_rgba(37,99,235,0.4),inset_0_1px_1px_rgba(255,255,255,0.7)] dark:from-blue-500/40 dark:to-blue-700/40 dark:border-white/10 dark:shadow-[0_8px_32px_0_rgba(37,99,235,0.15),inset_0_1px_1px_rgba(255,255,255,0.2)] dark:hover:from-blue-500/60 dark:hover:to-blue-700/60 active:scale-[0.98]"
                     >
                       Login
                     </Link>
                     <Link
                       href="/register"
-                      className={`px-4 py-2 rounded-lg text-[15px] font-medium shadow transition-all duration-150 ${theme === 'dark' ? 'bg-gray-800 hover:bg-gray-700 text-gray-200' : 'bg-gray-100 hover:bg-gray-200 text-gray-800'}`}
+                      className="relative flex px-5 py-2 items-center justify-center overflow-hidden rounded-full border border-gray-300/40 bg-gradient-to-b from-white/40 to-white/10 text-[15px] font-semibold text-gray-800 backdrop-blur-xl shadow-[0_8px_32px_0_rgba(0,0,0,0.05),inset_0_1px_1px_rgba(255,255,255,0.6)] transition-all duration-300 hover:-translate-y-[1px] hover:from-white/60 hover:to-white/20 hover:text-blue-600 hover:shadow-[0_8px_32px_0_rgba(0,0,0,0.1),inset_0_1px_1px_rgba(255,255,255,0.8)] dark:border-white/10 dark:from-white/10 dark:to-white/5 dark:text-gray-200 dark:shadow-[0_8px_32px_0_rgba(0,0,0,0.3),inset_0_1px_1px_rgba(255,255,255,0.1)] dark:hover:from-white/20 dark:hover:to-white/10 dark:hover:text-blue-300 dark:hover:shadow-[0_8px_32px_0_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.2)] active:scale-[0.98]"
                     >
                       Register
                     </Link>
@@ -684,14 +684,14 @@ export default function Navbar() {
               <>
                 <Link
                   href="/login"
-                  className={`flex px-3 py-2 rounded-lg text-[15px] font-medium shadow transition-all duration-150 ${theme === 'dark' ? 'bg-blue-500 hover:bg-blue-600 text-white' : 'bg-blue-600 hover:bg-blue-700 text-white'}`}
+                  className="relative flex px-5 py-2.5 items-center justify-center overflow-hidden rounded-full bg-gradient-to-b from-blue-400/70 to-blue-600/70 text-[15px] font-semibold text-white border border-white/20 backdrop-blur-xl shadow-[0_8px_32px_0_rgba(37,99,235,0.25),inset_0_1px_1px_rgba(255,255,255,0.5)] transition-all duration-300 hover:from-blue-400/90 hover:to-blue-600/90 hover:shadow-[0_8px_32px_0_rgba(37,99,235,0.4),inset_0_1px_1px_rgba(255,255,255,0.7)] dark:from-blue-500/40 dark:to-blue-700/40 dark:border-white/10 dark:shadow-[0_8px_32px_0_rgba(37,99,235,0.15),inset_0_1px_1px_rgba(255,255,255,0.2)] dark:hover:from-blue-500/60 dark:hover:to-blue-700/60 active:scale-[0.98] mb-2"
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   Login
                 </Link>
                 <Link
                   href="/register"
-                  className={`flex px-3 py-2 rounded-lg text-[15px] font-medium shadow transition-all duration-150 ${theme === 'dark' ? 'bg-gray-800 hover:bg-gray-700 text-gray-200' : 'bg-gray-100 hover:bg-gray-200 text-gray-800'}`}
+                  className="relative flex px-5 py-2.5 items-center justify-center overflow-hidden rounded-full border border-gray-300/40 bg-gradient-to-b from-white/40 to-white/10 text-[15px] font-semibold text-gray-800 backdrop-blur-xl shadow-[0_8px_32px_0_rgba(0,0,0,0.05),inset_0_1px_1px_rgba(255,255,255,0.6)] transition-all duration-300 hover:-translate-y-[1px] hover:from-white/60 hover:to-white/20 hover:text-blue-600 hover:shadow-[0_8px_32px_0_rgba(0,0,0,0.1),inset_0_1px_1px_rgba(255,255,255,0.8)] dark:border-white/10 dark:from-white/10 dark:to-white/5 dark:text-gray-200 dark:shadow-[0_8px_32px_0_rgba(0,0,0,0.3),inset_0_1px_1px_rgba(255,255,255,0.1)] dark:hover:from-white/20 dark:hover:to-white/10 dark:hover:text-blue-300 dark:hover:shadow-[0_8px_32px_0_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.2)] active:scale-[0.98]"
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   Register

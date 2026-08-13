@@ -142,11 +142,11 @@ export default function DiscordInvitePopup() {
         >
           <button
             onClick={() => setIsOpen(true)}
-            className="flex items-center gap-2 rounded-full border border-neutral-800 bg-[#0d0f14]/90 px-3.5 py-2 text-xs font-medium text-neutral-300 shadow-xl backdrop-blur-md transition-all hover:border-neutral-700 hover:bg-[#131720] hover:text-white active:scale-95"
+            className="flex items-center gap-2 rounded-full border border-white/20 dark:border-white/10 bg-gradient-to-b from-white/40 to-white/10 dark:from-white/10 dark:to-white/5 px-4 py-2 text-xs font-semibold text-gray-800 dark:text-gray-200 shadow-[0_8px_32px_0_rgba(0,0,0,0.1),inset_0_1px_1px_rgba(255,255,255,0.6)] dark:shadow-[0_8px_32px_0_rgba(0,0,0,0.3),inset_0_1px_1px_rgba(255,255,255,0.1)] backdrop-blur-xl transition-all duration-300 hover:from-white/60 hover:to-white/20 dark:hover:from-white/20 dark:hover:to-white/10 active:scale-[0.95]"
           >
             <DiscordLogo className="h-3.5 w-3.5 text-[#5865F2]" />
             <span>Discord</span>
-            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
           </button>
         </motion.div>
       )}

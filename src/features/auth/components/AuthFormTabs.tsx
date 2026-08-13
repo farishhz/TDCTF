@@ -96,11 +96,11 @@ export default function AuthFormTabs({ defaultTab = 'login' }: AuthFormTabsProps
         </AnimatePresence>
       </div>
 
-      {/* ─── Tab Switcher with animated pill ─── */}
-      <div className="relative mb-6 flex items-center rounded-xl bg-white/[0.06] p-1 gap-1">
-        {/* Animated sliding pill */}
+      {/* ─── Tab Switcher with animated liquid glass pill ─── */}
+      <div className="relative mb-6 flex items-center rounded-full border border-white/20 dark:border-white/10 bg-white/10 dark:bg-white/5 p-1 gap-1 backdrop-blur-xl shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)]">
+        {/* Animated sliding liquid pill */}
         <motion.div
-          className="absolute rounded-[10px] bg-blue-600 shadow-lg shadow-blue-700/30"
+          className="absolute rounded-full bg-gradient-to-b from-blue-400/80 to-blue-600/80 dark:from-blue-500/50 dark:to-blue-700/50 border border-white/20 backdrop-blur-xl shadow-[0_8px_24px_0_rgba(37,99,235,0.3),inset_0_1px_1px_rgba(255,255,255,0.5)]"
           layoutId="auth-tab-pill"
           transition={{ type: 'spring', stiffness: 400, damping: 36 }}
           style={{
@@ -118,9 +118,9 @@ export default function AuthFormTabs({ defaultTab = 'login' }: AuthFormTabsProps
               key={tab.id}
               onClick={() => handleTabChange(tab.id)}
               className={[
-                'relative z-10 flex-1 rounded-[10px] py-2 text-sm font-semibold',
-                'transition-colors duration-200 focus-visible:outline-none',
-                isActive ? 'text-white' : 'text-gray-500 hover:text-gray-300',
+                'relative z-10 flex-1 rounded-full py-2 text-sm font-bold',
+                'transition-colors duration-300 focus-visible:outline-none active:scale-[0.98]',
+                isActive ? 'text-white' : 'text-gray-400 hover:text-gray-200',
               ].join(' ')}
             >
               {tab.label}

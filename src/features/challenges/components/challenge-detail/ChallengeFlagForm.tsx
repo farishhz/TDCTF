@@ -71,11 +71,11 @@ export default function ChallengeFlagForm({
           handleFlagSubmit(challenge.id)
         }}
       >
-        <div className={`relative flex-1 h-[38px] overflow-hidden focus-within:ring-2 focus-within:ring-blue-500/40 ${SURFACE_GLASS_CARD_COMPACT_CLASS}`}>
+        <div className="relative flex-1 h-[38px] overflow-hidden rounded-full border border-white/20 dark:border-white/10 bg-white/20 dark:bg-white/5 backdrop-blur-xl shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)] focus-within:ring-2 focus-within:ring-blue-500/40 focus-within:border-white/30 transition-all">
           {challenge.flag_placeholder && placeholders[challenge.id] && (
             <div
               ref={overlayRef}
-              className="pointer-events-none absolute inset-0 flex select-none items-center overflow-hidden whitespace-pre pl-4 pr-16 font-mono text-sm text-gray-400 opacity-50 dark:text-gray-600"
+              className="pointer-events-none absolute inset-0 flex select-none items-center overflow-hidden whitespace-pre pl-4 pr-16 font-mono text-sm text-gray-400 opacity-50 dark:text-gray-500"
             >
               <span className="invisible">{flagInputs[challenge.id] || ''}</span>
               <span>{placeholders[challenge.id].slice((flagInputs[challenge.id] || '').length)}</span>
@@ -118,7 +118,7 @@ export default function ChallengeFlagForm({
             spellCheck={false}
             autoComplete="off"
           />
-          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-mono font-bold text-gray-400 dark:text-gray-500 select-none z-20 pointer-events-none">
+          <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[10px] font-mono font-bold text-gray-400 dark:text-gray-500 select-none z-20 pointer-events-none">
             {submissionsRemaining}/10
           </span>
         </div>
@@ -134,12 +134,12 @@ export default function ChallengeFlagForm({
           onMouseDown={(event) => {
             event.preventDefault()
           }}
-          className={`flex h-[38px] w-24 shrink-0 select-none items-center justify-center rounded-xl text-[13px] font-black uppercase tracking-widest text-white shadow-lg transition-all active:scale-95 disabled:opacity-30
+          className={`flex h-[38px] w-28 shrink-0 select-none items-center justify-center rounded-full text-[12px] font-black uppercase tracking-widest text-white shadow-lg transition-all duration-300 active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed border border-white/20 backdrop-blur-xl
             ${eventEnded
-              ? 'bg-gray-600 hover:bg-gray-600 cursor-not-allowed shadow-gray-500/10'
+              ? 'bg-gradient-to-b from-gray-600/60 to-gray-800/60 shadow-none border-white/10'
               : cooldownSeconds > 0
-                ? 'bg-red-600 hover:bg-red-600 cursor-not-allowed shadow-red-500/10'
-                : 'bg-blue-600 shadow-blue-500/20 hover:bg-blue-500 hover:shadow-blue-500/30'}
+                ? 'bg-gradient-to-b from-red-500/80 to-red-700/80 shadow-[0_4px_16px_rgba(239,68,68,0.3),inset_0_1px_1px_rgba(255,255,255,0.4)]'
+                : 'bg-gradient-to-b from-blue-400/80 to-blue-600/80 hover:from-blue-400/95 hover:to-blue-600/95 shadow-[0_8px_24px_rgba(37,99,235,0.3),inset_0_1px_1px_rgba(255,255,255,0.5)]'}
           `}
         >
           {submitting[challenge.id] ? (
