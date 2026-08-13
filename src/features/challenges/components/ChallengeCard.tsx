@@ -84,14 +84,14 @@ const ChallengeCard: React.FC<ChallengeCardProps> = ({ challenge, highlightTeamS
         <div className={`absolute top-0 left-4 right-4 h-[2px] rounded-full bg-gradient-to-r from-transparent ${cardHover.accentLine} to-transparent z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-500`} />
       )}
 
-      <div className={`relative h-full flex flex-col p-4 md:p-5 rounded-2xl border backdrop-blur-sm transition-all duration-400 z-0
+      <div className={`relative h-full flex flex-col p-4 md:p-5 rounded-2xl border backdrop-blur-xl transition-all duration-400 z-0
         ${isMaintenance
           ? 'bg-amber-500/[0.02] border-amber-500/20 dark:border-amber-500/10 border-dashed shadow-none'
           : isSolved
-            ? 'bg-gray-800/60 border-green-500/25 dark:border-green-500/20 shadow-none'
+            ? 'bg-gradient-to-b from-gray-800/70 to-gray-900/80 border-green-500/30 dark:border-green-500/20 shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)]'
             : isTeamSolved
-              ? 'bg-gray-800/60 border-purple-500/25 dark:border-purple-500/20 shadow-none'
-              : 'bg-gray-800/85 border-gray-600/50 shadow-sm shadow-black/30 group-hover:shadow-xl group-hover:shadow-black/40'}`}
+              ? 'bg-gradient-to-b from-gray-800/70 to-gray-900/80 border-purple-500/30 dark:border-purple-500/20 shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)]'
+              : 'bg-gradient-to-b from-gray-800/60 to-gray-900/80 border-white/15 dark:border-white/10 shadow-[0_4px_20px_0_rgba(0,0,0,0.2),inset_0_1px_1px_rgba(255,255,255,0.15)] group-hover:border-white/30 dark:group-hover:border-white/20 group-hover:shadow-[0_12px_36px_0_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.3)]'}`}
       >
 
         {/* Subtle Background Category Icon */}
@@ -137,8 +137,8 @@ const ChallengeCard: React.FC<ChallengeCardProps> = ({ challenge, highlightTeamS
                   <div className="flex items-center gap-1 min-w-0">
                     <div
                       title={parent}
-                      className={`min-w-0 truncate whitespace-nowrap text-[9px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded transition-all duration-300 ${categoryBadgeColor}
-                      opacity-25 group-hover:opacity-100`}
+                      className={`min-w-0 truncate whitespace-nowrap text-[9px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full border border-white/10 backdrop-blur-md transition-all duration-300 ${categoryBadgeColor}
+                      opacity-50 group-hover:opacity-100 shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)]`}
                     >
                       {parent}
                     </div>
@@ -149,8 +149,8 @@ const ChallengeCard: React.FC<ChallengeCardProps> = ({ challenge, highlightTeamS
                         </span>
                         <div
                           title={sub}
-                          className={`min-w-0 truncate whitespace-nowrap text-[9px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded border border-dashed transition-all duration-300 ${categoryBorderColor} ${categoryIconColor}
-                          opacity-20 group-hover:opacity-85`}
+                          className={`min-w-0 truncate whitespace-nowrap text-[9px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full border border-white/10 backdrop-blur-md transition-all duration-300 ${categoryBorderColor} ${categoryIconColor}
+                          opacity-40 group-hover:opacity-90 shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)]`}
                         >
                           {sub}
                         </div>

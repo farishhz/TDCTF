@@ -20,46 +20,46 @@ type SegmentedTabsProps<T extends string> = {
 
 const containerClasses: Record<SegmentedTabsVariant, string> = {
   pill:
-    'inline-flex max-w-full flex-nowrap overflow-x-auto rounded-full border border-gray-200 bg-white/50 p-1 backdrop-blur scroll-hidden dark:border-white/10 dark:bg-gray-800/50',
+    'inline-flex max-w-full flex-nowrap overflow-x-auto rounded-full border border-white/20 bg-white/20 p-1 backdrop-blur-xl scroll-hidden dark:border-white/10 dark:bg-white/5 shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)]',
   panel:
-    'flex w-fit max-w-full flex-nowrap gap-1 overflow-x-auto rounded-xl border border-gray-200 bg-white/40 p-1.5 backdrop-blur-sm scroll-hidden dark:border-gray-800 dark:bg-gray-900/40',
+    'flex w-fit max-w-full flex-nowrap gap-1.5 overflow-x-auto rounded-full border border-white/20 bg-white/20 p-1.5 backdrop-blur-xl scroll-hidden dark:border-white/10 dark:bg-white/5 shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)]',
   panelLarge:
-    'flex max-w-full flex-nowrap gap-1 overflow-x-auto rounded-2xl border border-gray-200 bg-white/40 p-1 backdrop-blur-sm scroll-hidden dark:border-gray-800 dark:bg-gray-900/40',
+    'flex max-w-full flex-nowrap gap-1.5 overflow-x-auto rounded-full border border-white/20 bg-white/20 p-1 backdrop-blur-xl scroll-hidden dark:border-white/10 dark:bg-white/5 shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)]',
   compact:
-    'flex max-w-full flex-nowrap gap-1 overflow-x-auto rounded-xl border border-gray-200 bg-black/5 p-1 scroll-hidden dark:border-gray-800 dark:bg-white/5',
+    'flex max-w-full flex-nowrap gap-1 overflow-x-auto rounded-full border border-white/20 bg-white/20 p-1 backdrop-blur-xl scroll-hidden dark:border-white/10 dark:bg-white/5 shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)]',
 }
 
 const buttonClasses: Record<SegmentedTabsVariant, string> = {
   pill:
-    'flex shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-full px-4 py-2 text-sm font-semibold caret-transparent transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/40 focus-visible:ring-offset-0',
+    'flex shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-full px-4 py-2 text-sm font-semibold caret-transparent transition-all duration-300 focus-visible:outline-none active:scale-[0.98]',
   panel:
-    'flex shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-lg px-3 py-2 text-sm font-bold caret-transparent transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/40 focus-visible:ring-offset-0 sm:px-5',
+    'flex shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-full px-4 py-2 text-xs font-bold uppercase tracking-wider caret-transparent transition-all duration-300 focus-visible:outline-none active:scale-[0.98]',
   panelLarge:
-    'flex shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-xl px-6 py-2.5 text-[10px] font-black uppercase tracking-widest caret-transparent transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/40 focus-visible:ring-offset-0',
+    'flex shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-full px-6 py-2.5 text-[10px] font-black uppercase tracking-widest caret-transparent transition-all duration-300 focus-visible:outline-none active:scale-[0.98]',
   compact:
-    'shrink-0 whitespace-nowrap rounded-lg px-3 py-1.5 text-center text-xs font-bold caret-transparent transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/40 focus-visible:ring-offset-0',
+    'shrink-0 whitespace-nowrap rounded-full px-3 py-1.5 text-center text-xs font-bold caret-transparent transition-all duration-300 focus-visible:outline-none active:scale-[0.98]',
 }
 
 const activeClasses: Record<SegmentedTabsVariant, string> = {
   pill:
-    'bg-blue-500/15 text-blue-600 shadow-sm dark:text-blue-400',
+    'bg-gradient-to-b from-blue-400/80 to-blue-600/80 text-white border border-white/20 backdrop-blur-xl shadow-[0_8px_24px_0_rgba(37,99,235,0.3),inset_0_1px_1px_rgba(255,255,255,0.5)] dark:from-blue-500/50 dark:to-blue-700/50 dark:border-white/20',
   panel:
-    'bg-white text-blue-600 shadow-sm dark:bg-gray-800 dark:text-blue-400',
+    'bg-gradient-to-b from-blue-400/80 to-blue-600/80 text-white border border-white/20 backdrop-blur-xl shadow-[0_8px_24px_0_rgba(37,99,235,0.3),inset_0_1px_1px_rgba(255,255,255,0.5)] dark:from-blue-500/50 dark:to-blue-700/50 dark:border-white/20',
   panelLarge:
-    'bg-white text-blue-600 shadow-lg shadow-blue-500/10 dark:bg-gray-800 dark:text-blue-400',
+    'bg-gradient-to-b from-blue-400/80 to-blue-600/80 text-white border border-white/20 backdrop-blur-xl shadow-[0_8px_24px_0_rgba(37,99,235,0.3),inset_0_1px_1px_rgba(255,255,255,0.5)] dark:from-blue-500/50 dark:to-blue-700/50 dark:border-white/20',
   compact:
-    'bg-white text-blue-600 shadow-sm dark:bg-gray-800 dark:text-blue-400',
+    'bg-gradient-to-b from-blue-400/80 to-blue-600/80 text-white border border-white/20 backdrop-blur-xl shadow-[0_8px_24px_0_rgba(37,99,235,0.3),inset_0_1px_1px_rgba(255,255,255,0.5)] dark:from-blue-500/50 dark:to-blue-700/50 dark:border-white/20',
 }
 
 const inactiveClasses: Record<SegmentedTabsVariant, string> = {
   pill:
-    'text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400',
+    'text-gray-600 hover:text-blue-600 dark:text-gray-400 dark:hover:text-white',
   panel:
-    'text-gray-500 hover:bg-white/50 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800/50 dark:hover:text-gray-200',
+    'text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white',
   panelLarge:
-    'text-gray-500 hover:bg-white/50 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-gray-800/50 dark:hover:text-gray-200',
+    'text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white',
   compact:
-    'text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-200',
+    'text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white',
 }
 
 export function SegmentedTabs<T extends string>({

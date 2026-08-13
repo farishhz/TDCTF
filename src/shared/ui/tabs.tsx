@@ -29,11 +29,11 @@ type AppTabsProps<T extends string> = {
 
 const containerClasses: Record<AppTabsVariant, string> = {
   panel:
-    'flex w-fit max-w-full flex-nowrap gap-1 overflow-x-auto rounded-xl border border-gray-200 bg-white/40 p-1.5 shadow-sm backdrop-blur-sm scroll-hidden dark:border-gray-800 dark:bg-gray-900/40',
+    'flex w-fit max-w-full flex-nowrap gap-1 overflow-x-auto rounded-full border border-white/20 bg-white/20 p-1 shadow-sm backdrop-blur-xl scroll-hidden dark:border-white/10 dark:bg-white/5',
   pill:
-    'inline-flex max-w-full flex-nowrap overflow-x-auto rounded-full border border-gray-200 bg-white/50 p-1 shadow-sm backdrop-blur scroll-hidden dark:border-white/10 dark:bg-gray-800/50',
+    'inline-flex max-w-full flex-nowrap overflow-x-auto rounded-full border border-white/20 bg-white/20 p-1 shadow-sm backdrop-blur-xl scroll-hidden dark:border-white/10 dark:bg-white/5',
   compact:
-    'flex max-w-full flex-nowrap gap-1 overflow-x-auto rounded-xl border border-gray-200 bg-black/5 p-1 shadow-sm scroll-hidden dark:border-gray-800 dark:bg-white/5',
+    'flex max-w-full flex-nowrap gap-1 overflow-x-auto rounded-full border border-white/20 bg-white/20 p-1 shadow-sm backdrop-blur-xl scroll-hidden dark:border-white/10 dark:bg-white/5',
 }
 
 const sizeClasses: Record<AppTabsSize, string> = {
@@ -43,15 +43,15 @@ const sizeClasses: Record<AppTabsSize, string> = {
 }
 
 const activeClasses: Record<AppTabsVariant, string> = {
-  panel: 'bg-white text-blue-600 shadow-sm dark:bg-gray-800 dark:text-blue-400',
-  pill: 'bg-blue-500/15 text-blue-600 shadow-sm dark:text-blue-400',
-  compact: 'bg-white text-blue-600 shadow-sm dark:bg-gray-800 dark:text-blue-400',
+  panel: 'bg-gradient-to-b from-blue-400/80 to-blue-600/80 text-white border border-white/20 backdrop-blur-xl shadow-[0_8px_24px_0_rgba(37,99,235,0.3),inset_0_1px_1px_rgba(255,255,255,0.5)] dark:from-blue-500/50 dark:to-blue-700/50 dark:border-white/20',
+  pill: 'bg-gradient-to-b from-blue-400/80 to-blue-600/80 text-white border border-white/20 backdrop-blur-xl shadow-[0_8px_24px_0_rgba(37,99,235,0.3),inset_0_1px_1px_rgba(255,255,255,0.5)] dark:from-blue-500/50 dark:to-blue-700/50 dark:border-white/20',
+  compact: 'bg-gradient-to-b from-blue-400/80 to-blue-600/80 text-white border border-white/20 backdrop-blur-xl shadow-[0_8px_24px_0_rgba(37,99,235,0.3),inset_0_1px_1px_rgba(255,255,255,0.5)] dark:from-blue-500/50 dark:to-blue-700/50 dark:border-white/20',
 }
 
 const inactiveClasses: Record<AppTabsVariant, string> = {
-  panel: 'text-gray-500 hover:bg-white/50 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800/50 dark:hover:text-gray-200',
-  pill: 'text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400',
-  compact: 'text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-200',
+  panel: 'text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white',
+  pill: 'text-gray-600 hover:text-blue-600 dark:text-gray-400 dark:hover:text-white',
+  compact: 'text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white',
 }
 
 function renderIcon(icon: AppTabItem<string>['icon'], isActive: boolean) {
@@ -102,7 +102,7 @@ export function AppTabs<T extends string>({
             disabled={item.disabled}
             onClick={() => onValueChange(item.value)}
             className={cn(
-              'flex shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-lg font-bold caret-transparent transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/40 focus-visible:ring-offset-0 disabled:pointer-events-none disabled:opacity-50',
+              'flex shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-full font-bold caret-transparent transition-all duration-300 focus-visible:outline-none active:scale-[0.98]',
               sizeClasses[size],
               stretch && !collapseActive && !collapseInactive && 'flex-1 basis-0',
               stretch && collapseActive && (isActive ? 'w-10 flex-none px-0 sm:px-0' : 'flex-1 basis-0'),

@@ -74,14 +74,14 @@ export default function Home() {
           >
             <Link
               href={user ? "/challenges" : "/login"}
-              className="group relative inline-flex items-center justify-center gap-2 px-6 py-2.5 text-sm font-bold text-white transition-all bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 rounded-xl shadow-md shadow-blue-500/10 hover:shadow-lg hover:shadow-blue-500/20 hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98] duration-300"
+              className="group relative inline-flex items-center justify-center gap-2 px-6 py-3 text-sm font-bold text-white transition-all duration-300 bg-gradient-to-b from-blue-400/80 to-blue-600/80 hover:from-blue-400/95 hover:to-blue-600/95 dark:from-blue-500/50 dark:to-blue-700/50 dark:hover:from-blue-500/70 dark:hover:to-blue-700/70 border border-white/30 dark:border-white/20 backdrop-blur-xl rounded-full shadow-[0_8px_32px_0_rgba(37,99,235,0.35),inset_0_1px_1px_rgba(255,255,255,0.6)] hover:shadow-[0_12px_40px_0_rgba(37,99,235,0.5),inset_0_1px_1px_rgba(255,255,255,0.8)] hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98]"
             >
               {user ? "Enter Arena" : "Get Started"}
               <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
             </Link>
             <Link
               href="/info"
-              className="px-6 py-2.5 text-sm font-bold transition-all rounded-xl bg-white/40 dark:bg-gray-900/40 border border-gray-200 dark:border-gray-800 backdrop-blur-sm text-gray-700 dark:text-gray-300 hover:bg-white/80 dark:hover:bg-gray-800/80 hover:border-gray-300 dark:hover:border-gray-700 hover:text-gray-950 dark:hover:text-white hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98] duration-300"
+              className="relative inline-flex items-center justify-center px-6 py-3 text-sm font-bold transition-all duration-300 rounded-full bg-gradient-to-b from-white/40 to-white/10 dark:from-white/10 dark:to-white/5 border border-gray-300/40 dark:border-white/10 backdrop-blur-xl text-gray-800 dark:text-gray-200 shadow-[0_8px_32px_0_rgba(0,0,0,0.05),inset_0_1px_1px_rgba(255,255,255,0.6)] dark:shadow-[0_8px_32px_0_rgba(0,0,0,0.3),inset_0_1px_1px_rgba(255,255,255,0.1)] hover:from-white/60 hover:to-white/20 hover:text-blue-600 dark:hover:from-white/20 dark:hover:to-white/10 dark:hover:text-blue-300 hover:shadow-[0_8px_32px_0_rgba(0,0,0,0.1),inset_0_1px_1px_rgba(255,255,255,0.8)] hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98]"
             >
               About Platform
             </Link>
@@ -90,7 +90,7 @@ export default function Home() {
                 href={settings.discord_link}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center justify-center p-2.5 rounded-xl bg-white/40 dark:bg-gray-900/40 border border-gray-200 dark:border-gray-800 backdrop-blur-sm text-gray-400 dark:text-gray-500 hover:bg-white/80 dark:hover:bg-gray-800/80 hover:border-indigo-500/30 dark:hover:border-indigo-500/30 hover:text-indigo-500 dark:hover:text-indigo-400 transition-all hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.95] duration-300"
+                className="relative inline-flex items-center justify-center p-3 rounded-full bg-gradient-to-b from-white/40 to-white/10 dark:from-white/10 dark:to-white/5 border border-gray-300/40 dark:border-white/10 backdrop-blur-xl text-gray-600 dark:text-gray-300 shadow-[0_8px_32px_0_rgba(0,0,0,0.05),inset_0_1px_1px_rgba(255,255,255,0.6)] dark:shadow-[0_8px_32px_0_rgba(0,0,0,0.3),inset_0_1px_1px_rgba(255,255,255,0.1)] hover:from-white/60 hover:to-white/20 hover:text-indigo-500 dark:hover:from-white/20 dark:hover:to-white/10 dark:hover:text-indigo-400 hover:shadow-[0_8px_32px_0_rgba(0,0,0,0.1),inset_0_1px_1px_rgba(255,255,255,0.8)] transition-all duration-300 hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.95]"
                 title="Join Event Discord"
               >
                 <svg className="w-5 h-5 fill-current" viewBox="0 0 127.14 96.36">

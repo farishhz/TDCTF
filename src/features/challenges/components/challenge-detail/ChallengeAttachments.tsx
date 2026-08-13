@@ -5,10 +5,10 @@ import type { Attachment, ChallengeWithSolve } from '@/shared/types'
 import type { KeyedBooleanMap } from '../../types'
 
 const FILE_BUTTON_CLASS =
-  "flex select-none items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg transition-all duration-200 bg-gray-500/5 text-gray-700 border border-gray-200/80 hover:bg-100 hover:text-gray-900 dark:bg-gray-500/5 dark:text-gray-300 dark:border-gray-700/80 dark:hover:bg-gray-800/80 dark:hover:text-gray-100 disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-500/40 focus-visible:ring-offset-0"
+  "flex select-none items-center gap-2 px-3.5 py-1.5 text-xs font-semibold rounded-full transition-all duration-300 bg-gradient-to-b from-white/40 to-white/10 dark:from-white/10 dark:to-white/5 text-gray-800 dark:text-gray-200 border border-white/20 dark:border-white/10 backdrop-blur-xl shadow-[0_4px_16px_0_rgba(0,0,0,0.05),inset_0_1px_1px_rgba(255,255,255,0.6)] dark:shadow-[0_4px_16px_0_rgba(0,0,0,0.3),inset_0_1px_1px_rgba(255,255,255,0.1)] hover:from-white/60 hover:to-white/20 dark:hover:from-white/20 dark:hover:to-white/10 hover:text-blue-600 dark:hover:text-blue-300 active:scale-[0.98] disabled:opacity-50"
 
 const LINK_BUTTON_CLASS =
-  "flex select-none items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg transition-all duration-200 bg-blue-500/10 text-blue-600 border border-blue-500/20 hover:bg-blue-500/20 dark:bg-blue-500/10 dark:text-blue-400 dark:border-blue-500/20 dark:hover:bg-blue-500/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/40 focus-visible:ring-offset-0"
+  "flex select-none items-center gap-2 px-3.5 py-1.5 text-xs font-semibold rounded-full transition-all duration-300 bg-gradient-to-b from-blue-400/20 to-blue-600/20 text-blue-600 dark:text-blue-300 border border-blue-500/30 backdrop-blur-xl shadow-[0_4px_16px_0_rgba(37,99,235,0.1),inset_0_1px_1px_rgba(255,255,255,0.4)] hover:from-blue-400/35 hover:to-blue-600/35 active:scale-[0.98]"
 
 type ChallengeAttachmentsProps = {
   challenge: ChallengeWithSolve

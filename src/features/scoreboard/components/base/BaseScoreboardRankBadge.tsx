@@ -25,7 +25,7 @@ export default function BaseScoreboardRankBadge({
   return (
     <div
       className={cn(
-        'inline-flex items-center overflow-hidden divide-x divide-blue-500/20 rounded-lg border border-blue-500/20 bg-blue-50/50 shadow-sm backdrop-blur-sm dark:divide-blue-500/20 dark:border-blue-500/20 dark:bg-blue-900/10',
+        'inline-flex items-center overflow-hidden divide-x divide-white/20 rounded-full border border-white/20 dark:border-white/10 bg-gradient-to-b from-blue-400/20 to-blue-600/20 backdrop-blur-xl shadow-[0_4px_16px_rgba(37,99,235,0.1),inset_0_1px_1px_rgba(255,255,255,0.4)] dark:divide-white/10 dark:from-blue-500/20 dark:to-blue-700/20',
         className
       )}
     >

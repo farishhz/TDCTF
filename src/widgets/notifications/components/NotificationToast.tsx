@@ -48,12 +48,12 @@ export default function NotificationToast({
         toast.isFirstBlood ? (
           <div
             key={toast.id}
-            className="pointer-events-auto relative overflow-hidden flex flex-col gap-2 rounded-xl border border-red-500/30 bg-[#0d0708]/95 backdrop-blur-md px-4 py-3.5 shadow-[0_0_25px_rgba(239,68,68,0.2)] animate-toast-in animate-blood-shake hover:border-red-500/50 transition-all duration-300"
+            className="pointer-events-auto relative overflow-hidden flex flex-col gap-2 rounded-2xl border border-red-500/40 bg-gradient-to-b from-red-950/80 via-black/85 to-red-950/60 backdrop-blur-xl px-4 py-3.5 shadow-[0_8px_32px_rgba(239,68,68,0.25),inset_0_1px_1px_rgba(255,255,255,0.2)] animate-toast-in animate-blood-shake hover:border-red-500/60 transition-all duration-300"
           >
             <div className="flex gap-3.5 items-center relative z-10">
               {/* Profile Image with Skull Badge Overlay */}
               <div className="relative shrink-0">
-                <div className="rounded-full p-[1.5px] bg-gradient-to-tr from-red-600/20 via-red-500/50 to-rose-500/20 shadow-md">
+                <div className="rounded-full p-[2px] bg-gradient-to-tr from-red-600/30 via-red-500/70 to-rose-500/30 shadow-md">
                   <ImageWithFallback
                     src={toast.picture}
                     alt={toast.username}
@@ -62,7 +62,7 @@ export default function NotificationToast({
                     className="h-[42px] w-[42px] rounded-full object-cover"
                   />
                 </div>
-                <div className="absolute -bottom-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full border border-red-500 bg-red-600 text-white shadow-sm shadow-red-950/50">
+                <div className="absolute -bottom-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full border border-red-400 bg-red-600 text-white shadow-sm shadow-red-950/50">
                   <Skull size={10} />
                 </div>
               </div>
@@ -72,23 +72,23 @@ export default function NotificationToast({
                 <div className="flex flex-col gap-0.5 min-w-0">
                   <div className="flex flex-wrap items-center gap-1.5 leading-none">
                     <span className="truncate text-[13px] font-black text-gray-100">{toast.username}</span>
-                    <span className="shrink-0 bg-red-500/10 border border-red-500/20 text-red-400 font-extrabold px-1.5 py-0.5 rounded text-[8px] tracking-wider font-mono">FIRST BLOOD</span>
+                    <span className="shrink-0 bg-gradient-to-r from-red-600 to-rose-600 border border-white/20 text-white font-black px-2 py-0.5 rounded-full text-[8px] tracking-wider font-mono shadow-[inset_0_1px_1px_rgba(255,255,255,0.4)]">FIRST BLOOD</span>
                   </div>
                   {toast.teamName && (
                     <span className="truncate text-[10px] font-semibold text-gray-400 leading-none">
-                      Team: <span className="text-gray-300 font-bold">{toast.teamName}</span>
+                      Team: <span className="text-gray-200 font-bold">{toast.teamName}</span>
                     </span>
                   )}
                 </div>
-                <div className="mt-2 text-[12px] leading-tight text-gray-300 font-semibold">
-                  secured first blood on <span className="font-extrabold text-red-400">{toast.challenge}</span> <span className="text-rose-500 font-extrabold">(+{toast.points || 0} pts)</span>
+                <div className="mt-2 text-[12px] leading-tight text-gray-200 font-semibold">
+                  secured first blood on <span className="font-extrabold text-red-400">{toast.challenge}</span> <span className="text-rose-400 font-extrabold">(+{toast.points || 0} pts)</span>
                 </div>
               </div>
 
               {/* Close Button */}
               <button
                 onClick={() => onDismissSolve(toast.id)}
-                className="shrink-0 self-start -mt-1 -mr-1 rounded p-1 text-gray-500 transition-all hover:bg-white/5 hover:text-gray-300"
+                className="shrink-0 self-start -mt-1 -mr-1 rounded-full p-1 text-gray-400 transition-all hover:bg-white/10 hover:text-gray-200 active:scale-95"
                 aria-label="Dismiss"
               >
                 <X size={14} />
@@ -103,12 +103,12 @@ export default function NotificationToast({
         ) : (
           <div
             key={toast.id}
-            className="pointer-events-auto relative overflow-hidden flex flex-col gap-2 rounded-xl border border-emerald-500/25 bg-[#060b13]/95 backdrop-blur-md px-4 py-3.5 shadow-[0_0_25px_rgba(16,185,129,0.12)] transition-all duration-300 hover:border-emerald-500/45 animate-toast-in"
+            className="pointer-events-auto relative overflow-hidden flex flex-col gap-2 rounded-2xl border border-emerald-500/40 bg-gradient-to-b from-emerald-950/80 via-black/85 to-emerald-950/60 backdrop-blur-xl px-4 py-3.5 shadow-[0_8px_32px_rgba(16,185,129,0.2),inset_0_1px_1px_rgba(255,255,255,0.2)] transition-all duration-300 hover:border-emerald-500/60 animate-toast-in"
           >
             <div className="flex gap-3.5 items-center relative z-10">
               {/* Profile Image with Flag Badge Overlay */}
               <div className="relative shrink-0">
-                <div className="rounded-full p-[1.5px] bg-gradient-to-tr from-emerald-600/20 via-emerald-500/50 to-teal-500/20 shadow-md">
+                <div className="rounded-full p-[2px] bg-gradient-to-tr from-emerald-600/30 via-emerald-500/70 to-teal-500/30 shadow-md">
                   <ImageWithFallback
                     src={toast.picture}
                     alt={toast.username}
@@ -117,7 +117,7 @@ export default function NotificationToast({
                     className="h-[42px] w-[42px] rounded-full object-cover"
                   />
                 </div>
-                <div className="absolute -bottom-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full border border-emerald-500 bg-emerald-600 text-white shadow-sm shadow-emerald-950/50">
+                <div className="absolute -bottom-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full border border-emerald-400 bg-emerald-600 text-white shadow-sm shadow-emerald-950/50">
                   <Flag size={10} />
                 </div>
               </div>
@@ -128,11 +128,11 @@ export default function NotificationToast({
                   <span className="truncate text-[13px] font-black text-gray-100">{toast.username}</span>
                   {toast.teamName && (
                     <span className="truncate text-[10px] font-semibold text-gray-400 leading-none">
-                      Team: <span className="text-gray-300 font-bold">{toast.teamName}</span>
+                      Team: <span className="text-gray-200 font-bold">{toast.teamName}</span>
                     </span>
                   )}
                 </div>
-                <div className="mt-2 text-[12px] leading-tight text-gray-300 font-semibold">
+                <div className="mt-2 text-[12px] leading-tight text-gray-200 font-semibold">
                   just solved <span className="font-extrabold text-blue-400">{toast.challenge}</span> <span className="text-emerald-400 font-extrabold">(+{toast.points || 0} pts)</span>
                 </div>
               </div>
@@ -140,7 +140,7 @@ export default function NotificationToast({
               {/* Close Button */}
               <button
                 onClick={() => onDismissSolve(toast.id)}
-                className="shrink-0 self-start -mt-1 -mr-1 rounded p-1 text-gray-400 transition-all hover:bg-white/10 hover:text-gray-300"
+                className="shrink-0 self-start -mt-1 -mr-1 rounded-full p-1 text-gray-400 transition-all hover:bg-white/10 hover:text-gray-200 active:scale-95"
                 aria-label="Dismiss"
               >
                 <X size={14} />

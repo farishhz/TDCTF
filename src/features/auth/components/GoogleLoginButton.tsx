@@ -29,7 +29,7 @@ export default function GoogleLoginButton() {
         type="button"
         onClick={handleGoogleSignIn}
         disabled={loading}
-        className="flex h-11 w-full items-center justify-center gap-3 rounded-xl border border-white/10 bg-white/5 text-sm font-medium text-gray-200 transition-all duration-200 hover:border-white/20 hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-60"
+        className="relative flex h-11 w-full items-center justify-center gap-3 overflow-hidden rounded-full border border-gray-300/40 bg-gradient-to-b from-white/40 to-white/10 text-sm font-medium text-gray-800 backdrop-blur-xl shadow-[0_8px_32px_0_rgba(0,0,0,0.05),inset_0_1px_1px_rgba(255,255,255,0.6)] transition-all duration-300 hover:-translate-y-[1px] hover:from-white/60 hover:to-white/20 hover:text-blue-600 hover:shadow-[0_8px_32px_0_rgba(0,0,0,0.1),inset_0_1px_1px_rgba(255,255,255,0.8)] dark:border-white/10 dark:from-white/10 dark:to-white/5 dark:text-gray-200 dark:shadow-[0_8px_32px_0_rgba(0,0,0,0.3),inset_0_1px_1px_rgba(255,255,255,0.1)] dark:hover:from-white/20 dark:hover:to-white/10 dark:hover:text-blue-300 dark:hover:shadow-[0_8px_32px_0_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.2)] disabled:cursor-not-allowed disabled:opacity-60 active:scale-[0.98]"
       >
         {loading ? (
           <Loader2 className="h-4 w-4 animate-spin text-gray-400" />

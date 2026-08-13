@@ -1,4 +1,4 @@
-# TDCTF - Next CTF
+# TDCTF - Capture The Flag Platform
 > 🚩 **Modern Capture The Flag (CTF) Platform** — Built for security competitions, workshops, and training. Features real-time scoring, team management, and admin controls. Deploy to Vercel + Supabase in minutes.
 
 ## 🎯 What is TDCTF?
