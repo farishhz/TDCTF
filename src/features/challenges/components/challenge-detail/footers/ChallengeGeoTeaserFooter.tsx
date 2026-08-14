@@ -26,7 +26,7 @@ export const ChallengeGeoTeaserFooter: React.FC<ChallengeGeoTeaserFooterProps> =
 
         <button
           onClick={onGoToMap}
-          className="flex h-[38px] px-5 select-none items-center justify-center gap-2 rounded-xl text-xs font-black uppercase tracking-widest text-white bg-amber-500 hover:bg-amber-600 shadow-lg shadow-amber-500/20 hover:shadow-amber-500/30 transition-all active:scale-95 shrink-0"
+          className="flex h-[38px] px-6 select-none items-center justify-center gap-2 rounded-full text-xs font-black uppercase tracking-widest text-white transition-all duration-300 bg-gradient-to-b from-amber-400/80 to-amber-600/80 hover:from-amber-400/95 hover:to-amber-600/95 dark:from-amber-500/60 dark:to-amber-700/60 border border-white/30 dark:border-white/20 backdrop-blur-xl shadow-[0_8px_24px_rgba(245,158,11,0.35),inset_0_1px_1px_rgba(255,255,255,0.6)] hover:shadow-[0_12px_32px_rgba(245,158,11,0.5),inset_0_1px_1px_rgba(255,255,255,0.8)] active:scale-[0.98] shrink-0"
         >
           <span>Geo Guess</span>
           <ArrowRight size={14} />
