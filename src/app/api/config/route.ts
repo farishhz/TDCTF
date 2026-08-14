@@ -16,6 +16,11 @@ const isProduction = process.env.NODE_ENV === 'production'
  * Menggunakan Supabase JWT dari Authorization header (Bearer token).
  */
 async function isAuthenticatedAdmin(request: Request): Promise<boolean> {
+  // Allow Dev Tools configuration in development mode (DEV ONLY)
+  if (process.env.NODE_ENV === 'development') {
+    return true
+  }
+
   if (!SUPABASE_URL || !SUPABASE_ANON_KEY) return false
 
   const authorization = request.headers.get('authorization') || ''

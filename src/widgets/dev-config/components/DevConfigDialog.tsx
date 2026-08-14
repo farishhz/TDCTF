@@ -25,6 +25,7 @@ import {
   DIALOG_CONTENT_CLASS_3XL,
   SURFACE_GLASS_INPUT_CLASS,
 } from "@/shared/styles"
+import { supabase } from '@/lib/supabase/client'
 
 type SetupConfig = {
   shortName: string
@@ -114,11 +115,23 @@ export default function DevConfigDialog({ open, onOpenChange }: DevConfigDialogP
     loadConfig()
   }, [open])
 
+  const getAuthHeaders = async (baseHeaders: Record<string, string> = {}) => {
+    try {
+      const { data: sessionData } = await supabase.auth.getSession()
+      const token = sessionData?.session?.access_token
+      if (token) {
+        return { ...baseHeaders, Authorization: `Bearer ${token}` }
+      }
+    } catch {}
+    return baseHeaders
+  }
+
   const loadConfig = async () => {
     setLoading(true)
     setError('')
     try {
-      const response = await fetch('/api/config', { cache: 'no-store' })
+      const headers = await getAuthHeaders()
+      const response = await fetch('/api/config', { cache: 'no-store', headers })
       const data = await response.json()
       if (!response.ok || !data.ok) throw new Error(data.error || 'Failed to load config')
       setConfig(data.config)
@@ -136,9 +149,10 @@ export default function DevConfigDialog({ open, onOpenChange }: DevConfigDialogP
     setMessage('')
     try {
       const payload = activeTab === 'config' ? config : { secret }
+      const headers = await getAuthHeaders({ 'Content-Type': 'application/json' })
       const response = await fetch('/api/config', {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify(payload),
       })
       const data = await response.json()
@@ -172,8 +186,6 @@ export default function DevConfigDialog({ open, onOpenChange }: DevConfigDialogP
     setSecret((current) => ({ ...current, [key]: !current[key] }))
   }
 
-
-
   const handleFileUpload = async (file: File, type: string) => {
     setUploadingType(type)
     setError('')
@@ -182,8 +194,10 @@ export default function DevConfigDialog({ open, onOpenChange }: DevConfigDialogP
       formData.append('file', file)
       formData.append('type', type)
 
+      const headers = await getAuthHeaders()
       const res = await fetch('/api/config', {
         method: 'POST',
+        headers,
         body: formData,
       })
       const data = await res.json()

@@ -56,7 +56,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: `${APP.shortName} - ${APP.fullName}`,
     description: APP.description,
-    images: [`${BASE_URL}/${APP.image_icon}`],
+    images: [`${BASE_URL}/${APP.image_preview}`],
   },
   alternates: {
     canonical: BASE_URL,
