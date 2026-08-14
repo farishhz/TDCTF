@@ -160,13 +160,18 @@ export default function ChallengeListContent({
             key={category}
             className="mb-8 relative z-0"
           >
-            <div className="flex items-center gap-2 mb-4 border-b border-gray-100 dark:border-gray-800 pb-2">
-              <div className="w-1.5 h-6 bg-blue-600 dark:bg-blue-500 rounded-full" />
-              <h2 className="text-lg md:text-xl font-black uppercase tracking-tight text-gray-900 dark:text-white">
-                {eventId === 'all' && String(category).toLowerCase() === 'intro'
-                  ? `Intro (${String(settings.event_main_label || 'Main')})`
-                  : category}
-              </h2>
+            <div className="flex items-center justify-between gap-3 mb-5 border-b border-gray-200/50 dark:border-white/10 pb-3">
+              <div className="flex items-center gap-3">
+                <div className="flex h-6 w-2 rounded-full bg-gradient-to-b from-blue-400 via-cyan-400 to-indigo-600 shadow-[0_0_12px_rgba(59,130,246,0.6),inset_0_1px_1px_rgba(255,255,255,0.6)]" />
+                <h2 className="text-lg md:text-xl font-black uppercase tracking-wider text-gray-900 dark:text-white">
+                  {eventId === 'all' && String(category).toLowerCase() === 'intro'
+                    ? `Intro (${String(settings.event_main_label || 'Main')})`
+                    : category}
+                </h2>
+              </div>
+              <span className="text-[11px] font-mono font-bold text-gray-500 dark:text-gray-400 px-3 py-1 rounded-full border border-white/20 dark:border-white/10 bg-white/40 dark:bg-white/5 backdrop-blur-xl shadow-[inset_0_1px_1px_rgba(255,255,255,0.15)]">
+                {categoryChallenges.length} {categoryChallenges.length === 1 ? 'challenge' : 'challenges'}
+              </span>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-5 auto-rows-max">
               {categoryChallenges.map((challenge) => (

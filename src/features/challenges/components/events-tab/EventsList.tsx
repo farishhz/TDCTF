@@ -38,9 +38,12 @@ export default function EventsList({
 
   return (
     <div className="space-y-5">
-      <h3 className="text-lg font-bold tracking-tight text-gray-900 dark:text-gray-100">
-        {title}
-      </h3>
+      <div className="flex items-center gap-3 border-b border-gray-200/50 dark:border-white/10 pb-2.5">
+        <div className="flex h-5 w-2 rounded-full bg-gradient-to-b from-blue-400 via-cyan-400 to-indigo-600 shadow-[0_0_12px_rgba(59,130,246,0.6),inset_0_1px_1px_rgba(255,255,255,0.6)]" />
+        <h3 className="text-lg md:text-xl font-black uppercase tracking-wider text-gray-900 dark:text-gray-100">
+          {title}
+        </h3>
+      </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-5">
         {mainEvent && (

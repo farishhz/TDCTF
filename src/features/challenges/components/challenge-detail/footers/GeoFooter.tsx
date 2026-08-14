@@ -58,10 +58,10 @@ export const GeoFooter: React.FC<GeoFooterProps> = ({
           <button
             onClick={onSubmit}
             disabled={!currentGuess || submitting || geoCooldownSeconds > 0 || (isRevealed && isRevealCardOpen)}
-            className={`flex h-[38px] min-w-[96px] px-5 select-none items-center justify-center rounded-xl text-xs font-black uppercase tracking-widest text-white shadow-lg transition-all active:scale-95 disabled:opacity-30
+            className={`flex h-[38px] min-w-[104px] px-5 select-none items-center justify-center rounded-full text-xs font-black uppercase tracking-widest text-white backdrop-blur-xl border border-white/20 shadow-lg transition-all duration-300 active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed
               ${geoCooldownSeconds > 0
-                ? 'bg-red-600 hover:bg-red-600 cursor-not-allowed shadow-red-500/10'
-                : 'bg-blue-600 shadow-blue-500/20 hover:bg-blue-500 hover:shadow-blue-500/30'}
+                ? 'bg-gradient-to-b from-red-500/80 to-red-700/80 shadow-[0_4px_16px_rgba(239,68,68,0.3),inset_0_1px_1px_rgba(255,255,255,0.4)]'
+                : 'bg-gradient-to-b from-blue-400/80 to-blue-600/80 hover:from-blue-400/95 hover:to-blue-600/95 shadow-[0_8px_24px_rgba(37,99,235,0.3),inset_0_1px_1px_rgba(255,255,255,0.5)]'}
             `}
           >
             {submitting ? (

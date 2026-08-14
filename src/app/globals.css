@@ -11,6 +11,23 @@
   --background-end-rgb: 250, 250, 250;
 }
 
+@keyframes shimmer-slow {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.animate-shimmer-slow {
+  background-size: 200% 200%;
+  animation: shimmer-slow 5s ease infinite;
+}
+
 .dark {
   --background: 222.9 38.9% 7.1%;
   --foreground: 0 0% 98%;

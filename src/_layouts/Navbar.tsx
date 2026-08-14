@@ -11,6 +11,7 @@ import { useEffect, useLayoutEffect, useState, useRef, useCallback } from 'react
 import APP from '@/config'
 import { TDCTF } from '@/_vars/const'
 import ImageWithFallback from '@/shared/components/ImageWithFallback'
+import BrandLogo from '@/shared/components/BrandLogo'
 import { useAuth } from '@/shared/contexts/AuthContext'
 import { useTheme } from '@/shared/contexts/ThemeContext'
 import { usePresence } from '@/shared/contexts'
@@ -257,7 +258,7 @@ export default function Navbar() {
                   size={42}
                   className="rounded-full"
                 />
-                <span className={`text-[1.35rem] font-extrabold tracking-wide ${theme === 'dark' ? 'text-white' : 'text-gray-900'} transition-all duration-200 group-hover:text-blue-500 dark:group-hover:text-blue-400`}>{APP.shortName}</span>
+                <BrandLogo name={APP.shortName} className="text-[1.35rem]" />
               </Link>
 
               {/* Desktop menu */}

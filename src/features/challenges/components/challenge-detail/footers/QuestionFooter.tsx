@@ -68,7 +68,7 @@ export const QuestionFooter: React.FC<QuestionFooterProps> = ({
                 onClick={async () => {
                   await onSubmitFlag()
                 }}
-                className="h-[38px] px-4 shrink-0 select-none rounded-xl bg-blue-600 hover:bg-blue-500 disabled:bg-blue-600/60 text-white text-xs font-black uppercase tracking-widest active:scale-95 transition-all gap-1.5 flex items-center justify-center shadow-md shadow-blue-500/10"
+                className="h-[38px] px-5 shrink-0 select-none rounded-full bg-gradient-to-b from-blue-400/80 to-blue-600/80 hover:from-blue-400/95 hover:to-blue-600/95 dark:from-blue-500/60 dark:to-blue-700/60 border border-white/20 backdrop-blur-xl text-white text-xs font-black uppercase tracking-widest active:scale-[0.98] transition-all duration-300 gap-1.5 flex items-center justify-center shadow-[0_8px_24px_rgba(37,99,235,0.3),inset_0_1px_1px_rgba(255,255,255,0.5)] disabled:opacity-40"
                 title="Submit Flag to Challenge"
               >
                 {submittingFlag ? (
@@ -82,7 +82,7 @@ export const QuestionFooter: React.FC<QuestionFooterProps> = ({
 
             <button
               onClick={() => setResetConfirmOpen(true)}
-              className="h-[38px] px-4 shrink-0 select-none items-center justify-center rounded-xl border border-red-500/20 bg-red-500/5 hover:bg-red-500/10 text-red-500 dark:text-red-400 dark:border-red-500/20 dark:hover:bg-red-500/10 text-xs font-black uppercase tracking-widest active:scale-95 transition-all flex gap-1.5"
+              className="h-[38px] px-5 shrink-0 select-none items-center justify-center rounded-full border border-red-500/30 bg-gradient-to-b from-red-500/20 to-red-700/20 hover:from-red-500/35 hover:to-red-700/35 backdrop-blur-xl text-red-400 text-xs font-black uppercase tracking-widest active:scale-[0.98] transition-all duration-300 flex gap-1.5 shadow-[inset_0_1px_1px_rgba(255,255,255,0.2)]"
             >
               <RotateCcw size={12} />
               <span>Reset</span>
