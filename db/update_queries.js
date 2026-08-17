@@ -29,6 +29,7 @@ const orderedFiles = [
   "queries/event_teams.sql",
   "queries/event_writeups.sql",
   "queries/notifications.sql",
+  "queries/announcements.sql",
   "queries/scheduled_jobs.sql",
   "queries/keep-alive.sql",
   "queries/system.sql",
