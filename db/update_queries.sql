@@ -6825,7 +6825,7 @@ DECLARE
   v_user_tags TEXT[] := '{}'::TEXT[];
 BEGIN
   IF v_user_id IS NOT NULL THEN
-    SELECT is_admin, COALESCE(tags, '{}'::TEXT[])
+    SELECT COALESCE(is_admin, FALSE), COALESCE(tags, '{}'::TEXT[])
     INTO v_is_admin, v_user_tags
     FROM public.users
     WHERE id = v_user_id;
@@ -6856,12 +6856,12 @@ BEGIN
   FROM public.announcements a
   LEFT JOIN public.announcement_reads ar
     ON ar.announcement_id = a.id AND ar.user_id = v_user_id
-  WHERE a.status = 'published'
-    AND a.starts_at <= (now() + INTERVAL '2 minutes')
+  WHERE a.status IN ('published', 'active')
+    AND (a.starts_at IS NULL OR a.starts_at <= (now() + INTERVAL '12 hours'))
     AND (a.ends_at IS NULL OR a.ends_at >= now())
     -- Filter Target
     AND (
-      a.target_type = 'all'
+      a.target_type IN ('all', 'everyone', '') OR a.target_type IS NULL
       OR (a.target_type = 'role' AND (
             ('admin' = ANY(a.target_roles) AND v_is_admin) OR
             ('user' = ANY(a.target_roles) AND NOT v_is_admin)
@@ -7103,7 +7103,7 @@ BEGIN
     p_title, p_short_description, p_content, p_banner_image_url, p_type, p_priority,
     COALESCE(p_channels, '{"modal", "notification"}'::TEXT[]), p_popup_style, p_status,
     p_target_type, p_target_roles, p_target_tags, p_target_event_id,
-    p_starts_at, p_ends_at, p_display_rule, p_cooldown_hours, p_is_dismissible,
+    COALESCE(p_starts_at, now()), p_ends_at, p_display_rule, p_cooldown_hours, p_is_dismissible,
     p_cta_text, p_cta_link, p_cta_target, v_user_id
   )
   RETURNING id INTO v_new_id;
@@ -7172,7 +7172,7 @@ BEGIN
     target_roles = p_target_roles,
     target_tags = p_target_tags,
     target_event_id = p_target_event_id,
-    starts_at = p_starts_at,
+    starts_at = COALESCE(p_starts_at, starts_at, now()),
     ends_at = p_ends_at,
     display_rule = p_display_rule,
     cooldown_hours = p_cooldown_hours,
@@ -7268,7 +7268,7 @@ END;
 $$ LANGUAGE plpgsql
 SECURITY DEFINER SET search_path = public, auth, extensions;
 GRANT EXECUTE ON FUNCTION admin_delete_announcement(UUID) TO authenticated;
--- 9. RLS POLICIES
+-- 9. RLS POLICIES & GRANTS
 ALTER TABLE public.announcements ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.announcement_reads ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "Announcements readable by everyone" ON public.announcements;
@@ -7288,6 +7288,9 @@ CREATE POLICY "Announcement reads user self"
   FOR ALL
   USING (auth.uid() = user_id OR is_admin())
   WITH CHECK (auth.uid() = user_id OR is_admin());
+GRANT SELECT ON public.announcements TO anon, authenticated;
+GRANT ALL ON public.announcements TO service_role;
+GRANT ALL ON public.announcement_reads TO anon, authenticated, service_role;
 
 -- <<< END: queries/announcements.sql
 
