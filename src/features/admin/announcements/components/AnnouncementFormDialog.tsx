@@ -804,7 +804,7 @@ export default function AnnouncementFormDialog({
                     className="w-full h-10 rounded-xl border border-white/15 bg-[#0f172a] px-3 text-xs text-white focus:outline-none focus:ring-2 focus:ring-blue-500/40"
                   >
                     <option value="until_read">
-                      ✅ Show Until Read (Muncul sampai user klik 'Saya Mengerti')
+                      ✅ Show Until Read (Muncul sampai user klik &quot;Saya Mengerti&quot;)
                     </option>
                     <option value="once_per_session">
                       ⏱️ Show Once Per Session (Muncul 1x setiap user membuka browser)
