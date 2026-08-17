@@ -181,18 +181,18 @@ export default function AnnouncementPreviewModal({
                 initial={{ opacity: 0, scale: 0.95, y: 10 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.95, y: 10 }}
-                className="relative w-full max-w-xl overflow-hidden rounded-2xl sm:rounded-3xl border border-white/15 bg-[#0b101b]/98 text-gray-100 shadow-[0_25px_70px_rgba(0,0,0,0.85)] backdrop-blur-2xl"
+                className="relative w-full max-w-lg max-h-[75vh] flex flex-col overflow-hidden rounded-2xl sm:rounded-3xl border border-white/15 bg-[#0b101b]/98 text-gray-100 shadow-[0_25px_70px_rgba(0,0,0,0.85)] backdrop-blur-2xl"
               >
                 {/* Close Button */}
                 {data.is_dismissible && (
-                  <div className="absolute top-3.5 right-3.5 z-30 flex h-8 w-8 items-center justify-center rounded-full bg-black/60 backdrop-blur-md border border-white/15 text-gray-300">
+                  <div className="absolute top-3 right-3 z-30 flex h-7 w-7 sm:h-8 sm:w-8 items-center justify-center rounded-full bg-black/60 backdrop-blur-md border border-white/15 text-gray-300">
                     <X className="h-4 w-4" />
                   </div>
                 )}
 
                 {/* Banner Hero Image */}
                 {data.banner_image_url && (
-                  <div className="relative aspect-[21/9] sm:aspect-[2.4/1] w-full overflow-hidden border-b border-white/10 bg-black/50">
+                  <div className="shrink-0 relative w-full h-32 sm:h-36 overflow-hidden border-b border-white/10 bg-black/50">
                     <img
                       src={data.banner_image_url}
                       alt={data.title}
@@ -206,23 +206,23 @@ export default function AnnouncementPreviewModal({
                 )}
 
                 {/* Modal Body */}
-                <div className="p-5 sm:p-7 space-y-4">
+                <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-3.5 [scrollbar-width:thin] [scrollbar-color:rgba(255,255,255,0.15)_transparent]">
                   {/* Badges */}
                   <div className="flex items-center gap-2">
                     <span
-                      className={`select-none text-[11px] font-bold uppercase tracking-wider px-2 py-0.5 rounded border ${typeInfo.className}`}
+                      className={`select-none text-[10px] sm:text-[11px] font-bold uppercase tracking-wider px-2 py-0.5 rounded border ${typeInfo.className}`}
                     >
                       {typeInfo.label}
                     </span>
 
                     {data.priority === 'critical' && (
-                      <span className="select-none text-[11px] font-bold uppercase tracking-wider px-2 py-0.5 rounded border bg-red-500/10 text-red-400 border-red-500/25">
+                      <span className="select-none text-[10px] sm:text-[11px] font-bold uppercase tracking-wider px-2 py-0.5 rounded border bg-red-500/10 text-red-400 border-red-500/25">
                         Critical
                       </span>
                     )}
 
                     {data.priority === 'high' && (
-                      <span className="select-none text-[11px] font-bold uppercase tracking-wider px-2 py-0.5 rounded border bg-amber-500/10 text-amber-400 border-amber-500/25">
+                      <span className="select-none text-[10px] sm:text-[11px] font-bold uppercase tracking-wider px-2 py-0.5 rounded border bg-amber-500/10 text-amber-400 border-amber-500/25">
                         High Priority
                       </span>
                     )}
@@ -230,18 +230,18 @@ export default function AnnouncementPreviewModal({
 
                   {/* Title & Short Description */}
                   <div>
-                    <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight leading-snug">
+                    <h2 className="text-lg sm:text-xl font-bold text-white tracking-tight leading-snug">
                       {data.title || 'Judul Pengumuman...'}
                     </h2>
                     {data.short_description && (
-                      <p className="mt-1 text-xs sm:text-sm text-gray-300 leading-relaxed font-normal">
+                      <p className="mt-1 text-xs text-gray-300 leading-relaxed font-normal">
                         {data.short_description}
                       </p>
                     )}
                   </div>
 
                   {/* Markdown Content */}
-                  <div className="max-h-[40vh] overflow-y-auto pr-1 text-xs sm:text-sm text-gray-300 leading-relaxed space-y-3 prose prose-invert prose-p:my-1.5 prose-headings:text-white prose-headings:font-bold prose-code:bg-black/50 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-code:border prose-code:border-white/10 prose-code:text-blue-300 prose-ul:my-1.5 prose-li:my-0.5 max-w-none">
+                  <div className="text-xs sm:text-sm text-gray-300 leading-relaxed space-y-2.5 prose prose-invert prose-p:my-1 prose-headings:text-white prose-headings:font-bold prose-headings:text-sm prose-code:bg-black/50 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-code:border prose-code:border-white/10 prose-code:text-blue-300 prose-ul:my-1 prose-li:my-0.5 max-w-none">
                     {data.content ? (
                       <ReactMarkdown remarkPlugins={[remarkGfm, remarkBreaks]}>
                         {data.content}
@@ -250,28 +250,28 @@ export default function AnnouncementPreviewModal({
                       <p className="italic text-gray-500">Konten pengumuman kosong...</p>
                     )}
                   </div>
+                </div>
 
-                  {/* Actions Footer */}
-                  <div className="flex items-center justify-end gap-2.5 pt-4 border-t border-white/10">
+                {/* Actions Footer */}
+                <div className="shrink-0 p-3.5 sm:p-4.5 border-t border-white/10 bg-[#0b101b]/90 backdrop-blur-md flex items-center justify-end gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-8 sm:h-9 px-3 sm:px-4 rounded-xl border border-white/15 bg-white/5 text-xs font-semibold text-gray-200"
+                  >
+                    <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400 mr-1.5" />
+                    <span>Saya Mengerti</span>
+                  </Button>
+
+                  {data.cta_text && (
                     <Button
-                      variant="outline"
                       size="sm"
-                      className="h-9 px-4 rounded-xl border border-white/15 bg-white/5 text-xs font-semibold text-gray-200"
+                      className="h-8 sm:h-9 px-3.5 sm:px-4.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 text-xs font-semibold text-white shadow-lg shadow-blue-500/25 flex items-center gap-1.5"
                     >
-                      <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400 mr-1.5" />
-                      <span>Saya Mengerti</span>
+                      <span>{data.cta_text}</span>
+                      <ExternalLink className="h-3.5 w-3.5 opacity-80" />
                     </Button>
-
-                    {data.cta_text && (
-                      <Button
-                        size="sm"
-                        className="h-9 px-4 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 text-xs font-semibold text-white shadow-lg shadow-blue-500/25 flex items-center gap-1.5"
-                      >
-                        <span>{data.cta_text}</span>
-                        <ExternalLink className="h-3.5 w-3.5 opacity-80" />
-                      </Button>
-                    )}
-                  </div>
+                  )}
                 </div>
               </motion.div>
             )}
