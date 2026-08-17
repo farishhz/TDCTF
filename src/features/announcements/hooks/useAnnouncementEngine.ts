@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
+import { useAuth } from '@/shared/contexts/AuthContext'
 import type { ClientAnnouncement } from '../types'
 import {
   fetchActiveAnnouncements,
@@ -9,11 +10,12 @@ import {
   subscribeToRealtimeAnnouncements,
 } from '../services/announcement-client.service'
 
-const STORAGE_PREFIX = 'tdctf_announcement_v1_'
+const STORAGE_PREFIX = 'tdctf_announcement_v2_'
 
 export function useAnnouncementEngine() {
   const router = useRouter()
   const pathname = usePathname()
+  const { user, loading: authLoading } = useAuth()
 
   const [announcements, setAnnouncements] = useState<ClientAnnouncement[]>([])
   const [loading, setLoading] = useState(true)
@@ -26,6 +28,24 @@ export function useAnnouncementEngine() {
   // Track session dismissals in state
   const [dismissedIds, setDismissedIds] = useState<Set<string>>(() => new Set())
   const [readIds, setReadIds] = useState<Set<string>>(() => new Set())
+
+  // Reset in-memory tracking on user switch
+  const lastUserIdRef = useRef<string | undefined>(user?.id)
+  useEffect(() => {
+    if (lastUserIdRef.current !== user?.id) {
+      lastUserIdRef.current = user?.id
+      setDismissedIds(new Set())
+      setReadIds(new Set())
+    }
+  }, [user?.id])
+
+  const getUserStorageKey = useCallback(
+    (keyType: string, itemId: string) => {
+      const userPart = user?.id ? `u_${user.id}` : 'guest'
+      return `${STORAGE_PREFIX}${userPart}_${keyType}_${itemId}`
+    },
+    [user?.id]
+  )
 
   const isEligibleToDisplay = useCallback(
     (item: ClientAnnouncement, channel: 'modal' | 'top_banner' | 'floating_card') => {
@@ -47,18 +67,18 @@ export function useAnnouncementEngine() {
       try {
         // 4. Check sessionStorage for once_per_session
         if (item.display_rule === 'once_per_session') {
-          const sessionVal = sessionStorage.getItem(`${STORAGE_PREFIX}session_${item.id}`)
+          const sessionVal = sessionStorage.getItem(getUserStorageKey('session', item.id))
           if (sessionVal) return false
         }
 
         // 5. Check localStorage for first_visit
         if (item.display_rule === 'first_visit') {
-          const firstVal = localStorage.getItem(`${STORAGE_PREFIX}first_${item.id}`)
+          const firstVal = localStorage.getItem(getUserStorageKey('first', item.id))
           if (firstVal) return false
         }
 
         // 6. Check cooldown from localStorage
-        const dismissedAtStr = localStorage.getItem(`${STORAGE_PREFIX}dismissed_${item.id}`)
+        const dismissedAtStr = localStorage.getItem(getUserStorageKey('dismissed', item.id))
         if (dismissedAtStr) {
           const dismissedAt = parseInt(dismissedAtStr, 10)
           const cooldownMs = (item.cooldown_hours || 24) * 3600 * 1000
@@ -72,7 +92,7 @@ export function useAnnouncementEngine() {
 
       return true
     },
-    [dismissedIds, readIds]
+    [dismissedIds, readIds, getUserStorageKey]
   )
 
   const evaluateActiveItems = useCallback(
@@ -124,10 +144,12 @@ export function useAnnouncementEngine() {
     }
   }, [evaluateActiveItems])
 
-  // Initial load & route change re-evaluation
+  // Initial load & route change or auth change re-evaluation
   useEffect(() => {
-    void loadAnnouncements()
-  }, [loadAnnouncements, pathname])
+    if (!authLoading) {
+      void loadAnnouncements()
+    }
+  }, [loadAnnouncements, pathname, user?.id, authLoading])
 
   // Realtime updates
   useEffect(() => {
@@ -153,8 +175,8 @@ export function useAnnouncementEngine() {
 
       // Save to storage
       try {
-        localStorage.setItem(`${STORAGE_PREFIX}read_${item.id}`, Date.now().toString())
-        sessionStorage.setItem(`${STORAGE_PREFIX}session_${item.id}`, '1')
+        localStorage.setItem(getUserStorageKey('read', item.id), Date.now().toString())
+        sessionStorage.setItem(getUserStorageKey('session', item.id), '1')
       } catch {}
 
       // Close modal / banner / card if it was this item
@@ -171,7 +193,7 @@ export function useAnnouncementEngine() {
         }
       }
     },
-    [activeModal, activeBanner, activeCard, router]
+    [activeModal, activeBanner, activeCard, router, getUserStorageKey]
   )
 
   const handleDismiss = useCallback(
@@ -187,9 +209,9 @@ export function useAnnouncementEngine() {
 
       // Save to storage
       try {
-        localStorage.setItem(`${STORAGE_PREFIX}dismissed_${item.id}`, Date.now().toString())
-        localStorage.setItem(`${STORAGE_PREFIX}first_${item.id}`, '1')
-        sessionStorage.setItem(`${STORAGE_PREFIX}session_${item.id}`, '1')
+        localStorage.setItem(getUserStorageKey('dismissed', item.id), Date.now().toString())
+        localStorage.setItem(getUserStorageKey('first', item.id), '1')
+        sessionStorage.setItem(getUserStorageKey('session', item.id), '1')
       } catch {}
 
       // Close display
@@ -197,7 +219,7 @@ export function useAnnouncementEngine() {
       if (activeBanner?.id === item.id) setActiveBanner(null)
       if (activeCard?.id === item.id) setActiveCard(null)
     },
-    [activeModal, activeBanner, activeCard]
+    [activeModal, activeBanner, activeCard, getUserStorageKey]
   )
 
   return {

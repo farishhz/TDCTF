@@ -6857,7 +6857,7 @@ BEGIN
   LEFT JOIN public.announcement_reads ar
     ON ar.announcement_id = a.id AND ar.user_id = v_user_id
   WHERE a.status = 'published'
-    AND a.starts_at <= now()
+    AND a.starts_at <= (now() + INTERVAL '2 minutes')
     AND (a.ends_at IS NULL OR a.ends_at >= now())
     -- Filter Target
     AND (

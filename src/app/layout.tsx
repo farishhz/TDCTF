@@ -8,7 +8,6 @@ import './globals.css'
 import { Toaster } from "react-hot-toast"
 import Navbar from '@/_layouts/Navbar'
 import ScrollToggle from '@/_layouts/components/ScrollToggle'
-import DiscordInvitePopup from '@/shared/components/DiscordInvitePopup'
 import AppUpdateNotifier from '@/shared/components/AppUpdateNotifier'
 import { AnnouncementEngineHost } from '@/features/announcements'
 import { AuthProvider } from '@/shared/contexts/AuthContext'
@@ -126,7 +125,6 @@ export default async function RootLayout({
                       <div className="pt-14">{children}</div>
                       <Toaster position="top-right" reverseOrder={false} />
                       <ScrollToggle />
-                      <DiscordInvitePopup />
                       <AppUpdateNotifier />
                       <AnnouncementEngineHost />
                     </CategoriesProvider>

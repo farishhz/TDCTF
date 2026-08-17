@@ -181,97 +181,96 @@ export default function AnnouncementPreviewModal({
                 initial={{ opacity: 0, scale: 0.95, y: 10 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.95, y: 10 }}
-                className="w-full max-w-xl overflow-hidden rounded-2xl border border-white/20 bg-[#0d1424]/90 p-5 shadow-[0_25px_60px_rgba(0,0,0,0.6)] backdrop-blur-2xl"
+                className="relative w-full max-w-xl overflow-hidden rounded-2xl sm:rounded-3xl border border-white/15 bg-[#0b101b]/98 text-gray-100 shadow-[0_25px_70px_rgba(0,0,0,0.85)] backdrop-blur-2xl"
               >
-                {/* Banner Image */}
+                {/* Close Button */}
+                {data.is_dismissible && (
+                  <div className="absolute top-3.5 right-3.5 z-30 flex h-8 w-8 items-center justify-center rounded-full bg-black/60 backdrop-blur-md border border-white/15 text-gray-300">
+                    <X className="h-4 w-4" />
+                  </div>
+                )}
+
+                {/* Banner Hero Image */}
                 {data.banner_image_url && (
-                  <div className="mb-4 overflow-hidden rounded-xl border border-white/10 bg-black/40 aspect-[21/9] relative">
+                  <div className="relative aspect-[21/9] sm:aspect-[2.4/1] w-full overflow-hidden border-b border-white/10 bg-black/50">
                     <img
                       src={data.banner_image_url}
                       alt={data.title}
                       className="h-full w-full object-cover object-center"
                       onError={(e) => {
-                        e.currentTarget.style.display = 'none'
+                        e.currentTarget.parentElement?.remove()
                       }}
                     />
+                    <div className="absolute inset-0 bg-gradient-to-t from-[#0b101b] via-transparent to-transparent opacity-80" />
                   </div>
                 )}
 
-                {/* Badges & Header */}
-                <div className="flex items-center justify-between gap-2 pb-2">
-                  <div className="flex items-center gap-2 flex-wrap">
+                {/* Modal Body */}
+                <div className="p-5 sm:p-7 space-y-4">
+                  {/* Badges */}
+                  <div className="flex items-center gap-2">
                     <span
-                      className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[10px] font-bold border ${typeInfo.className}`}
+                      className={`select-none text-[11px] font-bold uppercase tracking-wider px-2 py-0.5 rounded border ${typeInfo.className}`}
                     >
-                      <TypeIcon className="h-3 w-3" />
                       {typeInfo.label}
                     </span>
-                    <span
-                      className={`inline-flex items-center rounded-full px-2 py-0.5 text-[9px] ${priorityInfo.className}`}
-                    >
-                      {priorityInfo.label}
-                    </span>
+
+                    {data.priority === 'critical' && (
+                      <span className="select-none text-[11px] font-bold uppercase tracking-wider px-2 py-0.5 rounded border bg-red-500/10 text-red-400 border-red-500/25">
+                        Critical
+                      </span>
+                    )}
+
+                    {data.priority === 'high' && (
+                      <span className="select-none text-[11px] font-bold uppercase tracking-wider px-2 py-0.5 rounded border bg-amber-500/10 text-amber-400 border-amber-500/25">
+                        High Priority
+                      </span>
+                    )}
                   </div>
 
-                  {data.is_dismissible && (
-                    <button
-                      type="button"
-                      className="rounded-lg p-1 text-gray-400 hover:bg-white/10 hover:text-white transition-colors"
-                    >
-                      <X className="h-4 w-4" />
-                    </button>
-                  )}
-                </div>
-
-                {/* Title */}
-                <h3 className="mt-2 text-lg font-bold text-white tracking-tight leading-snug">
-                  {data.title || 'Judul Pengumuman...'}
-                </h3>
-
-                {/* Short Description */}
-                {data.short_description && (
-                  <p className="mt-1 text-xs text-gray-300 font-medium leading-relaxed">
-                    {data.short_description}
-                  </p>
-                )}
-
-                {/* Markdown Content */}
-                <div className="mt-3.5 max-h-56 overflow-y-auto rounded-xl border border-white/10 bg-white/[0.02] p-3 text-xs leading-relaxed text-gray-300 scroll-hidden prose prose-invert prose-xs max-w-none">
-                  {data.content ? (
-                    <ReactMarkdown remarkPlugins={[remarkGfm, remarkBreaks]}>
-                      {data.content}
-                    </ReactMarkdown>
-                  ) : (
-                    <p className="italic text-gray-500">Konten pengumuman kosong...</p>
-                  )}
-                </div>
-
-                {/* Actions Footer */}
-                <div className="mt-5 flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-white/10">
-                  <div className="text-[11px] text-gray-400 flex items-center gap-1.5">
-                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                    <span>TDCTF Broadcast</span>
+                  {/* Title & Short Description */}
+                  <div>
+                    <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight leading-snug">
+                      {data.title || 'Judul Pengumuman...'}
+                    </h2>
+                    {data.short_description && (
+                      <p className="mt-1 text-xs sm:text-sm text-gray-300 leading-relaxed font-normal">
+                        {data.short_description}
+                      </p>
+                    )}
                   </div>
 
-                  <div className="flex items-center gap-2">
+                  {/* Markdown Content */}
+                  <div className="max-h-[40vh] overflow-y-auto pr-1 text-xs sm:text-sm text-gray-300 leading-relaxed space-y-3 prose prose-invert prose-p:my-1.5 prose-headings:text-white prose-headings:font-bold prose-code:bg-black/50 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-code:border prose-code:border-white/10 prose-code:text-blue-300 prose-ul:my-1.5 prose-li:my-0.5 max-w-none">
+                    {data.content ? (
+                      <ReactMarkdown remarkPlugins={[remarkGfm, remarkBreaks]}>
+                        {data.content}
+                      </ReactMarkdown>
+                    ) : (
+                      <p className="italic text-gray-500">Konten pengumuman kosong...</p>
+                    )}
+                  </div>
+
+                  {/* Actions Footer */}
+                  <div className="flex items-center justify-end gap-2.5 pt-4 border-t border-white/10">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-9 px-4 rounded-xl border border-white/15 bg-white/5 text-xs font-semibold text-gray-200"
+                    >
+                      <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400 mr-1.5" />
+                      <span>Saya Mengerti</span>
+                    </Button>
+
                     {data.cta_text && (
                       <Button
                         size="sm"
-                        className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-semibold text-xs h-8 px-4 rounded-xl shadow-lg shadow-blue-500/20 flex items-center gap-1.5"
+                        className="h-9 px-4 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 text-xs font-semibold text-white shadow-lg shadow-blue-500/25 flex items-center gap-1.5"
                       >
                         <span>{data.cta_text}</span>
-                        <ExternalLink className="h-3 w-3 opacity-80" />
+                        <ExternalLink className="h-3.5 w-3.5 opacity-80" />
                       </Button>
                     )}
-
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="border-white/20 hover:bg-white/10 text-white text-xs h-8 px-3.5 rounded-xl font-medium"
-                    >
-                      <CheckCircle2 className="h-3.5 w-3.5 mr-1 text-emerald-400" />
-                      Saya Mengerti
-                    </Button>
                   </div>
                 </div>
               </motion.div>
