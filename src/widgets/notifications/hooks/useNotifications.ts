@@ -17,6 +17,7 @@ import {
   getNotifSeenIds,
   addNotifSeenIds,
 } from '@/lib/storage/user-state'
+import { fetchActiveAnnouncements } from '@/features/announcements'
 import { useAuth } from '@/shared/contexts/AuthContext'
 import { useTheme } from '@/shared/contexts/ThemeContext'
 
@@ -92,8 +93,28 @@ export function useNotifications() {
     setNotifOpen((v) => !v)
     if (!notifOpen && user) {
       setNotifLoading(true)
-      const items = await getNotifications(30, 0)
-      setNotifItems((prev) => mergeNotifications(prev, (items || []) as any))
+      const [items, announcements] = await Promise.all([
+        getNotifications(30, 0),
+        fetchActiveAnnouncements().catch(() => []),
+      ])
+
+      const announcementNotifs = (announcements || [])
+        .filter((a) => a.channels?.includes('notification'))
+        .map((a) => ({
+          id: a.id,
+          title: `[${a.type.toUpperCase()}] ${a.title}`,
+          message: a.short_description || a.content.slice(0, 150),
+          level:
+            a.type === 'maintenance' || a.type === 'warning'
+              ? 'hint'
+              : a.type === 'event'
+              ? 'info_challenges'
+              : 'info_platform',
+          created_at: a.starts_at || a.created_at,
+        }))
+
+      const allItems = [...(items || []), ...announcementNotifs]
+      setNotifItems((prev) => mergeNotifications(prev, allItems as any))
       setNotifLoading(false)
     }
   }, [notifOpen, user, mergeNotifications])
@@ -256,19 +277,42 @@ export function useNotifications() {
     }
   }, [user, getSeenNotifIds])
 
-  // Initial unread count fetch
+  // Initial unread count fetch (including active announcement notifications)
   useEffect(() => {
     if (!user) {
       setNotifUnreadCount(0)
       return
     }
-    ; (async () => {
-      const items = await getNotifications(50, 0)
-      const seen = getSeenNotifIds()
-      const unread = (items || []).filter((n: any) => !seen.has(n.id)).length
-      setNotifUnreadCount(unread)
+    ;(async () => {
+      try {
+        const [items, announcements] = await Promise.all([
+          getNotifications(50, 0),
+          fetchActiveAnnouncements().catch(() => []),
+        ])
+
+        const announcementNotifs = (announcements || [])
+          .filter((a) => a.channels?.includes('notification'))
+          .map((a) => ({
+            id: a.id,
+            title: `[${a.type.toUpperCase()}] ${a.title}`,
+            message: a.short_description || a.content.slice(0, 150),
+            level:
+              a.type === 'maintenance' || a.type === 'warning'
+                ? 'hint'
+                : a.type === 'event'
+                ? 'info_challenges'
+                : 'info_platform',
+            created_at: a.starts_at || a.created_at,
+          }))
+
+        const allItems = mergeNotifications(items || [], announcementNotifs as any)
+        setNotifItems(allItems)
+        const seen = getSeenNotifIds()
+        const unread = allItems.filter((n: any) => !seen.has(n.id)).length
+        setNotifUnreadCount(unread)
+      } catch {}
     })()
-  }, [user, getSeenNotifIds])
+  }, [user, getSeenNotifIds, mergeNotifications])
 
   // Real-time solves subscription
   useEffect(() => {

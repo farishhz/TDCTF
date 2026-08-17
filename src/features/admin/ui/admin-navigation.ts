@@ -10,6 +10,7 @@ import {
   ShieldCheck,
   Settings,
   FolderOpen,
+  Megaphone,
 } from 'lucide-react'
 
 export type AdminNavItem = {
@@ -31,6 +32,11 @@ export const ADMIN_NAV_ITEMS: AdminNavItem[] = [
     label: 'Overview',
     icon: LayoutDashboard,
     aliases: ['/admin'],
+  },
+  {
+    href: '/admin/announcements',
+    label: 'Announcements',
+    icon: Megaphone,
   },
   {
     href: '/admin/event',

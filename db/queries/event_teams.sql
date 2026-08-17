@@ -335,18 +335,6 @@ RETURNS TEXT AS $$
 DECLARE
   v_admin_id UUID := auth.uid()::uuid;
   v_token TEXT;
-END;
-$$;
-
--- Wait! We'll write the full generate token function logic
-CREATE OR REPLACE FUNCTION admin_generate_team_token(
-  p_event_id UUID,
-  p_team_id UUID
-)
-RETURNS TEXT AS $$
-DECLARE
-  v_admin_id UUID := auth.uid()::uuid;
-  v_token TEXT;
 BEGIN
   IF NOT is_admin() THEN
     RAISE EXCEPTION 'Unauthorized';
