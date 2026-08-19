@@ -272,12 +272,36 @@ export const AuthService = {
    * Get current user details from DB and Auth
    */
   async getCurrentUser(): Promise<User | null> {
+    const retryRpc = async <T = any>(
+      fn: () => PromiseLike<{ data: T | null; error: any }>,
+      retries = 3,
+      delay = 800
+    ): Promise<{ data: T | null; error: any }> => {
+      let result = await fn()
+      for (let attempt = 1; attempt <= retries && result.error; attempt++) {
+        const msg = String(result.error?.message || '').toLowerCase()
+        if (
+          msg.includes('schema cache') ||
+          msg.includes('connection') ||
+          msg.includes('timeout') ||
+          msg.includes('network') ||
+          msg.includes('fetch')
+        ) {
+          await new Promise((resolve) => setTimeout(resolve, delay * attempt))
+          result = await fn()
+        } else {
+          break
+        }
+      }
+      return result
+    }
+
     try {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return null
 
-      let { data, error } = await supabase.rpc('get_user_profile', { p_id: user.id })
-      let userData = data && data.length > 0 ? data[0] : null
+      let { data, error } = await retryRpc<any[]>(() => supabase.rpc('get_user_profile', { p_id: user.id }))
+      let userData = Array.isArray(data) && data.length > 0 ? data[0] : null
 
       if (!userData) {
         const rawUsername =
@@ -293,21 +317,25 @@ export const AuthService = {
           .slice(0, 28)
           || 'user_' + user.id.substring(0, 8)
 
-        const { error: rpcError } = await supabase.rpc('create_profile', {
-          p_id: user.id,
-          p_username: username
-        })
+        const { error: rpcError } = await retryRpc(() =>
+          supabase.rpc('create_profile', {
+            p_id: user.id,
+            p_username: username
+          })
+        )
         if (rpcError) {
           console.error('[getCurrentUser] create_profile RPC error:', rpcError.message, rpcError)
           throw new Error(`DB_CREATE_PROFILE_ERROR: ${rpcError.message}`)
         }
 
-        const { data: newData, error: newError } = await supabase.rpc('get_user_profile', { p_id: user.id })
+        const { data: newData, error: newError } = await retryRpc<any[]>(() =>
+          supabase.rpc('get_user_profile', { p_id: user.id })
+        )
         if (newError) {
           console.error('[getCurrentUser] get_user_profile RPC error after creation:', newError.message, newError)
           throw new Error(`DB_GET_PROFILE_ERROR: ${newError.message}`)
         }
-        userData = newData && newData.length > 0 ? newData[0] : null
+        userData = Array.isArray(newData) && newData.length > 0 ? newData[0] : null
         if (!userData) {
           console.error('[getCurrentUser] get_user_profile returned empty data after creation')
           throw new Error('DB_PROFILE_EMPTY_AFTER_CREATION')
