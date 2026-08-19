@@ -18,7 +18,7 @@ BEGIN
   END LOOP;
 END $$;
 
--- Drop all functions in public schema
+-- Drop all functions in public schema (EXCLUDING extension functions)
 DO $$
 DECLARE r record;
 BEGIN
@@ -26,7 +26,9 @@ BEGIN
     SELECT p.oid::regprocedure::text AS funcsig
     FROM pg_proc p
     JOIN pg_namespace n ON p.pronamespace = n.oid
+    LEFT JOIN pg_depend d ON d.objid = p.oid AND d.deptype = 'e'
     WHERE n.nspname = 'public'
+      AND d.objid IS NULL
   LOOP
     EXECUTE format('DROP FUNCTION IF EXISTS %s CASCADE;', r.funcsig);
   END LOOP;
@@ -45,7 +47,7 @@ BEGIN
   END LOOP;
 END $$;
 
--- Drop all triggers in public schema
+-- Drop all triggers in public schema (EXCLUDING extension triggers)
 DO $$
 DECLARE r record;
 BEGIN
@@ -54,8 +56,13 @@ BEGIN
     FROM pg_trigger
     JOIN pg_class c ON pg_trigger.tgrelid = c.oid
     JOIN pg_namespace n ON c.relnamespace = n.oid
+    LEFT JOIN pg_depend d ON d.objid = pg_trigger.oid AND d.deptype = 'e'
     WHERE n.nspname = 'public' AND NOT tgisinternal
+      AND d.objid IS NULL
   LOOP
     EXECUTE format('DROP TRIGGER IF EXISTS %I ON public.%I CASCADE;', r.tgname, r.relname);
   END LOOP;
 END $$;
+
+-- Ensure schema permissions are granted to all standard roles
+GRANT USAGE ON SCHEMA public TO postgres, anon, authenticated, service_role;
