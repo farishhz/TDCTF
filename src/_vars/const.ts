@@ -29,7 +29,9 @@ export const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KE
 export const MAINTENANCE_MODE = process.env.NEXT_PUBLIC_MAINTENANCE_MODE || 'no'
 
 // Env-backed site configuration
-export const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"
+export const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL && process.env.NEXT_PUBLIC_SITE_URL !== 'http://localhost:3000'
+  ? process.env.NEXT_PUBLIC_SITE_URL
+  : (process.env.NODE_ENV === 'production' ? 'https://ctf.tenkadeveloper.web.id' : (process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'))
 
 // Turnstile captcha configuration
 export const CAPTCHA_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY?.trim() || ''

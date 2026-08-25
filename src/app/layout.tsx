@@ -19,64 +19,97 @@ import { getPageMinHeightStyle, PAGE_BG_BASE_CLASS } from '@/shared/styles/page-
 import { THEME_PRIMARY_SELECTION_CLASS } from '@/shared/styles/theme-colors'
 import APP from '@/config'
 import { BASE_URL } from '@/_vars/const'
+import {
+  getWebsiteJsonLd,
+  getOrganizationJsonLd,
+  getSoftwareApplicationJsonLd,
+  getFaqPageJsonLd,
+} from '@/shared/lib/seo-structured-data'
 
 export const metadata: Metadata = {
   metadataBase: new URL(BASE_URL),
-  title: `${APP.shortName} - ${APP.fullName}`,
+  title: {
+    default: `${APP.shortName} | Capture The Flag Platform - Cybersecurity Competition`,
+    template: `%s | ${APP.shortName} - Capture The Flag`,
+  },
   description: APP.description,
-  keywords: ['CTF', 'Capture The Flag', 'Cybersecurity', 'Hacking Challenge', 'CSCV', 'InfoSec', 'ctftime', 'ctftime.org', 'CTF Platform', 'Cybersecurity Competition', 'Ethical Hacking', 'Vulnerability Assessment', 'Penetration Testing', 'Digital Forensics', 'Malware Analysis', 'Network Security', 'Web Application Security', 'Cryptography', 'Reverse Engineering', 'Security Training', 'Cyber Defense', 'Bug Bounty', 'Red Teaming', 'Blue Teaming', 'Cybersecurity Community', 'CTF Events', 'CTF Challenges', 'Cybersecurity Education', 'CTF Teams', 'Cybersecurity Awareness', 'Capture The Flag Events', 'CTF Challenges Platform', 'Cybersecurity Skills', 'CTF Competitions', 'Cybersecurity Learning', 'CTF Resources', 'Cybersecurity Tools', 'CTF Tutorials', 'Cybersecurity Labs', 'CTF Write-ups', 'Cybersecurity News', 'CTF Strategies', 'Cybersecurity Research', 'CTF Techniques', 'Cybersecurity Conferences', 'CTF Workshops', 'Cybersecurity Careers', 'CTF Training', 'Cybersecurity Certifications', 'CTF Platforms', 'Cybersecurity Innovations', 'CTF Community', 'Cybersecurity Trends', 'CTF Development', 'Cybersecurity Solutions'],
-  authors: [{ name: 'alfarisiazmir', url: BASE_URL }],
-  creator: 'alfarisiazmir',
-  publisher: APP.fullName,
-  applicationName: APP.fullName,
+  keywords: [
+    'Capture The Flag',
+    'CTF',
+    'TDCTF',
+    'Tradevis CTF',
+    'CTF Platform',
+    'Capture The Flag Indonesia',
+    'Cybersecurity Competition',
+    'Ethical Hacking Challenges',
+    'Web Exploitation',
+    'Cryptography',
+    'Reverse Engineering',
+    'Digital Forensics',
+    'Binary Exploitation',
+    'Pwn',
+    'Blockchain CTF',
+    'Jeopardy CTF',
+    'CTF Time',
+    'Security Training',
+    'Dynamic Scoring CTF',
+    'Docker CTF Container',
+    'tdctl',
+    'Cybersecurity Arena',
+  ],
+  authors: [{ name: 'Alfarisi Azmir', url: 'https://github.com/farishhz' }],
+  creator: 'Alfarisi Azmir',
+  publisher: 'Tradevis CTF / Tenka Developer',
+  applicationName: `${APP.shortName} Platform`,
+  generator: 'Next.js',
   referrer: 'origin-when-cross-origin',
   robots: {
     index: true,
     follow: true,
-    googleBot: { index: true, follow: true },
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-video-preview': -1,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+    },
+  },
+  verification: {
+    google: 'googlee2e132e5e265367a.html',
+    other: {
+      'google-site-verification': ['googlee2e132e5e265367a.html', 'e2e132e5e265367a'],
+    },
   },
   openGraph: {
-    title: `${APP.shortName} - ${APP.fullName}`,
+    title: `${APP.shortName} | Capture The Flag Platform - Cybersecurity Competition`,
     description: APP.description,
     url: BASE_URL,
-    siteName: APP.fullName,
+    siteName: `${APP.shortName} - Capture The Flag Platform`,
     images: [
       {
         url: `${BASE_URL}/${APP.image_preview}`,
         width: 1200,
         height: 630,
-        alt: `${APP.shortName} - ${APP.fullName}`,
+        alt: `${APP.shortName} - Modern Capture The Flag (CTF) Platform`,
         type: 'image/png',
       },
     ],
     locale: 'id_ID',
+    alternateLocale: ['en_US'],
     type: 'website',
   },
   twitter: {
     card: 'summary_large_image',
-    title: `${APP.shortName} - ${APP.fullName}`,
+    title: `${APP.shortName} | Capture The Flag Platform - Cybersecurity Competition`,
     description: APP.description,
     images: [`${BASE_URL}/${APP.image_preview}`],
+    creator: '@farishhz',
   },
   alternates: {
     canonical: BASE_URL,
   },
-  other: {
-    // Structured data biar Google bisa detect
-    'application/ld+json': JSON.stringify({
-      "@context": "https://schema.org",
-      "@type": "WebSite",
-      "url": BASE_URL,
-      "name": `${APP.shortName} - ${APP.fullName}`,
-      "description": APP.description,
-      "image": `${BASE_URL}/${APP.image_icon}`,
-      "publisher": {
-        "@type": "Organization",
-        "name": APP.fullName,
-        "logo": `${BASE_URL}/${APP.image_icon}`
-      }
-    })
-  }
+  category: 'technology',
+  classification: 'Cybersecurity & Capture The Flag Competitions',
 }
 
 export default async function RootLayout({
@@ -88,9 +121,30 @@ export default async function RootLayout({
   const pathname = headersList.get('x-pathname') || ''
   const isMaintenancePage = pathname === '/maintenance'
 
+  const websiteJsonLd = getWebsiteJsonLd()
+  const organizationJsonLd = getOrganizationJsonLd()
+  const appJsonLd = getSoftwareApplicationJsonLd()
+  const faqJsonLd = getFaqPageJsonLd()
+
   return (
     <html lang="id" suppressHydrationWarning>
       <head>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteJsonLd) }}
+        />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd) }}
+        />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(appJsonLd) }}
+        />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
+        />
         <script
           dangerouslySetInnerHTML={{
             __html: `

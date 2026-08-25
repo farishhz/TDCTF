@@ -201,6 +201,18 @@ async function checkMaintenance(): Promise<{ isActive: boolean; errorType: 'manu
 }
 
 export async function middleware(request: NextRequest) {
+  const { pathname } = request.nextUrl
+
+  // Biarkan SEO crawlers dan file verifikasi Google Search Console lewat tanpa terganggu maintenance
+  if (
+    pathname === '/robots.txt' ||
+    pathname === '/sitemap.xml' ||
+    pathname === '/manifest.webmanifest' ||
+    pathname.startsWith('/google')
+  ) {
+    return NextResponse.next()
+  }
+
   const { isActive, errorType, errorMessage } = await checkMaintenance()
 
   if (isActive) {
@@ -266,8 +278,10 @@ export const config = {
      * - _next/static (static files)
      * - _next/image (image optimization files)
      * - favicon.ico (favicon file)
+     * - robots.txt, sitemap.xml, manifest.webmanifest (SEO endpoints)
+     * - google*.html (Google Search Console verification)
      * - public files (images, etc)
      */
-    '/((?!api|_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+    '/((?!api|_next/static|_next/image|favicon.ico|robots\\.txt|sitemap\\.xml|manifest\\.webmanifest|google.*\\.html|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
 }
