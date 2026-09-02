@@ -62,6 +62,12 @@ analyze
 
 AGENTS.md
 DESIGN.md
+glassmorphism.md
+home-design.md
+liquid-glass.md
+challenges-design.md
+*-design.md
+*.design.md
 
 .codex-dev*
 .weave
