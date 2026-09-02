@@ -51,8 +51,12 @@ version.ts
 .agents/
 
 .vercel
-
-db/init.sql
+# Database, SQL & Seed
+db/
+/db/
+seed/
+sql/
+*.sql
 
 analyze
 

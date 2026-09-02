@@ -1,277 +1,170 @@
-# TDCTF - Capture The Flag Platform
-> 🚩 **Modern Capture The Flag (CTF) Platform** — Built for security competitions, workshops, and training. Features real-time scoring, team management, and admin controls. Deploy to Vercel + Supabase in minutes.
+# TDCTF
 
-## 🎯 What is TDCTF?
-TDCTF is a **full-featured CTF (Capture The Flag) competition platform** designed to host security challenges. Whether you're running a college competition, corporate training event, or online CTF, TDCTF provides everything you need:
+A modern Capture The Flag (CTF) competition platform built with Next.js, Supabase, and Tailwind CSS. Designed for hosting cybersecurity competitions, training sessions, and workshops with real-time scoring, multi-event support, and team management.
 
-- 🏆 **Live Scoreboard** — Real-time leaderboards (individual & team-based)
-- 🎮 **Challenge System** — 11+ challenge categories (Web, Crypto, Reverse, Pwn, etc.)
-- 👥 **Team Support** — Create teams, manage members, team scoring
-- 📊 **Multi-Event** — Host multiple CTF events simultaneously
-- ⚡ **Real-time Notifications** — Instant solve alerts across all users
-- 🛠️ **Admin Dashboard** — Full control over challenges, events, and users
-- 🔐 **Secure** — User authentication, Google OAuth, CAPTCHA support
-- 🌙 **Dark Mode** — Beautiful responsive UI with theme support
-- 🚀 **Service Integration** — Connect to TDCTL for dynamic challenge infrastructure
+---
 
-## ⚡ Quick Start
+## Overview
+
+TDCTF provides a complete platform for running Jeopardy-style CTF competitions. It handles challenge distribution, real-time flag verification, dynamic scoring, and live scoreboards for both individual and team participation.
+
+### Key Capabilities
+
+- **Challenge Engine**: Multi-category challenges (Web, Reverse, Binary Exploitation, Cryptography, Forensics, OSINT, etc.) with dynamic score decay based on solve count.
+- **Real-Time Scoreboard**: Instant leaderboard updates powered by Supabase real-time channels, supporting both individual competitors and team rankings.
+- **Multi-Event Management**: Create and isolate multiple CTF events on a single platform instance with individual timelines and scoreboards.
+- **Team Collaboration**: Team creation, invite links, join approvals, and member role management.
+- **Dynamic Challenge Services**: Integration with TDCTL for provisioning ephemeral on-demand challenge containers.
+- **Administration & Moderation**: In-app management for challenges, announcements, audit logging, first-blood alerts, and user roles.
+- **Authentication**: Email/password authentication and Google OAuth support with optional Cloudflare Turnstile verification.
+
+---
+
+## Architecture & Stack
+
+- **Framework**: Next.js 14 (App Router / Pages)
+- **Database & Auth**: Supabase (PostgreSQL, Row Level Security, Realtime, Auth)
+- **UI & Styling**: Tailwind CSS, Radix UI / Shadcn, Framer Motion
+- **Analytics & Graphs**: Chart.js
+- **Container Orchestration (Optional)**: TDCTL
+
+---
+
+## Getting Started
+
 ### Prerequisites
-- Node.js 18+ and npm 9+
-- Supabase account (free tier works)
-- (Optional) Vercel account for deployment
 
-## 🚀 Development Setup
-### 1. Clone & Install
-Clone the repo and install dependencies:
+- Node.js 18.x or higher
+- npm 9.x or higher
+- A Supabase account and project
+
+### 1. Installation
+
+Clone the repository and install dependencies:
+
 ```bash
-git clone https://github.com/farishhz
-cd tdctf
+git clone https://github.com/farishhz/TDCTF.git
+cd TDCTF
+npm install
 ```
 
-Install dependencies and generate the initial SQL file:
-```bash
-npm install                                  # Install dependencies
-npm run setup                                # Generate db/init.sql from schema
-# This creates db/init.sql with all tables, functions, and RLS policies
+### 2. Database Setup
+
+1. Create a new project in the [Supabase Dashboard](https://supabase.com).
+2. Execute your database schema and RPC functions in the Supabase SQL Editor.
+3. In your Supabase Dashboard under **Authentication > URL Configuration**:
+   - Set **Site URL** to `http://localhost:3000` (or your production domain).
+   - Configure your redirect URLs accordingly.
+
+### 3. Environment Configuration
+
+Create a `.env.local` file in the root directory:
+
+```env
+# Required Supabase Configuration
+NEXT_PUBLIC_SUPABASE_URL=https://your-project-ref.supabase.co
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=your-supabase-anon-key
+NEXT_PUBLIC_SITE_URL=http://localhost:3000
+
+# Optional Configurations
+# NEXT_PUBLIC_TURNSTILE_SITE_KEY=your_cloudflare_turnstile_site_key
+# TDCTL_API_URL=http://localhost:8000
+# TDCTL_API_TOKEN=your_tdctl_token
+# NEXT_PUBLIC_MAINTENANCE_MODE=no
 ```
 
-### 2. Supabase Setup
-1. Create a project at [supabase.com](https://supabase.com)
-2. Go to **SQL Editor**
-3. Open `db/init.sql` from this repo and run it
+### 4. Running the Development Server
 
-Schema is now initialized with all tables, functions, and RLS policies.
+Start the local development server:
 
-### 3. Run Dev (For Automatic Env Setup)
-Let's run the dev server and automatically create a `.env.local` file with the required variables. Just run the command below and follow the prompts:
 ```bash
 npm run dev
 ```
 
-After that, your `.env.local` file should look like this:
-```env
-NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
-NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=your_supabase_anon_key
-NEXT_PUBLIC_SITE_URL=http://localhost:3000
+The application will be accessible at `http://localhost:3000`.
 
-# NEXT_PUBLIC_TURNSTILE_SITE_KEY=your_cloudflare_turnstile_site_key
-# TDCTL_API_URL=http://localhost:8000
-# TDCTL_API_TOKEN=your_api_token
-# NEXT_PUBLIC_MAINTENANCE_MODE=no
-```
+### 5. Creating an Administrator Account
 
-The only required variables are `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, and `NEXT_PUBLIC_SITE_URL`.
-
-You can find `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` in your Supabase dashboard → Connect. Copy the URL and the publishable key (anon key), then paste them into your `.env.local` file.
-
-The optional variables are `NEXT_PUBLIC_TURNSTILE_SITE_KEY` for Cloudflare Turnstile CAPTCHA, `TDCTL_API_URL` and `TDCTL_API_TOKEN` for TDCTL service integration, and `NEXT_PUBLIC_MAINTENANCE_MODE` for maintenance mode.
-
-### 4. Setting your platform
-After running the development server, you can open `http://localhost:3000` and see the Icon Setting in the navbar. Click it to open the config dialog, then set your platform name, description, flag format, challenge categories, team settings, event settings, and more.
-
-### 5. Setting the Supabase authentication settings
-Go to Dashboard → Authentication → Sign in / Providers
-- Enable "Allow manual linking" (Opsional)
-- Disable "Confirm Email" (Opsional)
-
-Go to your Supabase dashboard → Authentication → Settings → Site URL and add `http://localhost:3000` (or your Vercel domain if you deployed) and save.
-
-### 6. Create an Admin Account
-To create an admin account, register a new account on the platform, then go to Supabase Dashboard → **users** table, find your user, and set `admin = true`. After that, refresh the page and you will see the Admin menu in the navbar.
-
-### 7. Generating Database TypeScript Types
-If you modify the database schema or RPC functions, you should regenerate the TypeScript type definitions:
-* **Remote Supabase Project**:
-  Run the command directly by passing your Supabase Project ID as an argument:
-  ```bash
-  npm run update-types <your-project-ref>
-  npm run update-types rzucnnwfbhxbsoipfyed
-  ```
-* **Local Supabase Instance**: If you are running Supabase locally, run:
-  ```bash
-  npm run update-types:local
-  ```
-This will automatically update `src/lib/supabase/database.types.ts` to keep your frontend code in sync with your database changes.
-
-## 🚀 Production Setup
-### Deploy to Vercel
-1. Push to GitHub
-2. Import repo in [Vercel Dashboard](https://vercel.com)
-3. Add environment variables:
-   - `NEXT_PUBLIC_SUPABASE_URL`
-   - `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`
-   - `NEXT_PUBLIC_SITE_URL` (your Vercel domain)
-4. Deploy!
-
-### Deploy to Vercel with CI/CD GitHub
-1. Push to GitHub
-2. Create a new Project in Vercel and get the `VERCEL_ORG_ID`, `VERCEL_PROJECT_ID`, and `VERCEL_TOKEN` from the Vercel dashboard
-3. Add the following secrets in your GitHub repository:
-   - `VERCEL_ORG_ID`
-   - `VERCEL_PROJECT_ID`
-   - `VERCEL_TOKEN`
-4. Go to your GitHub repository → Actions, choose the "Vercel Production Deployment", and click on "Run workflow". This will trigger the deployment to Vercel.
-
-## 📱 Main Features
-### For Users
-- **Browse Challenges** — Filter by category, difficulty, points
-- **Submit Flags** — Real-time validation
-- **Track Progress** — See solved challenges and score
-- **Team Collaboration** — Join/create teams, team scoreboard
-- **View Leaderboard** — Compete individually or as a team
-- **Profile** — View your stats, solves, and achievements
-
-### For Admins
-- **Challenge Management** — Create, edit, delete challenges
-- **Dynamic Scoring** — Adjust points based on solver count
-- **Event Management** — Host multiple CTF events
-- **Service Integration** — Connect TDCTL for ephemeral challenge services
-- **User Management** — Manage admins and users
-- **Analytics** — View solves, audit logs, first bloods
-- **Notifications** — Send broadcast messages to all users
-
-### For Developers
-- **Dev Config Dialog** — In development mode, edit all settings from UI (no file editing needed)
-- **Real-time Updates** — Supabase subscriptions for live data
-- **Extensible** — Easy to add custom features
-- **Mobile Responsive** — Works on all devices
-
-## ⚙️ Customization
-Edit `src/config.ts` to customize your platform:
-```typescript
-export const APP = {
-  shortName: "TDCTF",                    // Platform name
-  fullName: "Next CTF",                  // Full name
-  description: "...",                    // Description
-  flagFormat: "TDCTF{...}",             // Expected flag format
-  challengeCategories: [...],            // Available challenge types
-
-  // Team settings
-  teams: {
-    enabled: true,                       // Enable team mode
-    hideScoreboardIndividual: false,     // Hide personal scores
-    hideScoreboardTotal: false,          // Hide team scores
-  },
-
-  // Event configuration
-  hideEventMain: false,                  // Hide "Main" event
-  eventMainLabel: "main",                // Label for main event
-  eventMainImageUrl: "...",              // Banner image URL
-}
-```
-
-## 🔗 Optional Features
-### TDCTL Service Integration
-If you have [TDCTL](https://github.com/tenka-developer/tdctl) running, add to `.env.local`:
-
-```env
-TDCTL_API_URL=http://localhost:8000
-TDCTL_API_TOKEN=your_secret_token
-```
-
-Services will auto-appear in challenge panels for users to start/restart/extend instances.
-
-### Cloudflare Turnstile (CAPTCHA)
-```env
-NEXT_PUBLIC_TURNSTILE_SITE_KEY=your_site_key
-```
-
-Leave empty to skip CAPTCHA on login/register.
-
-### Google OAuth
-1. Create OAuth credentials in [Google Cloud Console](https://console.cloud.google.com)
-2. Add to Supabase → **Authentication → Providers → Google**
-3. Set Site URL to `https://your-domain`
-
-### Opsional Supabase Reset Emils
-```html
-<table width="100%" cellpadding="0" cellspacing="0" style="max-width: 600px; margin: auto; background: #ffffff; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.05);">
-   <tr>
-      <td style="padding: 32px; text-align: center;">
-      <h2 style="color: #111827; margin-bottom: 16px;">Reset Password</h2>
-      <p style="color: #374151; font-size: 15px; line-height: 1.6; margin-bottom: 24px;">
-         Kamu menerima email ini karena ada permintaan untuk reset password akunmu.
-         Klik tombol di bawah untuk membuat password baru.
-      </p>
-      <a href="{{ .ConfirmationURL }}"
-         style="display: inline-block; background-color: #3b82f6; color: #ffffff; text-decoration: none; padding: 12px 24px; border-radius: 8px; font-weight: bold; font-size: 15px;">
-         Reset Password
-      </a>
-      <p style="color: #6b7280; font-size: 13px; line-height: 1.6; margin-top: 24px;">
-         Jika kamu tidak meminta reset password, abaikan email ini.
-      </p>
-      </td>
-   </tr>
-</table>
-<p style="text-align: center; color: #9ca3af; font-size: 12px; margin-top: 16px;">{{ .SiteURL }}
-   © {{ .SiteURL }} - Semua hak dilindungi
-</p>
-```
-
-## 📁 Project Structure
-```
-src/
-├── app/                    # Next.js pages & API routes
-│   ├── admin/             # Admin dashboard pages
-│   ├── challenges/        # Challenge listing & detail
-│   ├── scoreboard/        # Leaderboards
-│   ├── teams/             # Team management
-│   ├── profile/           # User profiles
-│   ├── api/tdctl/         # TDCTL API integration
-│   └── ...other pages
-├── shared/
-│   ├── components/        # Reusable React components
-│   ├── contexts/          # React contexts (Auth, Events, etc.)
-│   ├── hooks/             # Custom React hooks
-│   ├── lib/               # Business logic & utilities
-│   ├── types/             # TypeScript interfaces
-│   └── ui/                # Shadcn UI components
-├── config.ts              # App configuration
-├── secret.ts              # Server-only secrets
-└── middleware.ts          # Maintenance mode detection
-
-db/
-├── init.sql               # Generated from schema + queries
-├── schema/                # PostgreSQL table definitions
-├── queries/               # Stored procedures & RPC functions
-└── seed/                  # Initial data
-```
-
-## 🛠️ Available Scripts
-```bash
-npm run setup               # Generate db/init.sql from schema
-npm run dev                 # Start development server (localhost:3000)
-npm run build               # Build for production
-npm run start               # Start production server
-npm run lint                # Run ESLint
-npm run update-types <project-ref> # Generate TypeScript types from remote Supabase
-npm run update-types:local  # Generate TypeScript types from local Supabase
-```
-
-## ✨ Key Technologies
-| Tech | Purpose |
-|------|---------|
-| **Next.js 14** | React framework with API routes |
-| **Supabase** | PostgreSQL + Auth + Real-time |
-| **Tailwind CSS** | Styling |
-| **Framer Motion** | Smooth animations |
-| **Chart.js** | Score analytics & graphs |
-| **dnd-kit** | Drag-and-drop sorting |
-| **Markdown** | Challenge descriptions |
-| **Lucide Icons** | Beautiful icons |
-
-## 📊 How It Works
-
-## 🤝 Support & Contributing
-- 📖 [TDCTL Documentation](https://docs.tdctf.my.id)
-- 🐛 Report issues on GitHub or your repository issue tracker
-- 💬 Questions? Open a discussion
-
-## 📝 License
-
-Apache License 2.0 - Feel free to use and modify for your competitions!
-
-Built with ❤️ by the CTF community. Good luck with your challenges! 🚩
-
+1. Register a new account via the platform's sign-up page (`/register`).
+2. Open your Supabase Dashboard and navigate to the `users` table.
+3. Locate your user record and set the `admin` column to `true`.
+4. Refresh the application to access the Admin dashboard.
 
 ---
+
+## Database Types Synchronization
+
+To synchronize database TypeScript definitions with your remote Supabase instance:
+
+```bash
+npm run update-types <your-project-ref>
+```
+
+For a local Supabase CLI instance:
+
+```bash
+npm run update-types:local
+```
+
+---
+
+## Configuration
+
+Platform settings can be adjusted directly in `src/config.ts`:
+
+```typescript
+export const APP = {
+  shortName: "TDCTF",
+  fullName: "TDCTF Platform",
+  description: "Capture The Flag Competition Platform",
+  flagFormat: "TDCTF{...}",
+  challengeCategories: [
+    "Web Exploitation",
+    "Cryptography",
+    "Reverse Engineering",
+    "Binary Exploitation",
+    "Forensics",
+    "OSINT",
+    "Miscellaneous"
+  ],
+  teams: {
+    enabled: true,
+    hideScoreboardIndividual: false,
+    hideScoreboardTotal: false,
+  },
+  hideEventMain: false,
+  eventMainLabel: "main",
+};
+```
+
+---
+
+## Deployment
+
+### Vercel Deployment
+
+1. Push your repository to GitHub.
+2. Import the project in the [Vercel Dashboard](https://vercel.com).
+3. Set the required environment variables:
+   - `NEXT_PUBLIC_SUPABASE_URL`
+   - `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`
+   - `NEXT_PUBLIC_SITE_URL`
+4. Deploy the application.
+
+---
+
+## Available Scripts
+
+| Command | Description |
+|---|---|
+| `npm run dev` | Starts the Next.js development server |
+| `npm run build` | Compiles the production build |
+| `npm run start` | Starts the production server |
+| `npm run lint` | Runs ESLint checks |
+| `npm run update-types` | Generates TypeScript types from remote Supabase |
+
+---
+
+## License
+
+This project is licensed under the Apache License 2.0. See the [LICENSE](LICENSE) file for details.
