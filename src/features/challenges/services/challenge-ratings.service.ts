@@ -101,33 +101,54 @@ export async function getAdminChallengeRatings(params: AdminRatingsQueryParams =
   } = params
 
   try {
-    // 1. Fetch ratings
+    // 1. Fetch ratings directly from DB without postgrest relational joins to prevent schema relationship errors
     let query = (supabase as any)
       .from('challenge_ratings')
-      .select(`
-        *,
-        users:user_id(username, picture, profile_picture_url),
-        challenges:challenge_id(title, category, event_id),
-        teams:team_id(name)
-      `, { count: 'exact' })
+      .select('*', { count: 'exact' })
       .order('created_at', { ascending: false })
 
     if (ratingFilter !== 'all' && typeof ratingFilter === 'number') {
       query = query.eq('rating', ratingFilter)
     }
 
-    // Apply pagination
-    query = query.range(offset, offset + limit - 1)
-
-    const { data, error, count } = await query
+    const { data: rawRatings, error, count } = await query
 
     if (error) {
       console.error('Error fetching admin challenge ratings:', error)
       return { data: [], total: 0 }
     }
 
-    let items: ChallengeRating[] = (data || []).map((row: any) => {
-      const userObj = row.users || row.profiles
+    if (!rawRatings || rawRatings.length === 0) {
+      return { data: [], total: 0 }
+    }
+
+    // 2. Batch fetch related details (users, challenges, teams) safely
+    const userIds = Array.from(new Set(rawRatings.map((r: any) => r.user_id).filter(Boolean)))
+    const challengeIds = Array.from(new Set(rawRatings.map((r: any) => r.challenge_id).filter(Boolean)))
+    const teamIds = Array.from(new Set(rawRatings.map((r: any) => r.team_id).filter(Boolean)))
+
+    const [usersRes, challengesRes, teamsRes] = await Promise.all([
+      userIds.length > 0
+        ? (supabase as any).from('users').select('id, username, picture, profile_picture_url').in('id', userIds)
+        : Promise.resolve({ data: [] }),
+      challengeIds.length > 0
+        ? (supabase as any).from('challenges').select('id, title, category, event_id').in('id', challengeIds)
+        : Promise.resolve({ data: [] }),
+      teamIds.length > 0
+        ? (supabase as any).from('teams').select('id, name').in('id', teamIds)
+        : Promise.resolve({ data: [] }),
+    ])
+
+    const userMap = new Map((usersRes.data || []).map((u: any) => [u.id, u]))
+    const challengeMap = new Map((challengesRes.data || []).map((c: any) => [c.id, c]))
+    const teamMap = new Map((teamsRes.data || []).map((t: any) => [t.id, t]))
+
+    // 3. Map raw ratings with user, challenge, and team info
+    let items: ChallengeRating[] = rawRatings.map((row: any) => {
+      const u: any = userMap.get(row.user_id) || {}
+      const c: any = challengeMap.get(row.challenge_id) || {}
+      const t: any = teamMap.get(row.team_id) || {}
+
       return {
         id: row.id,
         challenge_id: row.challenge_id,
@@ -137,16 +158,16 @@ export async function getAdminChallengeRatings(params: AdminRatingsQueryParams =
         feedback: row.feedback || '',
         created_at: row.created_at,
         updated_at: row.updated_at,
-        username: userObj?.username || 'Unknown',
-        user_picture: userObj?.profile_picture_url || userObj?.picture || null,
-        challenge_title: row.challenges?.title || 'Unknown Challenge',
-        challenge_category: row.challenges?.category || 'General',
-        team_name: row.teams?.name || null,
-        event_id: row.challenges?.event_id || null,
+        username: u.username || 'Unknown',
+        user_picture: u.profile_picture_url || u.picture || null,
+        challenge_title: c.title || 'Unknown Challenge',
+        challenge_category: c.category || 'General',
+        team_name: t.name || null,
+        event_id: c.event_id || null,
       }
     })
 
-    // Local filter by eventId / category / searchQuery if relational filtering is needed
+    // 4. Apply client-side filters if specified
     if (eventIdFilter !== 'all') {
       if (eventIdFilter === 'main') {
         items = items.filter((item: any) => !item.event_id)
@@ -170,9 +191,12 @@ export async function getAdminChallengeRatings(params: AdminRatingsQueryParams =
       )
     }
 
+    const filteredTotal = items.length
+    const paginatedItems = items.slice(offset, offset + limit)
+
     return {
-      data: items,
-      total: count ?? items.length,
+      data: paginatedItems,
+      total: count ?? filteredTotal,
     }
   } catch (err) {
     console.error('Failed to load admin challenge ratings:', err)
@@ -185,11 +209,11 @@ export async function getAdminChallengeRatings(params: AdminRatingsQueryParams =
  */
 export async function getAdminRatingAnalytics(): Promise<RatingAnalyticsSummary> {
   try {
-    const { data, error } = await (supabase as any)
+    const { data: ratingsData, error } = await (supabase as any)
       .from('challenge_ratings')
-      .select('rating, challenge_id, challenges:challenge_id(title, category)')
+      .select('rating, challenge_id')
 
-    if (error || !data || data.length === 0) {
+    if (error || !ratingsData || ratingsData.length === 0) {
       return {
         totalRatings: 0,
         averageRating: 0,
@@ -199,22 +223,30 @@ export async function getAdminRatingAnalytics(): Promise<RatingAnalyticsSummary>
       }
     }
 
-    const totalRatings = data.length
-    const sum = data.reduce((acc: number, row: any) => acc + (row.rating || 0), 0)
+    const challengeIds = Array.from(new Set(ratingsData.map((r: any) => r.challenge_id).filter(Boolean)))
+    const { data: challengesData } = challengeIds.length > 0
+      ? await (supabase as any).from('challenges').select('id, title, category').in('id', challengeIds)
+      : { data: [] }
+
+    const challengeMap = new Map((challengesData || []).map((c: any) => [c.id, c]))
+
+    const totalRatings = ratingsData.length
+    const sum = ratingsData.reduce((acc: number, row: any) => acc + (row.rating || 0), 0)
     const averageRating = Number((sum / totalRatings).toFixed(1))
 
     const distribution: Record<number, number> = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 }
     const challengeStats: Record<string, { title: string; category: string; sum: number; count: number }> = {}
 
-    data.forEach((row: any) => {
+    ratingsData.forEach((row: any) => {
       const r = row.rating
       if (r >= 1 && r <= 5) {
         distribution[r] = (distribution[r] || 0) + 1
       }
 
       const chId = row.challenge_id
-      const chTitle = row.challenges?.title || 'Unknown'
-      const chCat = row.challenges?.category || 'General'
+      const chInfo: any = challengeMap.get(chId) || {}
+      const chTitle = chInfo.title || 'Unknown'
+      const chCat = chInfo.category || 'General'
 
       if (!challengeStats[chId]) {
         challengeStats[chId] = { title: chTitle, category: chCat, sum: 0, count: 0 }
