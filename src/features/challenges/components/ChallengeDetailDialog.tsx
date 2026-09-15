@@ -17,7 +17,6 @@ import ChallengeDialogTabs from './challenge-detail/ChallengeDialogTabs'
 import ChallengeFlagForm from './challenge-detail/ChallengeFlagForm'
 import ChallengeHints from './challenge-detail/ChallengeHints'
 import ChallengeRatingSection from './challenge-detail/ChallengeRatingSection'
-import ChallengeRatingDialog from './challenge-detail/ChallengeRatingDialog'
 import ChallengeMetadata from './challenge-detail/ChallengeMetadata'
 import ChallengeTasksTeaser from './challenge-detail/ChallengeTasksTeaser'
 import SubChallengePanel from './challenge-detail/SubChallengePanel'
@@ -258,7 +257,14 @@ ${links || '- (No links)'}
     })
   }, [solvers, solvesSortOrder])
 
-  const [isRatingModalOpen, setIsRatingModalOpen] = useState(false)
+  const ratingSectionRef = React.useRef<HTMLDivElement | null>(null)
+
+  const scrollToRatingSection = React.useCallback(() => {
+    handleTabChange('challenge', challenge?.id)
+    setTimeout(() => {
+      ratingSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    }, 120)
+  }, [handleTabChange, challenge?.id])
 
   React.useEffect(() => {
     contentScrollRef.current?.scrollTo({ top: 0, behavior: 'auto' })
@@ -268,12 +274,12 @@ ${links || '- (No links)'}
     const handleSolveEvent = (e: Event) => {
       const customEvent = e as CustomEvent<{ challengeId: string }>
       if (customEvent.detail?.challengeId === challenge?.id) {
-        setIsRatingModalOpen(true)
+        scrollToRatingSection()
       }
     }
     window.addEventListener('challenge-solved-event', handleSolveEvent)
     return () => window.removeEventListener('challenge-solved-event', handleSolveEvent)
-  }, [challenge?.id])
+  }, [challenge?.id, scrollToRatingSection])
 
   const { settings } = useSystemSettings()
 
@@ -419,7 +425,7 @@ ${links || '- (No links)'}
                 {(isSolved || isTeamSolved) && (
                   <button
                     type="button"
-                    onClick={() => setIsRatingModalOpen(true)}
+                    onClick={scrollToRatingSection}
                     className="select-none flex items-center gap-1.5 px-2.5 py-1 bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-300 rounded-md border border-cyan-500/30 text-[11px] font-bold transition-all active:scale-95 shadow-sm"
                   >
                     <MessageSquareText size={12} className="text-cyan-400" />
@@ -490,11 +496,13 @@ ${links || '- (No links)'}
                   setShowHintModal={setShowHintModal}
                 />
 
-                <ChallengeRatingSection
-                  challengeId={challenge.id}
-                  user={user}
-                  isSolved={isSolved || isTeamSolved}
-                />
+                <div ref={ratingSectionRef}>
+                  <ChallengeRatingSection
+                    challengeId={challenge.id}
+                    user={user}
+                    isSolved={isSolved || isTeamSolved}
+                  />
+                </div>
               </div>
             </div>
           )}
@@ -621,14 +629,6 @@ ${links || '- (No links)'}
         hintIdx={showHintModal.hintIdx}
         open={!!showHintModal.challenge}
         onClose={() => setShowHintModal({ challenge: null })}
-      />
-      <ChallengeRatingDialog
-        open={isRatingModalOpen}
-        onClose={() => setIsRatingModalOpen(false)}
-        challengeId={challenge.id}
-        challengeTitle={dialogTitle}
-        category={challenge.category}
-        user={user}
       />
     </Dialog>
   )
