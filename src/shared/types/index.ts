@@ -110,6 +110,8 @@ export interface ChallengeWithSolve extends Challenge {
   total_solves?: number
   has_geo_flag?: boolean
   geo_prefix?: string
+  rating_avg?: number
+  rating_count?: number
 }
 
 export type GeoCoordinates = {

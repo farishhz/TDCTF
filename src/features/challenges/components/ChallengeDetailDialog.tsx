@@ -1,7 +1,7 @@
 'use client'
 
-import React, { useState } from 'react'
-import { Flag, Check, CheckCircle2, ListChecks, Server, Key, MapPin, ClipboardCopy } from 'lucide-react'
+import React, { useState, useEffect } from 'react'
+import { Flag, Check, CheckCircle2, ListChecks, Server, Key, MapPin, ClipboardCopy, MessageSquareText } from 'lucide-react'
 import toast from 'react-hot-toast'
 import APP from '@/config'
 import { useSystemSettings } from '@/shared/contexts/SystemSettingsContext'
@@ -17,6 +17,7 @@ import ChallengeDialogTabs from './challenge-detail/ChallengeDialogTabs'
 import ChallengeFlagForm from './challenge-detail/ChallengeFlagForm'
 import ChallengeHints from './challenge-detail/ChallengeHints'
 import ChallengeRatingSection from './challenge-detail/ChallengeRatingSection'
+import ChallengeRatingDialog from './challenge-detail/ChallengeRatingDialog'
 import ChallengeMetadata from './challenge-detail/ChallengeMetadata'
 import ChallengeTasksTeaser from './challenge-detail/ChallengeTasksTeaser'
 import SubChallengePanel from './challenge-detail/SubChallengePanel'
@@ -257,9 +258,22 @@ ${links || '- (No links)'}
     })
   }, [solvers, solvesSortOrder])
 
+  const [isRatingModalOpen, setIsRatingModalOpen] = useState(false)
+
   React.useEffect(() => {
     contentScrollRef.current?.scrollTo({ top: 0, behavior: 'auto' })
   }, [challenge?.id, challengeTab])
+
+  useEffect(() => {
+    const handleSolveEvent = (e: Event) => {
+      const customEvent = e as CustomEvent<{ challengeId: string }>
+      if (customEvent.detail?.challengeId === challenge?.id) {
+        setIsRatingModalOpen(true)
+      }
+    }
+    window.addEventListener('challenge-solved-event', handleSolveEvent)
+    return () => window.removeEventListener('challenge-solved-event', handleSolveEvent)
+  }, [challenge?.id])
 
   const { settings } = useSystemSettings()
 
@@ -401,7 +415,17 @@ ${links || '- (No links)'}
               </div>
 
               {/* Points & Solved Status */}
-              <div className="flex items-center gap-4">
+              <div className="flex items-center gap-3">
+                {(isSolved || isTeamSolved) && (
+                  <button
+                    type="button"
+                    onClick={() => setIsRatingModalOpen(true)}
+                    className="select-none flex items-center gap-1.5 px-2.5 py-1 bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-300 rounded-md border border-cyan-500/30 text-[11px] font-bold transition-all active:scale-95 shadow-sm"
+                  >
+                    <MessageSquareText size={12} className="text-cyan-400" />
+                    <span>Rating Soal</span>
+                  </button>
+                )}
                 {isSolved && (
                   <div className="select-none flex items-center gap-1.5 px-2 py-1 bg-green-500/15 rounded-md border border-green-500/20">
                     <Flag size={12} className="text-green-400 fill-green-400" />
@@ -597,6 +621,14 @@ ${links || '- (No links)'}
         hintIdx={showHintModal.hintIdx}
         open={!!showHintModal.challenge}
         onClose={() => setShowHintModal({ challenge: null })}
+      />
+      <ChallengeRatingDialog
+        open={isRatingModalOpen}
+        onClose={() => setIsRatingModalOpen(false)}
+        challengeId={challenge.id}
+        challengeTitle={dialogTitle}
+        category={challenge.category}
+        user={user}
       />
     </Dialog>
   )

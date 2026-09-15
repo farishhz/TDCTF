@@ -166,11 +166,13 @@ export async function getChallengesList(
       const challengeIds = (challenges as any[]).map((ch) => String(ch.id)).filter(Boolean)
       const hasQuestionIds = new Set<string>()
       const geoFlagMap = new Map<string, string>()
+      const ratingStatsMap = new Map<string, { sum: number; count: number }>()
 
       if (challengeIds.length > 0) {
-        const [subChallengesResult, geoFlagsResult] = await Promise.all([
+        const [subChallengesResult, geoFlagsResult, ratingsResult] = await Promise.all([
           callChallengeRpc('get_challenges_with_sub_challenges', { p_challenge_ids: challengeIds }),
           callChallengeRpc('get_challenges_with_geo_flag', { p_challenge_ids: challengeIds }),
+          (supabase as any).from('challenge_ratings').select('challenge_id, rating'),
         ])
 
         if (subChallengesResult.error) {
@@ -188,21 +190,39 @@ export async function getChallengesList(
             if (row?.challenge_id) geoFlagMap.set(String(row.challenge_id), String(row.geo_prefix || ''))
           }
         }
+
+        if (!ratingsResult.error && ratingsResult.data) {
+          for (const row of (ratingsResult.data || []) as any[]) {
+            if (row?.challenge_id && row?.rating) {
+              const chId = String(row.challenge_id)
+              const existing = ratingStatsMap.get(chId) || { sum: 0, count: 0 }
+              ratingStatsMap.set(chId, { sum: existing.sum + Number(row.rating), count: existing.count + 1 })
+            }
+          }
+        }
       }
 
-      return (challenges as any[]).map((ch) => ({
-        // lightweight fields from DB
-        ...addComputedFields(ch, solvedIds),
-        has_questions: hasQuestionIds.has(String(ch.id)),
-        has_geo_flag: geoFlagMap.has(String(ch.id)),
-        geo_prefix: geoFlagMap.get(String(ch.id)),
+      return (challenges as any[]).map((ch) => {
+        const rStat = ratingStatsMap.get(String(ch.id))
+        const rating_avg = rStat && rStat.count > 0 ? Number((rStat.sum / rStat.count).toFixed(1)) : 0
+        const rating_count = rStat ? rStat.count : 0
 
-        // fill heavy / unused fields so existing UI types don't break
-        description: '',
-        hint: null,
-        attachments: [],
-        flag: '',
-      }))
+        return {
+          // lightweight fields from DB
+          ...addComputedFields(ch, solvedIds),
+          has_questions: hasQuestionIds.has(String(ch.id)),
+          has_geo_flag: geoFlagMap.has(String(ch.id)),
+          geo_prefix: geoFlagMap.get(String(ch.id)),
+          rating_avg,
+          rating_count,
+
+          // fill heavy / unused fields so existing UI types don't break
+          description: '',
+          hint: null,
+          attachments: [],
+          flag: '',
+        }
+      })
     } catch (err) {
       console.error('Error fetching challenges (list):', err)
       return []

@@ -86,13 +86,13 @@ export const ChallengeRatingSection: React.FC<ChallengeRatingSectionProps> = ({
   return (
     <div className="mt-6 overflow-hidden rounded-2xl border border-cyan-500/20 bg-gradient-to-br from-slate-900/90 via-cyan-950/20 to-slate-900/90 p-4 md:p-5 backdrop-blur-xl shadow-xl shadow-cyan-950/20 transition-all">
       <div className="flex items-center justify-between border-b border-cyan-500/10 pb-3 mb-4">
-        <div className="flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-cyan-500/10 text-cyan-400 ring-1 ring-cyan-500/30">
-            <Sparkles className="h-4 w-4 animate-pulse" />
+        <div className="flex items-center gap-2.5">
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
+            <MessageSquareText className="h-4 w-4" />
           </div>
           <div>
             <h4 className="text-sm font-semibold text-gray-100 flex items-center gap-1.5">
-              Evaluasi & Rating Challenge
+              Evaluasi & Rating Soal
             </h4>
             <p className="text-xs text-gray-400">
               Bagikan penilaianmu untuk membantu author meningkatkan kualitas soal CTF ini.

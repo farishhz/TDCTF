@@ -40,6 +40,14 @@ export function AdminRatingsPage() {
 
   if (!user || !isAdminUser) return null
 
+  if (isLoading) {
+    return (
+      <AdminPageShell>
+        <AdminContentLoading variant="solvers" />
+      </AdminPageShell>
+    )
+  }
+
   return (
     <>
       <AdminPageShell>

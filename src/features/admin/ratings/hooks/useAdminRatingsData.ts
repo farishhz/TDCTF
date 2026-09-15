@@ -1,8 +1,10 @@
 'use client'
 
 import { useCallback, useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import toast from 'react-hot-toast'
 import { useAuth } from '@/shared/contexts/AuthContext'
+import { isAdmin } from '@/features/admin/services/admin.service'
 import {
   deleteChallengeRating,
   getAdminChallengeRatings,
@@ -11,8 +13,9 @@ import {
 import type { ChallengeRating, RatingAnalyticsSummary } from '@/shared/types'
 
 export function useAdminRatingsData() {
+  const router = useRouter()
   const { user, loading: authLoading } = useAuth()
-  const isAdminUser = Boolean(user?.is_admin)
+  const [isAdminUser, setIsAdminUser] = useState<boolean>(false)
 
   const [ratings, setRatings] = useState<ChallengeRating[]>([])
   const [analytics, setAnalytics] = useState<RatingAnalyticsSummary | null>(null)
@@ -54,7 +57,6 @@ export function useAdminRatingsData() {
         console.error('Error fetching admin ratings:', err)
         toast.error('Gagal memuat data rating evaluasi.')
       } finally {
-        setIsLoading(false)
         setLoadingMore(false)
       }
     },
@@ -62,20 +64,59 @@ export function useAdminRatingsData() {
   )
 
   const fetchAnalytics = useCallback(async () => {
-    const summary = await getAdminRatingAnalytics()
-    setAnalytics(summary)
+    try {
+      const summary = await getAdminRatingAnalytics()
+      setAnalytics(summary)
+    } catch (err) {
+      console.error('Error fetching rating analytics:', err)
+    }
   }, [])
 
   const reloadAll = useCallback(async () => {
     setIsLoading(true)
-    await Promise.all([fetchRatings(0), fetchAnalytics()])
+    try {
+      await Promise.all([fetchRatings(0), fetchAnalytics()])
+    } finally {
+      setIsLoading(false)
+    }
   }, [fetchRatings, fetchAnalytics])
 
   useEffect(() => {
-    if (!authLoading && user && isAdminUser) {
-      reloadAll()
+    let mounted = true
+
+    const initRatingsData = async () => {
+      if (authLoading) return
+
+      if (!user) {
+        router.push('/challenges')
+        return
+      }
+
+      const adminCheck = await isAdmin()
+      if (!mounted) return
+
+      setIsAdminUser(adminCheck)
+      if (!adminCheck) {
+        router.push('/challenges')
+        return
+      }
+
+      try {
+        await Promise.all([fetchRatings(0), fetchAnalytics()])
+      } catch (err) {
+        console.error('Error initializing ratings data:', err)
+      } finally {
+        if (mounted) {
+          setIsLoading(false)
+        }
+      }
     }
-  }, [authLoading, user, isAdminUser, reloadAll])
+
+    initRatingsData()
+    return () => {
+      mounted = false
+    }
+  }, [authLoading, user, router, fetchRatings, fetchAnalytics])
 
   const handleAskDelete = (item: ChallengeRating) => {
     setPendingDelete(item)
