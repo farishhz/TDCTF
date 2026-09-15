@@ -4,14 +4,31 @@ import type { ClientAnnouncement } from '../types'
 const client = supabase as any
 
 export async function fetchActiveAnnouncements(): Promise<ClientAnnouncement[]> {
-  const { data, error } = await client.rpc('get_active_announcements')
+  try {
+    const { data, error } = await client.rpc('get_active_announcements')
 
-  if (error) {
-    console.warn('Error fetching active announcements:', error)
-    return []
+    if (!error && data) {
+      return (data || []) as unknown as ClientAnnouncement[]
+    }
+  } catch {
+    // Fallback to table query if RPC is not present
   }
 
-  return (data || []) as unknown as ClientAnnouncement[]
+  try {
+    const { data, error } = await client
+      .from('announcements')
+      .select('*')
+      .eq('is_published', true)
+      .order('created_at', { ascending: false })
+
+    if (error) {
+      return []
+    }
+
+    return (data || []) as unknown as ClientAnnouncement[]
+  } catch {
+    return []
+  }
 }
 
 export async function recordInteraction(
