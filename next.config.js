@@ -37,7 +37,7 @@ const securityHeaders = [
       "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
       "img-src 'self' data: https: blob:",
       "font-src 'self' https://fonts.gstatic.com",
-      "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://challenges.cloudflare.com",
+      "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://challenges.cloudflare.com https://api.github.com https://*.githubusercontent.com https://*.github.com https://cdn.jsdelivr.net",
       "frame-src 'self' https://challenges.cloudflare.com",
       "frame-ancestors 'self'",
       "object-src 'none'",

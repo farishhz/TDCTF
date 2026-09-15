@@ -110,6 +110,8 @@ export interface ChallengeWithSolve extends Challenge {
   total_solves?: number
   has_geo_flag?: boolean
   geo_prefix?: string
+  rating_avg?: number
+  rating_count?: number
 }
 
 export type GeoCoordinates = {
@@ -136,3 +138,28 @@ export type LeaderboardEntry = {
     score: number
   }[]
 }
+
+export interface ChallengeRating {
+  id: string
+  challenge_id: string
+  user_id: string
+  team_id?: string | null
+  rating: number
+  feedback: string
+  created_at: string
+  updated_at: string
+  username?: string
+  user_picture?: string | null
+  challenge_title?: string
+  challenge_category?: string
+  team_name?: string | null
+}
+
+export interface RatingAnalyticsSummary {
+  totalRatings: number
+  averageRating: number
+  distribution: Record<number, number>
+  topRated?: { id: string; title: string; category: string; avgRating: number; totalCount: number } | null
+  lowestRated?: { id: string; title: string; category: string; avgRating: number; totalCount: number } | null
+}
+

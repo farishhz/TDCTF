@@ -11,6 +11,7 @@ import {
   Settings,
   FolderOpen,
   Megaphone,
+  Star,
 } from 'lucide-react'
 
 export type AdminNavItem = {
@@ -54,6 +55,11 @@ export const ADMIN_NAV_ITEMS: AdminNavItem[] = [
     icon: FolderOpen,
   },
   {
+    href: '/admin/ratings',
+    label: 'Rating Soal',
+    icon: Star,
+  },
+  {
     href: '/admin/services',
     label: 'Services',
     icon: Server,
@@ -85,7 +91,7 @@ export const ADMIN_NAV_ITEMS: AdminNavItem[] = [
   },
 ]
 
-const EVENT_ADMIN_NAV_HREFS = new Set(['/admin/challenges', '/admin/solvers'])
+const EVENT_ADMIN_NAV_HREFS = new Set(['/admin/challenges', '/admin/solvers', '/admin/ratings'])
 
 export function getVisibleAdminNavItems(scope: AdminNavScope | null | undefined) {
   if (!scope || scope.is_global_admin) return ADMIN_NAV_ITEMS

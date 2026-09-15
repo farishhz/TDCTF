@@ -37,6 +37,7 @@ export default function ChallengeDialogs({ data }: ChallengeDialogsProps) {
 
       <ChallengeDetailDialog
         open={!!data.selectedChallenge}
+        user={data.user}
         challenge={data.selectedChallenge}
         solvers={data.solvers}
         challengeTab={data.challengeTab}

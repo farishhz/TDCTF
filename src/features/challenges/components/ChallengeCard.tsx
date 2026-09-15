@@ -1,6 +1,6 @@
 // React Imports
 import React, { memo } from "react";
-import { Flame, Sparkles, AlertTriangle, Flag, CheckCircle2, ListChecks, Server, Variable, MapPin, Shield } from 'lucide-react';
+import { Flame, Sparkles, AlertTriangle, Flag, CheckCircle2, ListChecks, Server, Variable, MapPin, Shield, Star } from 'lucide-react';
 import * as LucideIcons from 'lucide-react';
 
 // Shared Imports
@@ -244,7 +244,16 @@ const ChallengeCard: React.FC<ChallengeCardProps> = ({ challenge, highlightTeamS
           </div>
 
           {!isMaintenance && (
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
+              {typeof challenge.rating_avg === 'number' && challenge.rating_avg > 0 && (
+                <div
+                  title={`Rata-rata rating: ${challenge.rating_avg}/5 (${challenge.rating_count} ulasan)`}
+                  className="flex items-center gap-1 text-[10px] font-bold text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded border border-amber-500/20"
+                >
+                  <Star size={10} className="fill-amber-400 text-amber-400" />
+                  <span>{challenge.rating_avg.toFixed(1)}</span>
+                </div>
+              )}
               {noFirstBlood ? (
                 <span className="text-orange-400 flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider opacity-60 group-hover:opacity-100 transition-opacity duration-300">
                   <Flame size={11} className="fill-current" />

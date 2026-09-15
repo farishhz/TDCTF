@@ -111,6 +111,9 @@ export function useChallengeFlagSubmission({
       }, 5000)
 
       if (result.success) {
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new CustomEvent('challenge-solved-event', { detail: { challengeId } }))
+        }
         const audio = new Audio('/sounds/succes.wav')
         audio.volume = 0.3
         audio.play().catch(() => {})

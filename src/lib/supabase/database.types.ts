@@ -14,6 +14,54 @@ export type Database = {
   }
   public: {
     Tables: {
+      challenge_ratings: {
+        Row: {
+          id: string
+          challenge_id: string
+          user_id: string
+          team_id: string | null
+          rating: number
+          feedback: string
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          challenge_id: string
+          user_id: string
+          team_id?: string | null
+          rating: number
+          feedback?: string
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          challenge_id?: string
+          user_id?: string
+          team_id?: string | null
+          rating?: number
+          feedback?: string
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "challenge_ratings_challenge_id_fkey"
+            columns: ["challenge_id"]
+            isOneToOne: false
+            referencedRelation: "challenges"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "challenge_ratings_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
       admin_audit_logs: {
         Row: {
           action: string

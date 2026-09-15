@@ -1,14 +1,14 @@
 'use client'
 
-import React, { useState } from 'react'
-import { Flag, Check, CheckCircle2, ListChecks, Server, Key, MapPin, ClipboardCopy } from 'lucide-react'
+import React, { useState, useEffect } from 'react'
+import { Flag, Check, CheckCircle2, ListChecks, Server, Key, MapPin, ClipboardCopy, MessageSquareText } from 'lucide-react'
 import toast from 'react-hot-toast'
 import APP from '@/config'
 import { useSystemSettings } from '@/shared/contexts/SystemSettingsContext'
 import { Dialog, DialogContent, DialogTitle } from '@/shared/ui'
 import { MarkdownRenderer } from '@/shared/markdown/MarkdownRenderer'
 import { DIALOG_CONTENT_CLASS_2XL } from '@/shared/styles'
-import type { Attachment, ChallengeWithSolve } from '@/shared/types'
+import type { Attachment, ChallengeWithSolve, User } from '@/shared/types'
 import ChallengeServicesPanel from './ChallengeServicesPanel'
 import HintDialog from './HintDialog'
 import SolversList from './SolversList'
@@ -16,6 +16,7 @@ import ChallengeAttachments from './challenge-detail/ChallengeAttachments'
 import ChallengeDialogTabs from './challenge-detail/ChallengeDialogTabs'
 import ChallengeFlagForm from './challenge-detail/ChallengeFlagForm'
 import ChallengeHints from './challenge-detail/ChallengeHints'
+import ChallengeRatingSection from './challenge-detail/ChallengeRatingSection'
 import ChallengeMetadata from './challenge-detail/ChallengeMetadata'
 import ChallengeTasksTeaser from './challenge-detail/ChallengeTasksTeaser'
 import SubChallengePanel from './challenge-detail/SubChallengePanel'
@@ -58,6 +59,7 @@ function getChallengeDialogTitle(title: string) {
 
 interface ChallengeDetailDialogProps {
   open: boolean
+  user?: User | null
   challenge: (ChallengeWithSolve & { is_team_solved?: boolean }) | null
   solvers: Solver[]
   challengeTab: ChallengeDialogTab
@@ -105,6 +107,7 @@ interface ChallengeDetailDialogProps {
 
 const ChallengeDetailDialog: React.FC<ChallengeDetailDialogProps> = ({
   open,
+  user,
   challenge,
   solvers,
   challengeTab,
@@ -254,9 +257,29 @@ ${links || '- (No links)'}
     })
   }, [solvers, solvesSortOrder])
 
+  const ratingSectionRef = React.useRef<HTMLDivElement | null>(null)
+
+  const scrollToRatingSection = React.useCallback(() => {
+    handleTabChange('challenge', challenge?.id)
+    setTimeout(() => {
+      ratingSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    }, 120)
+  }, [handleTabChange, challenge?.id])
+
   React.useEffect(() => {
     contentScrollRef.current?.scrollTo({ top: 0, behavior: 'auto' })
   }, [challenge?.id, challengeTab])
+
+  useEffect(() => {
+    const handleSolveEvent = (e: Event) => {
+      const customEvent = e as CustomEvent<{ challengeId: string }>
+      if (customEvent.detail?.challengeId === challenge?.id) {
+        scrollToRatingSection()
+      }
+    }
+    window.addEventListener('challenge-solved-event', handleSolveEvent)
+    return () => window.removeEventListener('challenge-solved-event', handleSolveEvent)
+  }, [challenge?.id, scrollToRatingSection])
 
   const { settings } = useSystemSettings()
 
@@ -398,7 +421,17 @@ ${links || '- (No links)'}
               </div>
 
               {/* Points & Solved Status */}
-              <div className="flex items-center gap-4">
+              <div className="flex items-center gap-3">
+                {(isSolved || isTeamSolved) && (
+                  <button
+                    type="button"
+                    onClick={scrollToRatingSection}
+                    className="select-none flex items-center gap-1.5 px-2.5 py-1 bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-300 rounded-md border border-cyan-500/30 text-[11px] font-bold transition-all active:scale-95 shadow-sm"
+                  >
+                    <MessageSquareText size={12} className="text-cyan-400" />
+                    <span>Rating Soal</span>
+                  </button>
+                )}
                 {isSolved && (
                   <div className="select-none flex items-center gap-1.5 px-2 py-1 bg-green-500/15 rounded-md border border-green-500/20">
                     <Flag size={12} className="text-green-400 fill-green-400" />
@@ -462,6 +495,14 @@ ${links || '- (No links)'}
                   challenge={challenge}
                   setShowHintModal={setShowHintModal}
                 />
+
+                <div ref={ratingSectionRef}>
+                  <ChallengeRatingSection
+                    challengeId={challenge.id}
+                    user={user}
+                    isSolved={isSolved || isTeamSolved}
+                  />
+                </div>
               </div>
             </div>
           )}
