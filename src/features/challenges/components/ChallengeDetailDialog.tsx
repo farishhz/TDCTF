@@ -8,7 +8,7 @@ import { useSystemSettings } from '@/shared/contexts/SystemSettingsContext'
 import { Dialog, DialogContent, DialogTitle } from '@/shared/ui'
 import { MarkdownRenderer } from '@/shared/markdown/MarkdownRenderer'
 import { DIALOG_CONTENT_CLASS_2XL } from '@/shared/styles'
-import type { Attachment, ChallengeWithSolve } from '@/shared/types'
+import type { Attachment, ChallengeWithSolve, User } from '@/shared/types'
 import ChallengeServicesPanel from './ChallengeServicesPanel'
 import HintDialog from './HintDialog'
 import SolversList from './SolversList'
@@ -16,6 +16,7 @@ import ChallengeAttachments from './challenge-detail/ChallengeAttachments'
 import ChallengeDialogTabs from './challenge-detail/ChallengeDialogTabs'
 import ChallengeFlagForm from './challenge-detail/ChallengeFlagForm'
 import ChallengeHints from './challenge-detail/ChallengeHints'
+import ChallengeRatingSection from './challenge-detail/ChallengeRatingSection'
 import ChallengeMetadata from './challenge-detail/ChallengeMetadata'
 import ChallengeTasksTeaser from './challenge-detail/ChallengeTasksTeaser'
 import SubChallengePanel from './challenge-detail/SubChallengePanel'
@@ -58,6 +59,7 @@ function getChallengeDialogTitle(title: string) {
 
 interface ChallengeDetailDialogProps {
   open: boolean
+  user?: User | null
   challenge: (ChallengeWithSolve & { is_team_solved?: boolean }) | null
   solvers: Solver[]
   challengeTab: ChallengeDialogTab
@@ -105,6 +107,7 @@ interface ChallengeDetailDialogProps {
 
 const ChallengeDetailDialog: React.FC<ChallengeDetailDialogProps> = ({
   open,
+  user,
   challenge,
   solvers,
   challengeTab,
@@ -461,6 +464,12 @@ ${links || '- (No links)'}
                 <ChallengeHints
                   challenge={challenge}
                   setShowHintModal={setShowHintModal}
+                />
+
+                <ChallengeRatingSection
+                  challengeId={challenge.id}
+                  user={user}
+                  isSolved={isSolved || isTeamSolved}
                 />
               </div>
             </div>
