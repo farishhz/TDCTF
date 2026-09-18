@@ -3,7 +3,7 @@
 // React Imports
 import Link from 'next/link'
 import dynamic from 'next/dynamic'
-import { Compass, BookOpen, Flag, Trophy, Shield, Users, Gavel, User, ChevronDown, Loader2, Menu, X, LogOut } from 'lucide-react';
+import { Compass, BookOpen, Code, Flag, Trophy, Shield, Users, Gavel, User, ChevronDown, Loader2, Menu, X, LogOut } from 'lucide-react';
 import { useRouter, usePathname } from 'next/navigation'
 import { useEffect, useLayoutEffect, useState, useRef, useCallback } from 'react'
 
@@ -372,13 +372,14 @@ export default function Navbar() {
                       <Link
                         href={TDCTF.tdctf_docs}
                         target="_blank"
+                        rel="noopener noreferrer"
                         onClick={() => setDocsOpen(false)}
                         className={SURFACE_NAV_DROPDOWN_ITEM_CLASS}
                         data-tour="navbar-docs"
                       >
                         <span className="flex items-center">
-                          <BookOpen size={18} className="mr-1" />
-                          Docs
+                          <Code size={18} className="mr-1" />
+                          Developer
                         </span>
                       </Link>
                     </div>
@@ -649,12 +650,14 @@ export default function Navbar() {
                   </span>
                 </Link>
                 <Link
-                  href="/docs"
+                  href={TDCTF.tdctf_docs}
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className={`px-3 py-2 rounded-lg text-sm ${theme === 'dark' ? 'text-gray-300 hover:text-blue-400 hover:bg-gray-800' : 'text-gray-700 hover:text-blue-600 hover:bg-blue-50'}`}
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   <span className="flex items-center">
-                    <BookOpen size={18} className="mr-1" /> Docs
+                    <Code size={18} className="mr-1" /> Developer
                   </span>
                 </Link>
               </div>

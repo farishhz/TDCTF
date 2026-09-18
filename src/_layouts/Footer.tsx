@@ -47,7 +47,7 @@ const Footer: React.FC = () => {
             <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-[10px] font-black uppercase tracking-widest text-gray-500 dark:text-gray-400">
               <a href="https://www.alfarisiazmir.my.id" className="hover:text-blue-500 transition-colors">Site</a>
               <a href={TDCTF.tdctf_github} className="hover:text-blue-500 transition-colors">Repo</a>
-              <a href={TDCTF.tdctf_docs} className="hover:text-blue-500 transition-colors">Docs</a>
+              <a href={TDCTF.tdctf_docs} target="_blank" rel="noopener noreferrer" className="hover:text-blue-500 transition-colors">Developer</a>
               <a href={TDCTF.tdctf_discord} className="hover:text-blue-500 transition-colors">Discord</a>
             </div>
 

@@ -3,7 +3,7 @@
 // React Imports
 import { useEffect, useState } from 'react'
 import { motion } from "framer-motion";
-import { Star, GitBranch, Users, Github, BookOpen, ScrollText, Info, ListOrdered, MessageSquare, Clock, Globe } from 'lucide-react'
+import { Star, GitBranch, Users, Github, BookOpen, Code, ScrollText, Info, ListOrdered, MessageSquare, Clock, Globe } from 'lucide-react'
 import Image from "next/image";
 
 // Shared Imports
@@ -65,7 +65,7 @@ const filledContributors = fillContributors(CONTRIBUTORS, 14);
 const LINKS = [
   { name: "Website", href: TDCTF.tdctf_url || "#", icon: Globe, description: "Official site" },
   { name: "GitHub", href: TDCTF.tdctf_github || "#", icon: Github, description: "Creator" },
-  { name: "Docs", href: TDCTF.tdctf_docs || "#", icon: BookOpen, description: "Documentation" },
+  { name: "Developer", href: TDCTF.tdctf_docs || "#", icon: Code, description: "Developer portfolio" },
   { name: "Discord", href: TDCTF?.tdctf_discord || "#", icon: MessageSquare, description: "Community chat" },
 ];
 

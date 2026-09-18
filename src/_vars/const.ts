@@ -7,7 +7,8 @@ export const TDCTF = {
   tdctf_github: 'https://github.com/farishhz',
   tdctf_github_org: 'https://github.com/tenka-developer',
   tdctf_author: 'https://github.com/farishhz',
-  tdctf_docs: 'https://ctf.tenkadeveloper.web.id'
+  tdctf_docs: 'https://alfarisiazmir.my.id',
+  tdctf_developer: 'https://alfarisiazmir.my.id'
 }
 
 export const LINKS = {
