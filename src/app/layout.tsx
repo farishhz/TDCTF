@@ -24,6 +24,7 @@ import {
   getOrganizationJsonLd,
   getSoftwareApplicationJsonLd,
   getFaqPageJsonLd,
+  getPersonJsonLd,
 } from '@/shared/lib/seo-structured-data'
 
 export const metadata: Metadata = {
@@ -75,10 +76,8 @@ export const metadata: Metadata = {
     },
   },
   verification: {
-    google: 'googlee2e132e5e265367a.html',
-    other: {
-      'google-site-verification': ['googlee2e132e5e265367a.html', 'e2e132e5e265367a'],
-    },
+    // Correct value is the verification token, not the filename
+    google: 'e2e132e5e265367a',
   },
   openGraph: {
     title: `${APP.shortName} | Capture The Flag Platform - Cybersecurity Competition`,
@@ -125,6 +124,7 @@ export default async function RootLayout({
   const organizationJsonLd = getOrganizationJsonLd()
   const appJsonLd = getSoftwareApplicationJsonLd()
   const faqJsonLd = getFaqPageJsonLd()
+  const personJsonLd = getPersonJsonLd()
 
   return (
     <html lang="id" suppressHydrationWarning>
@@ -144,6 +144,11 @@ export default async function RootLayout({
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
+        />
+        {/* Person entity for Alfarisi Azmir — founder/developer of TDCTF */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(personJsonLd) }}
         />
         <script
           dangerouslySetInnerHTML={{

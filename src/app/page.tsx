@@ -11,13 +11,14 @@ import CommunityShowcase from "@/shared/components/CommunityShowcase"
 import { THEME_PRIMARY_SELECTION_CLASS } from "@/shared/styles"
 
 export const metadata: Metadata = {
-  title: "TDCTF | Capture The Flag Platform - Cybersecurity Competition Arena",
+  // Title intentionally omitted — the root layout default applies:
+  // "TDCTF | Capture The Flag Platform - Cybersecurity Competition"
   description: APP.description,
   alternates: {
     canonical: BASE_URL,
   },
   openGraph: {
-    title: "TDCTF | Capture The Flag Platform - Cybersecurity Competition Arena",
+    title: "TDCTF — Capture The Flag Platform & Cybersecurity Competition Arena",
     description: APP.description,
     url: BASE_URL,
     siteName: "TDCTF - Capture The Flag Platform",
@@ -32,7 +33,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "TDCTF | Capture The Flag Platform - Cybersecurity Competition Arena",
+    title: "TDCTF — Capture The Flag Platform & Cybersecurity Competition Arena",
     description: APP.description,
     images: [`${BASE_URL}/${APP.image_preview}`],
   },

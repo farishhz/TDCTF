@@ -5,60 +5,52 @@ export default function sitemap(): MetadataRoute.Sitemap {
   const baseUrl = BASE_URL.replace(/\/$/, '')
   const now = new Date()
 
+  // NOTE on <priority> and <changefreq>:
+  // Google officially ignores both fields. Only <lastmod> has any use
+  // when it accurately reflects a meaningful content change on the page.
+  // These fields are intentionally omitted to keep the sitemap honest.
+
+  // ROUTE ACCESS AUDIT (verified from source code):
+  //
+  // PUBLIC (no auth guard):
+  //   /          → no auth guard
+  //   /info      → useAuth for loading spinner only, no router.push('/login')
+  //   /rules     → useAuth for loading spinner only, no router.push('/login')
+  //
+  // PRIVATE (client-side auth guard → router.push('/login')):
+  //   /challenges    → useChallengesPageData.ts:147
+  //   /scoreboard    → useScoreboardPageData.ts:91
+  //   /teams         → TeamsPage.tsx:~45
+  //   /teams/[name]  → TeamDetailPage.tsx:26-28
+  //   /logs          → LogsPageContent.tsx:36-38
+  //   /profile       → auth-required
+  //   /user/[username] → auth-required
+
   return [
+    // Homepage — primary platform entry point
     {
       url: baseUrl,
       lastModified: now,
-      changeFrequency: 'daily',
-      priority: 1.0,
     },
-    {
-      url: `${baseUrl}/challenges`,
-      lastModified: now,
-      changeFrequency: 'daily',
-      priority: 0.95,
-    },
-    {
-      url: `${baseUrl}/scoreboard`,
-      lastModified: now,
-      changeFrequency: 'daily',
-      priority: 0.9,
-    },
-    {
-      url: `${baseUrl}/teams`,
-      lastModified: now,
-      changeFrequency: 'daily',
-      priority: 0.85,
-    },
+    // Info — platform architecture, ecosystem, and founder context
+    // PUBLIC: no auth guard (useAuth only for loading spinner)
     {
       url: `${baseUrl}/info`,
       lastModified: now,
-      changeFrequency: 'monthly',
-      priority: 0.8,
     },
+    // Rules — official competition rules & code of conduct
+    // PUBLIC: no auth guard (useAuth only for loading spinner)
     {
       url: `${baseUrl}/rules`,
       lastModified: now,
-      changeFrequency: 'monthly',
-      priority: 0.8,
     },
-    {
-      url: `${baseUrl}/logs`,
-      lastModified: now,
-      changeFrequency: 'daily',
-      priority: 0.7,
-    },
-    {
-      url: `${baseUrl}/login`,
-      lastModified: now,
-      changeFrequency: 'monthly',
-      priority: 0.6,
-    },
-    {
-      url: `${baseUrl}/register`,
-      lastModified: now,
-      changeFrequency: 'monthly',
-      priority: 0.6,
-    },
+    // INTENTIONALLY EXCLUDED (auth-required — verified from source code):
+    // /challenges    — router.push('/login') when unauthenticated
+    // /scoreboard    — router.push('/login') when unauthenticated
+    // /teams         — router.push('/login') when unauthenticated
+    // /teams/[name]  — router.push('/login') when unauthenticated
+    // /logs          — router.push('/login') when unauthenticated
+    // /login         — auth flow, not a content page
+    // /register      — auth flow, not a content page
   ]
 }

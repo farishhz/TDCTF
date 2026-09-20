@@ -1,14 +1,14 @@
 export const TDCTF = {
   tdctf_title: 'TDCTF',
-  tdctf_url: 'https://ctf.tenkadeveloper.web.id',
+  tdctf_url: 'https://ctf.tdctf.my.id',
   tdctf_logo: '/logo.png',
   tdctf_discord: 'https://discord.gg/DUU439SAg',
   tdctf_donation: 'https://clicky.id/farisdev/support/traktir-saya-minum',
   tdctf_github: 'https://github.com/farishhz',
   tdctf_github_org: 'https://github.com/tenka-developer',
   tdctf_author: 'https://github.com/farishhz',
-  tdctf_docs: 'https://alfarisiazmir.my.id',
-  tdctf_developer: 'https://alfarisiazmir.my.id'
+  tdctf_docs: 'https://www.alfarisiazmir.my.id',
+  tdctf_developer: 'https://www.alfarisiazmir.my.id'
 }
 
 export const LINKS = {
@@ -32,7 +32,7 @@ export const MAINTENANCE_MODE = process.env.NEXT_PUBLIC_MAINTENANCE_MODE || 'no'
 // Env-backed site configuration
 export const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL && process.env.NEXT_PUBLIC_SITE_URL !== 'http://localhost:3000'
   ? process.env.NEXT_PUBLIC_SITE_URL
-  : (process.env.NODE_ENV === 'production' ? 'https://ctf.tenkadeveloper.web.id' : (process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'))
+  : (process.env.NODE_ENV === 'production' ? 'https://ctf.tdctf.my.id' : (process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'))
 
 // Turnstile captcha configuration
 export const CAPTCHA_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY?.trim() || ''

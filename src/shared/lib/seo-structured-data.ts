@@ -30,7 +30,31 @@ export const CTF_FAQ_ITEMS: FAQItem[] = [
 ]
 
 /**
- * Generate Schema.org WebSite JSON-LD with Sitelinks SearchBox
+ * Generate Schema.org Person JSON-LD for Alfarisi Azmir (founder / developer of TDCTF).
+ * Use on pages that prominently feature the founder context.
+ */
+export function getPersonJsonLd() {
+  return {
+    "@context": "https://schema.org",
+    "@type": "Person",
+    "@id": `${BASE_URL}/#person-alfarisi-azmir`,
+    "name": "Alfarisi Azmir",
+    "url": TDCTF.tdctf_developer || "https://www.alfarisiazmir.my.id",
+    "sameAs": [
+      TDCTF.tdctf_author || "https://github.com/farishhz",
+      TDCTF.tdctf_developer || "https://www.alfarisiazmir.my.id",
+    ].filter(Boolean),
+    "jobTitle": "Founder & Lead Developer",
+    "worksFor": {
+      // Reference the canonical Organization entity.
+      "@id": `${BASE_URL}/#organization`,
+    },
+  }
+}
+
+/**
+ * Generate Schema.org WebSite JSON-LD with Sitelinks SearchBox.
+ * publisher is linked via @id reference to the Organization entity.
  */
 export function getWebsiteJsonLd() {
   return {
@@ -56,48 +80,48 @@ export function getWebsiteJsonLd() {
       },
       "query-input": "required name=search_term_string"
     },
+    // Link to the Organization entity by @id — avoids re-declaring it inline.
     "publisher": {
-      "@type": "Organization",
       "@id": `${BASE_URL}/#organization`,
-      "name": APP.fullName,
-      "url": BASE_URL,
-      "logo": {
-        "@type": "ImageObject",
-        "url": `${BASE_URL}/${APP.image_logo}`,
-        "width": 512,
-        "height": 512
-      }
-    }
+    },
   }
 }
 
 /**
- * Generate Schema.org Organization JSON-LD
+ * Generate Schema.org Organization JSON-LD.
+ * - name uses the primary brand name; Tradevis CTF goes in alternateName.
+ * - founder.name is the person's real name only; GitHub handle lives in sameAs.
  */
 export function getOrganizationJsonLd() {
   return {
     "@context": "https://schema.org",
     "@type": "Organization",
     "@id": `${BASE_URL}/#organization`,
-    "name": `${APP.shortName} (${APP.fullName})`,
+    "name": APP.shortName,
+    "alternateName": [APP.fullName],
     "url": BASE_URL,
-    "logo": `${BASE_URL}/${APP.image_logo}`,
+    "logo": {
+      "@type": "ImageObject",
+      "url": `${BASE_URL}/${APP.image_logo}`,
+      "width": 512,
+      "height": 512,
+    },
     "sameAs": [
+      // Official TDCTF organizational profiles only.
+      // Personal profiles (farishhz, alfarisiazmir.my.id) belong in the Person entity.
       TDCTF.tdctf_github_org || "https://github.com/tenka-developer",
-      TDCTF.tdctf_github || "https://github.com/farishhz",
-      TDCTF.tdctf_discord || "https://discord.gg/DUU439SAg"
+      TDCTF.tdctf_discord || "https://discord.gg/DUU439SAg",
     ].filter(Boolean),
     "description": "Pengembang dan pengelola platform Capture The Flag (CTF) dan ekosistem keamanan siber TDCTF.",
     "founder": {
-      "@type": "Person",
-      "name": "Alfarisi Azmir (farishhz)",
-      "url": TDCTF.tdctf_author || "https://github.com/farishhz"
-    }
+      // Reference the canonical Person entity instead of re-declaring.
+      "@id": `${BASE_URL}/#person-alfarisi-azmir`,
+    },
   }
 }
 
 /**
- * Generate Schema.org SoftwareApplication / WebApplication JSON-LD
+ * Generate Schema.org SoftwareApplication / WebApplication JSON-LD.
  */
 export function getSoftwareApplicationJsonLd() {
   return {
@@ -115,14 +139,14 @@ export function getSoftwareApplicationJsonLd() {
     "description": "Open-source Capture The Flag (CTF) competition & training platform with isolated Docker instances, realtime scoreboard, and multi-discipline cybersecurity challenges.",
     "softwareVersion": "0.8.0",
     "author": {
-      "@type": "Person",
-      "name": "Alfarisi Azmir"
-    }
+      // Reference the canonical Person entity.
+      "@id": `${BASE_URL}/#person-alfarisi-azmir`,
+    },
   }
 }
 
 /**
- * Generate Schema.org FAQPage JSON-LD
+ * Generate Schema.org FAQPage JSON-LD.
  */
 export function getFaqPageJsonLd(items: FAQItem[] = CTF_FAQ_ITEMS) {
   return {
@@ -141,7 +165,7 @@ export function getFaqPageJsonLd(items: FAQItem[] = CTF_FAQ_ITEMS) {
 }
 
 /**
- * Generate Schema.org BreadcrumbList JSON-LD
+ * Generate Schema.org BreadcrumbList JSON-LD.
  */
 export function getBreadcrumbJsonLd(breadcrumbs: { name: string; url: string }[]) {
   return {
