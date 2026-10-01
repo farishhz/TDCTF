@@ -1,8 +1,213 @@
 import { supabase } from '@/lib/supabase/client'
 import { User } from '@/shared/types'
 import { AuthResponse, AuthIdentity } from '../types'
-import { mergeProfilePicture } from '../lib/auth-utils'
+import { mergeProfilePicture, getAuthAvatarUrl } from '../lib/auth-utils'
 import { SUPABASE_URL } from '@/_vars/const'
+
+/**
+ * Checks whether a Supabase/PostgREST/Network error is transient and safe to retry.
+ */
+function isTransientError(error: any): boolean {
+  if (!error) return false
+  const msg = String(error?.message || error?.details || error?.hint || error || '').toLowerCase()
+  const code = String(error?.code || '').toLowerCase()
+
+  return (
+    msg.includes('schema cache') ||
+    msg.includes('could not query the database') ||
+    msg.includes('connection') ||
+    msg.includes('timeout') ||
+    msg.includes('network') ||
+    msg.includes('fetch') ||
+    msg.includes('failed to fetch') ||
+    msg.includes('503') ||
+    msg.includes('502') ||
+    msg.includes('504') ||
+    msg.includes('500') ||
+    msg.includes('starting up') ||
+    msg.includes('recovery') ||
+    code === 'pgrst000' ||
+    code === 'pgrst001' ||
+    code === 'pgrst002' ||
+    code === 'pgrst003' ||
+    code === '57p03' || // cannot_connect_now
+    code === '57p01'    // admin_shutdown
+  )
+}
+
+/**
+ * Retry helper for asynchronous database/RPC operations with exponential backoff and jitter.
+ */
+async function retryOperation<T = any>(
+  fn: () => PromiseLike<{ data: T | null; error: any }>,
+  retries = 5,
+  initialDelay = 600
+): Promise<{ data: T | null; error: any }> {
+  let lastResult: { data: T | null; error: any } = { data: null, error: null }
+
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      lastResult = await fn()
+      if (!lastResult.error) {
+        return lastResult
+      }
+
+      if (!isTransientError(lastResult.error) || attempt === retries) {
+        return lastResult
+      }
+    } catch (err: any) {
+      lastResult = { data: null, error: err }
+      if (!isTransientError(err) || attempt === retries) {
+        return lastResult
+      }
+    }
+
+    // Exponential backoff + small random jitter
+    const delay = Math.round(initialDelay * Math.pow(1.6, attempt) + Math.random() * 200)
+    await new Promise((resolve) => setTimeout(resolve, delay))
+  }
+
+  return lastResult
+}
+
+/**
+ * Sanitize username for database storage and profile creation
+ */
+function sanitizeUsername(rawUsername: string, userId: string): string {
+  const sanitized = (rawUsername || '')
+    .replace(/[^a-zA-Z0-9_. -]/g, '_')
+    .replace(/^[^a-zA-Z0-9]+/, '')
+    .slice(0, 28)
+
+  return sanitized || 'user_' + userId.substring(0, 8)
+}
+
+/**
+ * Create a safe fallback User object from Supabase Auth user metadata
+ * Used when DB is in a cold restart or PostgREST schema reload to prevent login lockout
+ */
+function createFallbackUser(authUser: any): User {
+  const fallbackUsername =
+    authUser.user_metadata?.username ||
+    authUser.user_metadata?.name ||
+    (authUser.email ? authUser.email.split('@')[0] : 'user_' + authUser.id.substring(0, 8))
+
+  return {
+    id: authUser.id,
+    username: fallbackUsername,
+    score: 0,
+    rank: undefined,
+    picture: getAuthAvatarUrl(authUser) || undefined,
+    profile_picture_url: null,
+    is_admin: false,
+    banned_until: null,
+    ban_reason: null,
+    created_at: authUser.created_at || new Date().toISOString(),
+    updated_at: authUser.updated_at || new Date().toISOString(),
+  }
+}
+
+/**
+ * Resiliently fetch or auto-provision user profile.
+ * Employs multi-tier queries (RPC + Table fallback) and handles schema cache reload gracefully.
+ */
+async function fetchOrEnsureUserProfile(authUser: any): Promise<User> {
+  if (!authUser?.id) {
+    throw new Error('Invalid auth user')
+  }
+
+  // Tier 1: Try RPC get_user_profile with retry
+  const { data: rpcData, error: rpcError } = await retryOperation<any[]>(() =>
+    supabase.rpc('get_user_profile', { p_id: authUser.id })
+  )
+
+  let userData = Array.isArray(rpcData) && rpcData.length > 0 ? rpcData[0] : null
+
+  // Tier 2: Direct table query fallback if RPC didn't return data
+  if (!userData) {
+    const { data: tableData } = await retryOperation<any>(() =>
+      supabase.from('users').select('*').eq('id', authUser.id).maybeSingle()
+    )
+    if (tableData) {
+      userData = tableData
+    }
+  }
+
+  // If user profile already exists, merge with auth picture and return
+  if (userData) {
+    return mergeProfilePicture(userData as any, authUser, userData)
+  }
+
+  // If user profile truly doesn't exist (new OAuth or missing profile row), provision profile
+  const baseUsername =
+    authUser.user_metadata?.username ||
+    authUser.user_metadata?.name ||
+    (authUser.email ? authUser.email.split('@')[0] : 'user_' + authUser.id.substring(0, 8))
+
+  const cleanUsername = sanitizeUsername(baseUsername, authUser.id)
+
+  // Attempt RPC create_profile
+  let createResult = await retryOperation(() =>
+    supabase.rpc('create_profile', {
+      p_id: authUser.id,
+      p_username: cleanUsername,
+    })
+  )
+
+  // Handle unique constraint / duplicate key error gracefully
+  if (createResult.error) {
+    const errStr = String(createResult.error.message || '').toLowerCase()
+    if (errStr.includes('unique') || errStr.includes('duplicate') || errStr.includes('already exists')) {
+      // Profile might have been created concurrently in another tab or request
+      const { data: checkData } = await retryOperation<any[]>(() =>
+        supabase.rpc('get_user_profile', { p_id: authUser.id })
+      )
+      if (Array.isArray(checkData) && checkData.length > 0) {
+        return mergeProfilePicture(checkData[0] as any, authUser, checkData[0])
+      }
+
+      // Username collided with an existing user, retry with unique suffix
+      const uniqueUsername = `${cleanUsername.slice(0, 22)}_${Math.random().toString(36).substring(2, 7)}`
+      createResult = await retryOperation(() =>
+        supabase.rpc('create_profile', {
+          p_id: authUser.id,
+          p_username: uniqueUsername,
+        })
+      )
+    }
+  }
+
+  // If RPC create_profile still failed (e.g. schema cache or RPC permission), try direct table insert
+  if (createResult.error) {
+    console.warn('[fetchOrEnsureUserProfile] create_profile RPC failed, trying direct insert fallback:', createResult.error)
+    await retryOperation(() =>
+      supabase.from('users').insert({
+        id: authUser.id,
+        username: cleanUsername,
+        score: 0,
+      } as any)
+    )
+  }
+
+  // Re-fetch profile after creation attempt
+  const { data: postCreateRpc } = await retryOperation<any[]>(() =>
+    supabase.rpc('get_user_profile', { p_id: authUser.id })
+  )
+  if (Array.isArray(postCreateRpc) && postCreateRpc.length > 0) {
+    return mergeProfilePicture(postCreateRpc[0] as any, authUser, postCreateRpc[0])
+  }
+
+  const { data: postCreateTable } = await retryOperation<any>(() =>
+    supabase.from('users').select('*').eq('id', authUser.id).maybeSingle()
+  )
+  if (postCreateTable) {
+    return mergeProfilePicture(postCreateTable as any, authUser, postCreateTable)
+  }
+
+  // Ultimate resilience fallback: return metadata-derived user object rather than throwing error
+  console.warn('[fetchOrEnsureUserProfile] Using fallback user profile for auth session')
+  return createFallbackUser(authUser)
+}
 
 /**
  * Authentication Service
@@ -14,30 +219,25 @@ export const AuthService = {
    */
   async checkProviderEnabled(provider: string): Promise<boolean> {
     try {
-      if (!SUPABASE_URL) return true;
+      if (!SUPABASE_URL) return true
 
-      // Sanitize URL (remove trailing slash if exists)
-      const baseUrl = SUPABASE_URL.replace(/\/$/, '');
+      const baseUrl = SUPABASE_URL.replace(/\/$/, '')
 
       const res = await fetch(`${baseUrl}/auth/v1/authorize?provider=${provider}`, {
         method: 'GET',
         redirect: 'manual'
-      });
+      })
 
       if (res.status === 400) {
-        const data = await res.json();
-        // Only return false if Supabase explicitly says the provider is not enabled
-        // If it's 400 for other reasons (like missing redirect_to), we assume it might be enabled
+        const data = await res.json()
         if (data.msg?.toLowerCase().includes('provider is not enabled')) {
-          console.warn(`AuthService: Provider ${provider} is disabled in Supabase config.`, data);
-          return false;
+          console.warn(`AuthService: Provider ${provider} is disabled in Supabase config.`, data)
+          return false
         }
       }
-      return true;
+      return true
     } catch (error) {
-      // In case of CORS or network error, we assume it's enabled
-      // so we don't accidentally block users if the check itself fails
-      return true;
+      return true
     }
   },
 
@@ -46,10 +246,9 @@ export const AuthService = {
    */
   async loginWithGoogle(): Promise<AuthResponse> {
     try {
-      // Check if provider is enabled first
-      const isEnabled = await this.checkProviderEnabled('google');
+      const isEnabled = await this.checkProviderEnabled('google')
       if (!isEnabled) {
-        return { user: null, error: 'Google Sign-In is not enabled on this platform. Please contact the administrator.' };
+        return { user: null, error: 'Google Sign-In is not enabled on this platform. Please contact the administrator.' }
       }
 
       const redirectUrl = `${window.location.origin}/auth/callback`
@@ -111,15 +310,17 @@ export const AuthService = {
    */
   async signUp(email: string, password: string, username: string, captchaToken?: string): Promise<AuthResponse> {
     try {
-      const { data: usernameExists } = await supabase
-        .rpc('check_username_exists', { p_username: username })
+      const { data: usernameExists } = await retryOperation(() =>
+        supabase.rpc('check_username_exists', { p_username: username })
+      )
 
       if (usernameExists) {
         return { user: null, error: 'Username already taken' }
       }
 
-      const { data: emailExists } = await supabase
-        .rpc('check_email_exists', { p_email: email })
+      const { data: emailExists } = await retryOperation(() =>
+        supabase.rpc('check_email_exists', { p_email: email })
+      )
 
       if (emailExists) {
         return { user: null, error: 'Email already registered' }
@@ -154,32 +355,11 @@ export const AuthService = {
         }
       }
 
-      const { error: rpcError } = await supabase.rpc('create_profile', {
-        p_id: authData.user.id,
-        p_username: username
-      })
-
-      if (rpcError) {
-        return { user: null, error: `Failed to create user profile: ${rpcError.message}` }
-      }
-
-      const { data: userData, error: userError } = await supabase
-        .from('users')
-        .select('*')
-        .eq('id', authData.user.id)
-        .single()
-
-      if (userError) {
-        return { user: null, error: userError.message }
-      }
-
-      const { data: profileRows } = await supabase.rpc('get_user_profile', { p_id: authData.user.id })
-      const profileRow = Array.isArray(profileRows) ? profileRows[0] : null
-      const mergedUser = mergeProfilePicture(userData as any, authData.user, profileRow)
-
-      return { user: mergedUser, error: null }
-    } catch (error) {
-      return { user: null, error: 'Registration failed' }
+      const user = await fetchOrEnsureUserProfile(authData.user)
+      return { user, error: null }
+    } catch (error: any) {
+      console.error('[signUp] Unexpected error:', error)
+      return { user: null, error: error?.message || 'Registration failed' }
     }
   },
 
@@ -191,9 +371,11 @@ export const AuthService = {
       let email = identifier
 
       if (!identifier.includes('@')) {
-        const { data: rpcEmail, error: rpcError } = await supabase.rpc('get_email_by_username', {
-          p_username: identifier
-        })
+        const { data: rpcEmail, error: rpcError } = await retryOperation<string>(() =>
+          supabase.rpc('get_email_by_username', {
+            p_username: identifier
+          })
+        )
 
         if (rpcError || !rpcEmail) {
           return { user: null, error: 'User not found' }
@@ -218,46 +400,11 @@ export const AuthService = {
         return { user: null, error: 'Login failed' }
       }
 
-      let { data: userData, error: userError } = await supabase
-        .from('users')
-        .select('*')
-        .eq('id', data.user.id)
-        .single()
-
-      if (userError || !userData) {
-        const username =
-          data.user.user_metadata?.username ??
-          (data.user.email ? data.user.email.split("@")[0] : "user_" + data.user.id.substring(0, 8))
-
-        const { error: rpcError } = await supabase.rpc('create_profile', {
-          p_id: data.user.id,
-          p_username: username
-        })
-
-        if (rpcError) {
-          return { user: null, error: 'Failed to create user profile' }
-        }
-
-        const { data: newUserData, error: newUserError } = await supabase
-          .from('users')
-          .select('*')
-          .eq('id', data.user.id)
-          .single()
-
-        if (newUserError) {
-          return { user: null, error: newUserError.message }
-        }
-
-        userData = newUserData
-      }
-
-      const { data: profileRows } = await supabase.rpc('get_user_profile', { p_id: data.user.id })
-      const profileRow = Array.isArray(profileRows) ? profileRows[0] : null
-      const mergedUser = mergeProfilePicture(userData as any, data.user, profileRow)
-
-      return { user: mergedUser, error: null }
-    } catch (error) {
-      return { user: null, error: 'Login failed' }
+      const user = await fetchOrEnsureUserProfile(data.user)
+      return { user, error: null }
+    } catch (error: any) {
+      console.error('[signIn] Unexpected error:', error)
+      return { user: null, error: error?.message || 'Login failed' }
     }
   },
 
@@ -272,82 +419,12 @@ export const AuthService = {
    * Get current user details from DB and Auth
    */
   async getCurrentUser(): Promise<User | null> {
-    const retryRpc = async <T = any>(
-      fn: () => PromiseLike<{ data: T | null; error: any }>,
-      retries = 3,
-      delay = 800
-    ): Promise<{ data: T | null; error: any }> => {
-      let result = await fn()
-      for (let attempt = 1; attempt <= retries && result.error; attempt++) {
-        const msg = String(result.error?.message || '').toLowerCase()
-        if (
-          msg.includes('schema cache') ||
-          msg.includes('connection') ||
-          msg.includes('timeout') ||
-          msg.includes('network') ||
-          msg.includes('fetch')
-        ) {
-          await new Promise((resolve) => setTimeout(resolve, delay * attempt))
-          result = await fn()
-        } else {
-          break
-        }
-      }
-      return result
-    }
-
     try {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) return null
+      const { data: { user }, error: authError } = await supabase.auth.getUser()
+      if (authError || !user) return null
 
-      let { data, error } = await retryRpc<any[]>(() => supabase.rpc('get_user_profile', { p_id: user.id }))
-      let userData = Array.isArray(data) && data.length > 0 ? data[0] : null
-
-      if (!userData) {
-        const rawUsername =
-          user.user_metadata?.username ||
-          user.user_metadata?.name ||
-          (user.email ? user.email.split('@')[0] : 'user_' + user.id.substring(0, 8))
-
-        // Sanitize: hapus karakter yang tidak diizinkan create_profile ('^[a-zA-Z0-9_. -]+$')
-        // Ganti karakter invalid dengan underscore, lalu trim dan pastikan tidak kosong
-        const username = (rawUsername as string)
-          .replace(/[^a-zA-Z0-9_. -]/g, '_')
-          .replace(/^[^a-zA-Z0-9]+/, '') // hapus non-alphanumeric di awal
-          .slice(0, 28)
-          || 'user_' + user.id.substring(0, 8)
-
-        const { error: rpcError } = await retryRpc(() =>
-          supabase.rpc('create_profile', {
-            p_id: user.id,
-            p_username: username
-          })
-        )
-        if (rpcError) {
-          console.error('[getCurrentUser] create_profile RPC error:', rpcError.message, rpcError)
-          throw new Error(`DB_CREATE_PROFILE_ERROR: ${rpcError.message}`)
-        }
-
-        const { data: newData, error: newError } = await retryRpc<any[]>(() =>
-          supabase.rpc('get_user_profile', { p_id: user.id })
-        )
-        if (newError) {
-          console.error('[getCurrentUser] get_user_profile RPC error after creation:', newError.message, newError)
-          throw new Error(`DB_GET_PROFILE_ERROR: ${newError.message}`)
-        }
-        userData = Array.isArray(newData) && newData.length > 0 ? newData[0] : null
-        if (!userData) {
-          console.error('[getCurrentUser] get_user_profile returned empty data after creation')
-          throw new Error('DB_PROFILE_EMPTY_AFTER_CREATION')
-        }
-      }
-
-      const merged = mergeProfilePicture(userData as any, user, userData)
-      return merged
+      return await fetchOrEnsureUserProfile(user)
     } catch (error: any) {
-      if (error && error.message && (error.message.startsWith('DB_') || error.message.startsWith('DB_CREATE_PROFILE_ERROR'))) {
-        throw error
-      }
       console.error('[getCurrentUser] Unexpected error:', error)
       return null
     }
@@ -358,7 +435,7 @@ export const AuthService = {
    */
   async isAdmin(): Promise<boolean> {
     try {
-      const { data, error } = await supabase.rpc('is_admin')
+      const { data, error } = await retryOperation(() => supabase.rpc('is_admin'))
       if (error) return false
       return data || false
     } catch (error) {
@@ -377,7 +454,7 @@ export const AuthService = {
    * Get administrative scope for current user
    */
   async getAdminScope(): Promise<{ is_global_admin: boolean; event_ids: string[] }> {
-    const { data, error } = await supabase.rpc('get_admin_scope')
+    const { data, error } = await retryOperation(() => supabase.rpc('get_admin_scope'))
     if (error || !data) return { is_global_admin: false, event_ids: [] }
 
     const is_global_admin = !!(data as any).is_global_admin
@@ -416,9 +493,9 @@ export const AuthService = {
    */
   async bindGoogle(): Promise<{ error: string | null }> {
     try {
-      const isEnabled = await this.checkProviderEnabled('google');
+      const isEnabled = await this.checkProviderEnabled('google')
       if (!isEnabled) {
-        return { error: 'Google integration is not enabled on this platform.' };
+        return { error: 'Google integration is not enabled on this platform.' }
       }
 
       const { error } = await supabase.auth.linkIdentity({ provider: 'google' })

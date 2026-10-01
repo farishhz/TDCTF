@@ -10,16 +10,9 @@ import Loader from '@/shared/components/Loader'
 /**
  * OAuth Callback Handler
  *
- * Menangani dua flow Supabase:
- *
- * 1. PKCE Flow (supabase v2 default di beberapa config):
- *    URL: /auth/callback?code=XXXX
- *    → panggil exchangeCodeForSession(code)
- *
- * 2. Implicit Flow (token di hash):
- *    URL: /auth/callback#access_token=...
- *    → Supabase JS memproses hash secara async, lalu fire SIGNED_IN via onAuthStateChange
- *    → JANGAN panggil getSession() langsung, harus tunggu event terlebih dahulu
+ * Handles both Supabase PKCE Flow and Implicit Flow seamlessly.
+ * Employs automatic retry and fallback profile resolution so database
+ * schema reload/cold-starts never lock users out of the platform.
  */
 export default function AuthCallbackPage() {
   const router = useRouter()
@@ -37,18 +30,51 @@ export default function AuthCallbackPage() {
       clearTimeout(timeoutId)
 
       try {
-        const currentUser = await AuthService.getCurrentUser()
+        let currentUser = await AuthService.getCurrentUser()
+
+        // If not immediately available (e.g. initial cold start), wait and retry once
+        if (!currentUser) {
+          await new Promise((resolve) => setTimeout(resolve, 1000))
+          currentUser = await AuthService.getCurrentUser()
+        }
+
         if (currentUser) {
           setUser(currentUser)
           router.replace(redirectTo)
         } else {
-          console.error('[auth/callback] getCurrentUser returned null')
-          router.replace('/login?error=profile_creation_failed&details=profile_null')
+          // If AuthService returned null but Supabase Auth has a session,
+          // create a minimal session user so the user can enter
+          const { data: { session } } = await supabase.auth.getSession()
+          if (session?.user) {
+            const fallbackUser = {
+              id: session.user.id,
+              username:
+                session.user.user_metadata?.username ||
+                session.user.user_metadata?.name ||
+                (session.user.email ? session.user.email.split('@')[0] : 'user_' + session.user.id.substring(0, 8)),
+              score: 0,
+              rank: null,
+              created_at: session.user.created_at || new Date().toISOString(),
+              updated_at: session.user.updated_at || new Date().toISOString(),
+            } as any
+
+            setUser(fallbackUser)
+            router.replace(redirectTo)
+          } else {
+            console.error('[auth/callback] No active user/session found')
+            router.replace('/login?error=oauth_failed')
+          }
         }
       } catch (err: any) {
         console.error('[auth/callback] Error during succeed getCurrentUser:', err)
-        const errMsg = encodeURIComponent(err?.message || 'unknown_error')
-        router.replace(`/login?error=profile_creation_failed&details=${errMsg}`)
+        try {
+          const { data: { session } } = await supabase.auth.getSession()
+          if (session?.user) {
+            router.replace(redirectTo)
+            return
+          }
+        } catch {}
+        router.replace('/login?error=oauth_failed')
       }
     }
 
@@ -60,11 +86,11 @@ export default function AuthCallbackPage() {
       router.replace('/login?error=oauth_failed')
     }
 
-    // Hard timeout 20 detik
-    const timeoutId = setTimeout(fail, 20000)
+    // Timeout 30 seconds to allow Supabase cold-starts to finish
+    const timeoutId = setTimeout(fail, 30000)
 
     async function init() {
-      // ── PKCE Flow: ada ?code= di query param ─────────────────────────
+      // ── PKCE Flow: ?code= in query params ─────────────────────────
       const code = searchParams.get('code')
       if (code) {
         const { data, error } = await supabase.auth.exchangeCodeForSession(code)
@@ -72,25 +98,20 @@ export default function AuthCallbackPage() {
           await succeed(searchParams.get('next') || '/challenges')
           return
         }
-        // PKCE gagal — lanjut coba implicit
       }
 
-      // ── Implicit Flow: tunggu Supabase selesai memproses hash ─────────
-      // Supabase membaca window.location.hash secara async, lalu fire event
-      // Jangan panggil getSession() sebelum event ini muncul
+      // ── Implicit Flow: listen to auth state changes ─────────────────
       const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
         if (session && (event === 'SIGNED_IN' || event === 'INITIAL_SESSION')) {
           await succeed(searchParams.get('next') || '/challenges')
         } else if (event === 'INITIAL_SESSION' && !session) {
-          // Supabase selesai cek, tidak ada session
           fail()
         }
       })
 
       unsubscribe = () => subscription.unsubscribe()
 
-      // Fallback: kalau event sudah fire sebelum kita subscribe,
-      // getSession() akan return session yang sudah ada
+      // Fallback: check existing session
       const { data: { session } } = await supabase.auth.getSession()
       if (session) {
         await succeed(searchParams.get('next') || '/challenges')
